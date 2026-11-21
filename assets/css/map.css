@@ -1,0 +1,3914 @@
+/* Map interface.
+   Three areas: lists on the left, map in the middle, detail window on the
+   right. On narrow screens, lists and detail lay themselves over the map. */
+
+/* THE hidden ATTRIBUTE, SETTLED IN ONE LINE — for this whole file and,
+   with its twin at the head of app.css, for the whole project.
+
+   The browser's own stylesheet hides [hidden] through display:none, and
+   that is the weakest rule there is: any display of ours beats it. This
+   line makes ours the strongest instead, so a rule further down may say
+   display:flex without the element escaping its attribute. NO ELEMENT
+   NEEDS A COUNTER-RULE OF ITS OWN — there were eighteen of them here and
+   in app.css, every one without effect, and they went on 09.09.2026.
+
+   THE TRAP IS NOW THE OTHER WAY ROUND: whoever wants to SHOW something
+   that carries [hidden] has to beat this line and needs !important
+   himself — see .sidebar-page[hidden] further down, the one place that
+   does. A rule that tried it without (the load window's progress line)
+   was dead for months and nobody noticed, because the script takes the
+   attribute off anyway. */
+[hidden] { display: none !important; }
+
+/* Height of the attribution footer.
+ *
+ * APPLIES AT EVERY WIDTH, no longer only narrow ones. The attribution
+ * stood on wide screens as a corner box with wrapping — and at half
+ * window width (preview next to the editor, window next to window) grew
+ * upward to two, three lines until it covered "Standort" and "Punkt
+ * setzen". How tall it gets hangs on the chosen layer; a fixed offset by
+ * contrast could not be measured for that. A single-line footer, on the
+ * other hand, ALWAYS has this height, and everything above relies on
+ * it. */
+:root { --footer-bar: 1.75rem; }
+
+/* THE WIDTH OF THE TWO GRIPS at the edges of the map view — and its own
+   token since 11.09.2026 („in der Desktopversion kannst Du die Handles
+   für die rechte und die linke Sidebar etwas kleiner machen, von der
+   Breite her"). They used to take --footer-bar, because a bar is a bar
+   and both were 28 px. That was a coincidence, not a relationship: the
+   footer's number is the HEIGHT of the attribution line, and everything
+   above it is placed from that. Narrowing the grips through it would
+   have moved the scale, the map tools and the buttons on the map with
+   them. A grip is not a bar one reads; it is a handle one grabs, and 20
+   px is enough of one for a mouse. On the phone both grips are away
+   entirely (see the @media blocks), so this number is a desk number. */
+:root { --grip-width: 1.25rem; }
+
+/* ONE COLUMN, NOT TWO. Lists and points now lie one behind the other in
+   tabs instead of side by side; the sidebar thus only needs its own
+   width anymore. Incidentally that clears away the subgrid construction
+   with which the sidebar laid itself across two grid columns. */
+.app {
+    display: grid;
+    /* THREE COLUMNS: sidebar, grip, map. The grip is a column of its own
+       and nothing floating — it is meant to TAKE space, not to cover
+       something (09.09.2026, the same decision as for the grip of the
+       statistics). Collapsed, the first column goes to zero, and the grip
+       slides to the edge by itself. */
+    grid-template-columns: var(--sidebar-width, 340px) auto 1fr;
+    height: 100dvh;
+    overflow: hidden;
+    transition: grid-template-columns .2s ease;
+}
+
+/* THE BAR OVER THE WHOLE PAGE (09.10.2026) — at the desk only,
+   and not for a guest (he has no tabs to walk between: no body class, no
+   bar). One row above the three columns; the sidebar, its grip and the map
+   take the row below, so none of them has to know the bar is there — apart
+   from the detail window, which stands on the viewport and hangs under it
+   by the same token. The sidebar's head hands what the bar now carries
+   (name, help, sign out, the gear) over: .bar-moved. */
+.app-bar { display: none; }
+@media (min-width: 861px) {
+    :root { --app-bar-height: 2.9rem; }
+    body.has-app-bar .app { grid-template-rows: var(--app-bar-height) minmax(0, 1fr); }
+    body.has-app-bar .app-bar {
+        display: flex;
+        grid-column: 1 / -1;
+        align-items: center;
+        gap: 1.6rem;
+        padding: 0 .85rem;
+        background: var(--ground-2);
+        border-bottom: 1px solid var(--border);
+        min-width: 0;
+    }
+    body.has-app-bar .app-bar-tools { display: flex; align-items: center; gap: .1rem; }
+    /* The coordinate search in the bar (placeHeaderSearch in map.js): a small
+       field, the hit list a floating panel under it — the bar has no room
+       for it to unfold in the flow. */
+    body.has-app-bar .app-bar-search { position: relative; margin-left: auto; width: min(22rem, 30vw); }
+    .app-bar-search .header-search { padding: 0; border: 0; background: none; }
+    .app-bar-search .field-with-x input { height: var(--field-height-small); }
+    .app-bar-search .coord-match {
+        position: absolute;
+        top: calc(100% + .45rem);
+        left: 0;
+        right: 0;
+        z-index: 1200;
+        margin: 0;
+        max-height: calc(100dvh - var(--app-bar-height) - 2rem);
+        overflow: auto;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+    }
+    body.has-app-bar .app-bar-tools .symbol-button { text-decoration: none; }
+    body.has-app-bar .bar-moved { display: none; }
+    /* With everything handed to the bar, the sidebar's head is an empty row. */
+    body.has-app-bar .sidebar-header { display: none; }
+    /* THE CHAT MOVED INTO THE BAR (10.10.2026): the bubble over
+       the map goes, and the badges take its corner back. Weightier than
+       the base rules further down, so the order in the file does not
+       matter here. */
+    body.has-app-bar .chat-entry-floating { display: none; }
+    body.has-app-bar .chat-entry-floating ~ .map-badges { --keepout-left: 0px; }
+}
+
+/* Collapsed: the column to zero, the map gets everything. The sidebar
+   stays visible in this — otherwise its handle would be gone too, and
+   that is the way back. It just no longer juts into the picture. */
+body.sidebar-collapsed .app { grid-template-columns: 0 auto 1fr; }
+
+/* The grip itself: a bar over the full height, in the sidebar's dress,
+   with the sign of the statistics drawer — ‹ puts away, › brings back.
+   The font carries it, not an image: the same reasoning as for the − and
+   + of the zoom. */
+.sidebar-grip {
+    width: var(--grip-width);
+    padding: 0;
+    border: 0;
+    border-right: 1px solid var(--border);
+    background: var(--ground-2);
+    color: var(--text-quiet);
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+    /* DRAGGING CHANGES THE WIDTH, CLICKING FOLDS — the same double role as
+       at the grip of the statistics, and therefore the same pointer too.
+       map.js tells the two apart by the movement. */
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.sidebar-grip:hover { color: var(--text); background: var(--ground-3); }
+
+/* „SCHLIESSEN" IN THE FOOTER IS GONE AT THE DESK
+   (09.09.2026): the grip does the same, is always visible and does not lie
+   at the end of a list one has just scrolled through. On the phone there
+   is no grip, so the button stays there — see the phone block. */
+#sidebar-close { display: none; }
+
+/* THE × IN THE SIDEBAR'S HEAD NO LONGER EXISTS (09.09.2026 in
+   two steps: first „das Schließen x rausnehmen in der mobilen
+   Version, damit wir dort einen Slot mehr Platz bekommen", then, once the
+   grip stood: „das können wir natürlich jetzt auch ganz entfernen").
+   It no longer stands in the document, so it needs no rule here any
+   more either — the sentence stays so the next reader does not go
+   looking for it. */
+
+/* --- Sidebar ------------------------------------------------------------ */
+
+.sidebar {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    /* COLLAPSED, THE COLUMN IS ZERO WIDE — AND THEN THE CONTENT MUST BE
+       GONE TOO (09.09.2026, in Firefox: „Fox zeigt mir das
+       zusammengeklappte Handel der Sidebar nun, den Sidebarinhalt mit
+       Scrollbalken"). Without this line the content spills out of a
+       column of zero width and lays itself over grip and map; the
+       browsers do not agree on this, Firefox showed it complete with a
+       scrollbar. The scrolling itself happens one level deeper, in
+       .sidebar-track — here things are only clipped. */
+    overflow: hidden;
+    background: var(--ground-2);
+    /* NO LINE TOWARD THE GRIP (09.09.2026: „keine Trennlinie
+       nach innen zum Inhalt … vom Handel"). Grip and sidebar wear the
+       same ground and are one surface; the stroke between them cut apart
+       something that belongs together. The edge toward the OUTSIDE,
+       against the map, is now drawn by the grip. */
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    flex: none;
+    padding: .55rem .6rem .55rem .85rem;
+    /* NO DIVIDING LINE TO THE TABS ANY MORE (09.09.2026: „durch
+       den hervorgehobenen Tab mit der Hintergrundfarbe können wir die
+       Trennlinie oberhalb des Tabs zu der Kopfzeile entfernen"). Since
+       today the active tab wears a surface of its own and thus divides by
+       itself; a line above it would be the second statement about the
+       same thing, and two strokes close above each other read as a
+       mistake. The baseline BELOW the tabs stays — it divides against the
+       list. */
+}
+
+/* The name may yield, the tools may not: with four icons and a narrow
+   sidebar, "Karte" is the first thing you can do without — the map-sheet
+   icon next to it says the same.
+
+   min-width: 0 IS THE YIELDING — the ellipsis alone was a promise the
+   flexbox never kept: without it the .brand flex item refuses to go
+   below the full wordmark, the header row grows past the sidebar, and
+   the OPEN sidebar stretches the whole document. On the maintainer's phone
+   Chrome then pinned the layout viewport to that stretched width
+   (369-px screen, 406-px page, measured 30.08.2026 via ?layoutprobe),
+   and every width:100% surface — the point window above all — inherited
+   the overhang even after the sidebar closed. The same trap
+   .detail-header h2 already documents. */
+.sidebar-header .brand { min-width: 0; }
+.brand-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* 20 pixels as ever — until the icon library the number stood as width on
+   the SVG and now stands where sizes belong. */
+.brand-icon { width: 1.25rem; height: 1.25rem; color: var(--accent-light); }
+
+.header-tools {
+    display: flex;
+    align-items: center;
+    gap: .1rem;
+    flex: none;
+}
+.header-tools .symbol-button { text-decoration: none; }
+
+/* --- Coordinate search in the header ------------------------------------ */
+
+.header-search {
+    flex: none;
+    padding: .6rem .8rem .5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--ground);
+}
+/* The sidebar's search fields carry the field font as everywhere — they
+   once stood at .9rem (here) and .92rem (below), two values for the same
+   thing in the same sidebar. The height was untouched by that anyway,
+   because the padding did not travel along; visible was only the font,
+   which jumped from field to field. */
+
+/* --- Tabs: Listen | Punkte ---------------------------------------------- */
+
+/* ONE TAB BAR FOR BOTH WINDOWS (10.09.2026). Since the point window has
+   tabs, they exist twice in the same scene — on the left above the list,
+   on the right above the details. They therefore carry the same rules
+   and not two drawings of the same thing; the names stay separate, so
+   that each bar says where it stands. Everything reasoned out below —
+   the transparent border, the line as a pseudo-element, the surface of
+   the active tab — applies to both. */
+.sidebar-tabs {
+    display: flex;
+    flex: none;
+    position: relative;
+}
+
+/* The baseline too ends before the edge — the same indentation as the
+   active line, so both lie flush on top of each other. As a
+   pseudo-element instead of border-bottom: a border would inevitably run
+   from edge to edge. */
+.sidebar-tabs::after {
+    content: '';
+    position: absolute;
+    left: .7rem;
+    right: .7rem;
+    bottom: 0;
+    height: 1px;
+    background: var(--border);
+}
+.sidebar-tabs [role="tab"] {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .6rem .5rem;
+    background: none;
+    /* THE AIR TO THE EDGE SITS IN THE BORDER, and that is the trick: a
+       transparent border belongs to the element, so the hit area stays
+       the full half of the sidebar — exactly what the note below at the
+       active line demands. Only the GROUND is indented
+       (background-clip), and the line below now starts at 0, because its
+       reference is the area INSIDE the border. That way both are exactly
+       the same width (09.09.2026: „der grüne Unterstrich sollte
+       auch so breit sein, wie der Hintergrund es anzeigt … sodass wir zum
+       Rand hin etwas Platz haben"). */
+    border: 0;
+    border-left: .7rem solid transparent;
+    border-right: .7rem solid transparent;
+    background-clip: padding-box;
+    font: inherit;
+    font-size: .88rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.sidebar-tabs [role="tab"]:hover { color: var(--text); }
+
+/* The active line is a pseudo-element, no border-bottom anymore: the
+   button fills half the sidebar, and its edge thus ran to the sidebar's
+   border — outer left, outer right, and in the middle both tabs butted
+   against each other. Indented is the LINE, not the button: a margin on
+   the button would also have trimmed the hit area, and precisely under
+   the finger that should remain the full half sidebar. */
+.sidebar-tabs [role="tab"]::after {
+    content: '';
+    position: absolute;
+    /* ZERO, NOT .7rem: the button's transparent border already indents
+       the reference, and another .7rem would be double that. */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
+    /* ABOVE the baseline, and this really needs the z-index: the ::after
+       of the BAR is painted after its children and would otherwise lie
+       on the active line — of the green, a 1px strip with a gray seam
+       would remain. */
+    z-index: 1;
+}
+.sidebar-tabs [role="tab"][aria-selected="true"] {
+    color: var(--text);
+    font-weight: 600;
+    /* A SURFACE IN ADDITION TO THE LINE (09.09.2026: „dass man
+       mehr sieht als nur den Unterstrich. Aber nicht die Akzentfarbe. Das
+       wäre zu viel Akzentfarben, sondern ein dezenterer Hintergrund, der
+       aber trotzdem den Tab hervorhebt").
+
+       --ground-3 is exactly that: the raised surface of this project,
+       which every button already wears under the pointer. It says „here
+       I am" without taking meaning away from the accent — that belongs
+       to the active line below and to the chosen things in the list.
+
+       Rounded at the top, not at the bottom: the surface sits on the
+       baseline, and the active line closes it off. */
+    /* background-COLOR and not the shorthand: „background" set the
+       background-clip from the base rule back to border-box, and the
+       surface ran under the transparent border — measured 170 px instead
+       of 148. A shorthand sets everything, after all, even what one does
+       not name. */
+    background-color: var(--ground-3);
+    /* PLUS THE BORDER WIDTH, otherwise the rounding is invisible: the
+       radius applies to the border box, but painting reaches only to the
+       inner edge of the transparent border — and what arrives there is
+       radius MINUS border. 10 px minus 11 px is zero, so a sharp corner
+       (09.09.2026: „die Reiter kannst Du die an den zwei oberen
+       Ecken abrunden" — they were rounded already, just by nothing). */
+    border-radius: calc(var(--radius) + .7rem) calc(var(--radius) + .7rem) 0 0;
+}
+.sidebar-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+
+/* The number ON THE TAB is the hint that something waits over there —
+   instead of a button under the list. That would be a second footer and
+   take up space permanently, of all places where you scroll through
+   fifty lists. The rule itself stands in app.css: the same number also
+   appears on the column header of the administration
+   (organize_content.php), which does not load map.css. */
+
+/* --- The two pages ------------------------------------------------------ */
+
+/* Side by side in one track, shifted instead of hidden and shown: that
+   way each page's scroll position is preserved, and you can swipe
+   between them. */
+.sidebar-track {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    width: 200%;
+    transform: translateX(0);
+    transition: transform .22s ease;
+}
+.sidebar[data-page="points"] .sidebar-track { transform: translateX(-50%); }
+
+.sidebar-page {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+/* The tab logic otherwise hides the unchosen page — here both should
+   remain standing, they are being shifted after all. */
+.sidebar-page[hidden] { display: flex !important; }
+
+.search-field { padding: .7rem 1rem .4rem; flex: none; }
+
+/* The X that clears a field lives in app.css since clearable.js — every
+   page has such fields now, not only the sidebar search. */
+
+.list-section,
+.point-section {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: .5rem .6rem 1rem;
+}
+
+/* THE FILTER MUST NEVER PUSH THE FOOTER OFF THE SCREEN. Without these two
+   lines it is an ordinary flex item, and one of those refuses to become
+   smaller than its content (min-height: auto — the classic flexbox trap).
+   With a few search rows and the threat categories it grew taller than the
+   whole column, and because nothing clipped it, it drew itself right over
+   the footer: the Schließen button sat between filter rows. Reported from
+   the phone, where the column is shortest.
+   min-height: 0 permits the shrinking, overflow-y gives the filter its own
+   scroll for the rare case that it really is that long. Normally there is
+   nothing to scroll and no second scrollbar appears — this is not the
+   trap of a scroll area inside a scroll area, the two are siblings. */
+.filter-section {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* And the list keeps a floor. Otherwise the flex algorithm would grant the
+   filter everything and squeeze the points to a sixteen-pixel slit — that
+   was the state in which the footer got buried. */
+.point-section { min-height: 4.5rem; }
+
+.point-section { padding-top: 0; }
+/* The why-is-this-empty line under the point header (drawList) — the
+   section's own side padding, nothing more: it is a state, not a box. */
+.filter-empty-hint { padding: .2rem .8rem 0; }
+
+/* --- Coordinate in the search field -------------------------------------- */
+
+.coord-match {
+    flex: none;
+    margin: .2rem .8rem .5rem;
+    padding: .6rem .7rem;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.list-row {
+    display: flex;
+    align-items: center;
+    border-radius: 8px;
+    /* THE WHOLE ROW INDENTS — box, ground and all (24.09.2026:
+       „die Haken und der Rahmen müssen mit einrücken"). Until then only the
+       fold column moved, and every ground ran from the same left edge: a
+       sublist's lit row stood as wide as its heading's, and the level was
+       told by the text alone. */
+    margin-left: calc(var(--depth, 0) * var(--indent));
+}
+
+/* ONE REM A LEVEL HERE, not the token's 1.35. Now that the ground indents
+   too, its edge shows the step as clearly as the text does, and in front
+   of every name stands the box column besides — at the full step a third
+   level lost half its name on the phone. The smaller step is the one the
+   draft showed and the maintainer took (25.09.2026). */
+.list-section { --indent: 1rem; }
+
+/* A gap between the rows so the ground shimmers through: two lists
+   selected next to each other otherwise melted into ONE light block, and
+   you read the marking as an area instead of row by row. The gap stands
+   at every row, not only selected ones — between quiet ones it is
+   invisible, and the row height stays the same everywhere. */
+.list-row + .list-row { margin-top: 2px; }
+
+/* HOVER ADDS, IT DOES NOT REPLACE (25.09.2026: „eine
+   transparente Farbe, die nur etwas dazu addiert"). A veil of the text
+   colour over whatever ground the row wears — quiet, ticked or heading.
+   It used to SWAP the ground for --ground-3: far too loud on a quiet row,
+   and on a heading, which wears --ground-3 itself, it did nothing at all.
+   As a background-image it leaves the row's own colour where it is; drawn
+   from the text colour it lightens on a dark theme and darkens on a light
+   one, like the buttons' resting surfaces in app.css. The section heads
+   and the buttons in a row take the same veil (below). */
+:root { --row-veil: color-mix(in srgb, var(--text) 5%, transparent); }
+.list-row:hover { background-image: linear-gradient(var(--row-veil), var(--row-veil)); }
+
+/* TICKED IS SAID BY THE BOX NOW (tickBox in map.js, 24.09.2026) — the row
+   only echoes it: a half step of lightness and the bold name.
+
+   THE ACCENT HAIRLINE ROUND A TICKED ROW WENT WITH THE BOX
+   (24.09.2026: „der Rahmen stört jetzt sogar"). It had come on 09.09.2026
+   because „ticked" and „a branch hangs below" differed only in shades of
+   one ground, and one had to KNOW which of them was the stronger. The box
+   says it without comparing; a line beside it would say it twice. The
+   rule in CLAUDE.md names the sidebar as the place where the box speaks.
+
+   THE GROUNDS SWAPPED THE NEXT DAY (25.09.2026): the heading
+   lists wear the full step --ground-3 now (.list-row.is-heading further
+   down), a ticked row the half step between it and the sidebar's
+   --ground-2. The ground no longer has to carry the choice, so it marks
+   the structure — and the ticked rows, of which there are many, stay
+   quiet.
+
+   EXPRESSLY ONLY LIGHTER, NO COLOUR. A tinted selection was tried on the
+   living stock and discarded: mint, turquoise and even the accent green
+   stood as their own colour family next to the green of the buttons and
+   the colourful list symbols — three voices where one suffices.
+
+   Through color-mix and not as a token of its own: the tone IS the half
+   way between the two, and as its own value it would have to be drawn up
+   by hand in eight themes. */
+.list-row.is-active { background-color: color-mix(in srgb, var(--ground-3) 45%, var(--ground-2)); }
+.list-row.is-active .list-row-name { color: var(--text); font-weight: 600; }
+
+/* The tick box's own styles (.list-row-check, .list-row-box) live in app.css
+   since 28.09.2026 — Organisieren draws the same box, and the
+   administration loads only that sheet. */
+
+/* The fold arrow before every row.
+   It ALSO stands where there is nothing to fold — then empty. Otherwise
+   lists without sublists move left by its width, and the indent that is
+   meant to show the level would suddenly mean two things. The indent sits
+   on the row itself since 24.09.2026 (.list-row), so this column is the
+   same width at every depth. */
+.list-row-arrow {
+    flex: none;
+    /* Wider than the triangle inside, and across the whole row height:
+       this gets tapped standing in the forest, and a target of 18 pixels
+       was too small for that. The row does not grow from this — it is
+       taller anyway. 1.5rem on the phone as well since the box stands in
+       front of it: a heading folds from anywhere on its row, so the
+       triangle need not be a target of its own. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    width: 1.5rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    line-height: 1;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+/* The column now carries triangle OR leaf symbol — empty it never is
+   anymore. Foldable (and with that pointer cursor plus brightening) is
+   only the triangle; the symbol passes its click on to the name next to
+   it. */
+.list-row-arrow { cursor: default; }
+
+/* The list symbols in the sidebar muted: on the map the colors have to
+   hold their own against aerial image and forest — in front of the
+   sidebar's dark ground the same values scream. Muted at DISPLAY time,
+   not in the value: it is the same color as on the map, just delivered
+   more quietly — two maintained color values per list drifted apart. */
+.list-row-arrow .color-point svg { filter: saturate(.65) brightness(.9); }
+/* And a touch smaller than the text next to it: the symbols are
+   accessory to the name, not the other way round. */
+.list-row-arrow .color-point { width: .9em; height: .9em; }
+
+/* The fold triangle in full text color — it is the heading's handle, not
+   an accessory. Set quiet (and caught up in the symbols' muting filter)
+   it looked switched off next to the bold names. */
+.list-row-arrow.is-collapsible { cursor: pointer; color: var(--text); }
+
+/* How many leaves of a folded branch are selected. Quiet and small — an
+   answer, not a button. */
+.list-row-selected {
+    flex: none;
+    font-size: .74rem;
+    color: var(--text-quiet);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: .05rem .45rem;
+}
+
+/* AND IT WEARS THE ACCENT COLOUR WHEN SOMETHING BELOW IT IS ON
+   (11.09.2026: „ist da was Aktives markiert, soll die Badge, also der Rand
+   und die Schrift, in der Akzentfarbe angezeigt werden — dasselbe gilt
+   für die Hauptbereiche meiner Listen und geteilt").
+
+   It is the same statement the accent makes in this sidebar anyway:
+   chosen is the user's own doing, and the accent is his colour
+   (.list-row.is-active, the bar at the point row). Folded, the row below
+   cannot show it itself, so the number shows it.
+
+   NO CONTRADICTION TO THE REJECTION FURTHER DOWN, where brightness and
+   no hue was expressly chosen for shared entries: there it was about the
+   ROW, which would have got a third voice next to colourful list
+   symbols. Here it is a number in a ring that does not exist at all
+   without a tick — it does not say „this list is different" but „here
+   something is on".
+
+   Without a tick it stays quiet: „0/5" is the information that nothing
+   is on, and must not look like its opposite (is-active in
+   choiceBadge).
+
+   --accent-light AND NOT --accent, and that is no weakening but the
+   same colour in the version meant for TEXT (app.css says so at the
+   accents: a light one for a dark ground, a darkened one for a light
+   one). Measured on the ground of this sidebar, ring and digits against
+   the stripe:
+
+       Theme        --accent   --accent-light
+       Moosgrün       7.9         8.3
+       Warmlicht      1.2         2.8
+       Warmlicht/Minze1.6         4.1
+       Warmlicht/Orange2.1        4.7
+       Taupe/Rot      2.8         4.8
+       Schiefer/Lila  5.5         7.1
+
+   In the light themes the pure accent would be a ghost — exactly the
+   trap that stands in CLAUDE.md. */
+.list-row-selected.is-active {
+    color: var(--accent-light);
+    border-color: var(--accent-light);
+}
+
+.list-row-main {
+    /* SHRINKS TO ITS NAME since 16.09.2026 — the pencil follows the name
+       directly, the gap after it stretches to the row's end (listRow /
+       sharedRow). The row itself stays the click target. */
+    flex: 0 1 auto;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .5rem .55rem .5rem .1rem;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: .92rem;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    min-width: 0;
+}
+
+/* Taller rows on the phone: with the padding the whole row grows to
+   about 44 points — the fingertip lower bound, as with the icon buttons.
+   The box, the fold arrow and the pencil stretch along across the row
+   height, the whole row is the target for "Zeigen". On the desktop it
+   stays denser: there a mouse pointer hits, and thirty lists should fit
+   at a glance. */
+@media (max-width: 860px) {
+    .list-row-main { padding-block: .7rem; }
+}
+
+.list-row-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* The stretching gap after the name: once the main button has stopped
+   behind the name, it pushes what belongs to the far end — the chat
+   bubble, the owner — to the row's end. See sharedRow() — that is where
+   it says why the info sign can sit neither inside the button nor at the
+   trailing end any more. */
+.list-row-gap { flex: 1; min-width: .4rem; cursor: pointer; }
+
+/* THE BUTTONS KEEP THEIR SIZE, THE NAME GIVES WAY. Without this a tight
+   row squeezed pencil and bubble below their square — 41.6 of 44 px,
+   measured on a 390 px phone (25.09.2026) — and the bubbles left their
+   line. */
+.list-row > .symbol-button { flex: none; }
+/* Under the pointer a button in a row lays its own veil on top of the
+   row's, instead of the solid --ground-3 every symbol button takes: in a
+   heading, which wears --ground-3 itself, that stood as a darker hole in
+   the lit row. */
+.list-row .symbol-button:hover { background: color-mix(in srgb, var(--text) 9%, transparent); }
+
+/* THE OWNER CLOSES THE ROW, AS A BUTTON'S SQUARE (25.09.2026). Its .6rem of
+   air existed to part it from the count; with the count gone it stands at
+   the row's end, flush with the gear in the header above, and as big as
+   the buttons beside it — a tap on it says whose the row is, and until
+   now a thumb had 13 px of little person to hit. The sizes are those of
+   .symbol-button.small, on the desk and on the phone. BUBBLE AND OWNER
+   TOUCH (25.09.2026: „nimm die Luft weg"). */
+.list-row > .list-row-owner { width: 28px; height: 28px; justify-content: center; }
+@media (max-width: 860px) {
+    .list-row > .list-row-owner { width: 44px; height: 44px; }
+}
+
+/* SHARED ENTRIES IN THE QUIET TONE. Own and foreign lists stand in the
+   same column one below the other; the heading separates them at the
+   top, but whoever reads further down no longer sees it.
+
+   BRIGHTNESS AND NO HUE, and that is not convenience: a tinted marking
+   was already tried once in this sidebar on the living stock and
+   discarded (see .list-row.is-active further up) — mint, turquoise and
+   even the accent green stood as a colour family of their own next to
+   the green of the buttons and the colourful list symbols. The symbols
+   here wear the user's colours; one more colour beside them would be the
+   third voice.
+
+   Chosen, the row returns to the full text colour — otherwise a ticked
+   foreign list would look weaker than an unticked own one, and the
+   choice is the more important statement. */
+/* HEADING LISTS IN ITALICS — and expressly not bold.
+   Bold is taken in this list already: it means „chosen"
+   (.list-row.is-active .list-row-name). A heading CAN look chosen —
+   folded, its name turns bold when something below it is ticked. Were it
+   always bold, bold would mean two things, and one would have to guess
+   which of them is meant.
+
+   Italics are free here and say the right thing besides: the row is not
+   a thing one chooses but the name of a branch. Points always lie in the
+   last rank; a list that gets sublists hands them down. Until then only
+   the missing shape dot said so — an absence one notices only when
+   looking for it. */
+.list-row.is-heading .list-row-name { font-style: italic; }
+
+/* A GROUND OF ITS OWN FOR HEADING LISTS (09.09.2026: „in
+   Sammellisten der ganzen Zeile auch jetzt einen dezenten Hintergrund
+   geben … Er soll nur markieren: hier gibt es Unterlisten").
+
+   THE FULL STEP SINCE 25.09.2026 („tausche die Farbe der
+   Sammellisten mit der Farbe der markierten Listen"). Until then the
+   heading wore the half step and a ticked row the full one, and a ticked
+   heading had to be lifted once more to beat its own ground. With the box
+   saying „ticked" (tickBox), the stronger ground went to the structure: a
+   heading looks the same whatever is on below it — its box and its bold
+   name say that.
+
+   AS background-color AND NOT THE SHORTHAND, here and at .is-active: the
+   shorthand would also reset the hover veil, which lies in
+   background-image (.list-row:hover). This rule stands later than the
+   ticked one at equal weight, so a heading that is also is-active keeps
+   the heading's ground. */
+.list-row.is-heading { background-color: var(--ground-3); }
+
+.list-row.is-shared .list-row-name { color: var(--text-quiet); }
+.list-row.is-shared.is-active .list-row-name { color: var(--text); }
+
+/* In the shared section: whose container, whose branch. Quiet like the
+   number — the list's name remains the main thing. Not flexible but
+   fixed: the list name next to it carries the shortening, the owner
+   stays whole. */
+.list-row-owner {
+    /* The little person and the name form one unit — inline-flex so the
+       figure sits centred on the text and does not push the line height,
+       and a gap instead of a margin on the SVG (the same reasoning as at
+       the tab icons in app.css). */
+    display: inline-flex;
+    align-items: center;
+    gap: .25em;
+    flex: none;
+    font-size: .8rem;
+    /* SOMEBODY ELSE'S STANDS OUT, MINE STEPS BACK (23.09.2026 —
+       the first try had it the wrong way round: „was mir gehört, soll
+       nicht hervorgehoben werden, die Listen der anderen etwas"). Foreign:
+       close to the text colour, tinted with the page's own ground — the
+       theme's hue, never the accent, which says „chosen". Mine: faded
+       quiet grey, it is the expected case and needs no attention. */
+    color: color-mix(in oklab, var(--ground) 15%, var(--text));
+    cursor: pointer;
+}
+.list-row-owner.is-mine { color: var(--text-quiet); opacity: .55; }
+
+/* .color-point ITSELF STANDS IN app.css — the administration's containers
+   have shown their mounted lists with the same symbol since 14.08.2026,
+   and the administration does not load this sheet. A second version here
+   would be the .button.small case all over again: the same name in both
+   sheets, different values, and nobody sees it because the two pages
+   never lie side by side. What remains here applies only on the map. */
+
+.sidebar-subheading {
+    margin: 1.1rem .6rem .35rem;
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-quiet);
+}
+
+/* As a fold handle ("Meine Listen", "Geteilt") the section title is a
+   button. Here stands only what makes it a button; the number of
+   selected lists it carries when folded is the same pill as on the
+   branch headings (.list-row-selected) — just without their
+   uppercasing, for "3/7" is no heading. */
+/* THE SECTION HEAD IS A SURFACE ACROSS THE WHOLE ROW, so the sidebar's
+   sections read as sections and not as two words between rows
+   (20.08.2026).
+
+   NOT --ground-3, obvious as it would be: a list row wears that tone —
+   the heading lists since 25.09.2026, the ticked rows before. A head that
+   looks like a row divides nothing, it confuses — noticed at once when
+   both stood side by side. So the next rung of the same ladder: the
+   sidebar stands on --ground-2, the rows reach --ground-3, the head
+   stands on --border. No new value, no new hue, only the place in the
+   row that was still free.
+
+   It reaches the edge through a negative margin: .list-section has .6rem
+   of padding, and a surface that stops short of it looks like a box and
+   not like a head. The rounding goes for the same reason — what takes
+   the full width has no corners to show. */
+.sidebar-subheading.is-collapsible {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    /* The width expressly: a <button> shrinks to its content, even as
+       display:flex — width:auto gave a surface that stopped after the
+       word. The 1.2rem are the padding of .list-section on both sides,
+       which the negative margin here cancels again. */
+    width: calc(100% + 1.2rem);
+    margin-inline: -.6rem;
+    /* THE HIERARCHY STOOD ON ITS HEAD (09.09.2026:
+       „markierte Listen sind in der Zeilenhöhe höher als die
+       Hauptkategorien. Das müssen wir ändern … die beiden Hauptkategorien
+       müssen höher sein und in etwas größerer Schrift sowie in fetter
+       Schrift").
+
+       Measured, it was exactly the wrong way round: head 36 px tall at
+       11.8 px type, row 45 px at 16. The head was the smallest text in
+       the block it heads — the surface alone carried the whole order, and
+       where two marked rows stood below it, it lost.
+
+       Now larger than the rows, bold, and the min-height makes it
+       binding: from padding and line height alone, depending on the
+       theme, 46 would come out once and 44 another time, and 44 would
+       again be less than a row. */
+    padding: .7rem .6rem;
+    min-height: 3rem;
+    background: var(--border);
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    cursor: pointer;
+    text-align: left;
+    /* FULL TEXT COLOUR, not the quiet one. Without a surface, --text-quiet
+       was right — the heading was meant to hold back. On the surface it
+       fails: measured 2.6:1 in Taupe, 3.5 in Papier, 3.8 in Petrol, while
+       4.5 is required. With --text all eight themes stand between 6.7 and
+       11. A head that gets a surface of its own may also look like a
+       head. */
+    color: var(--text);
+}
+/* The veil of the rows (.list-row:hover), not --ground-3: the head stands
+   on --border, one rung ABOVE --ground-3, so swapping that in under the
+   pointer made it darker (25.09.2026: „die werden dunkler"). */
+.sidebar-subheading.is-collapsible:hover { background-image: linear-gradient(var(--row-veil), var(--row-veil)); }
+
+/* Folded with something selected inside: light up like a selected row —
+   the same language as .list-row.is-active. Unfolded the title stays
+   quiet; then the rows themselves light up (rule for that in map.js,
+   bereichstitel()). */
+/* Folded and something chosen all the same: here once stood a bold
+   weight that lifted the head off the rest. Since it is bold anyway
+   (09.09.2026), a rule of its own here would only be a LIGHTER one — so
+   it is gone. The case is still told, namely by the number beside it
+   (3/7), which appears exactly then. */
+/* THE TRIANGLE GROWS WITH THE HEAD (09.09.2026: „das ist eh zu
+   klein. Es ist kleiner als die Sammellisten Dreiecke"). Measured, that
+   was true: 10.9 px at the head against 13.1 px at a heading list — the
+   sign of the top level was the smallest in the block. Now 15.2 px, so
+   larger than both, matching a type size of 16.8. */
+.sidebar-subheading .collapse-triangle { flex: none; width: .95rem; height: .95rem; }
+.sidebar-subheading .list-row-selected { text-transform: none; letter-spacing: normal; }
+
+/* Taller under the finger, like the rows below. */
+@media (max-width: 860px) {
+    .sidebar-subheading.is-collapsible { padding-block: .55rem; }
+}
+
+/* The number left, the sorting right — in the same row. A separate strip
+   for two buttons would be wasted height, and the header row stands
+   there always anyway. */
+.point-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+    /* IT STAYS AT THE TOP (09.09.2026: „diese Zeile wär gut,
+       wenn sie sticky immer am oberen Rand bleibt, damit man, egal wo man
+       hingescrollt hat, immer die Sortierreihenfolge neu festlegen
+       kann"). It carries both things one reaches for while scrolling: the
+       number of points and the sorting.
+
+       OPAQUE AND ACROSS THE FULL WIDTH, or it is no use: with a
+       transparent ground the rows visibly ran through it, and without the
+       negative margins they peeked past the section's padding left and
+       right. The .6rem are exactly that padding; the inner padding of
+       1.2rem gives the text its old place back (.6rem section + .6rem
+       margin of .sidebar-subheading), so that the number still stands
+       above the names of the point rows.
+
+       THE TOP MARGIN HAS TO MOVE INTO THE PADDING. When sticking, it
+       belongs to the element: with the 1.1rem of .sidebar-subheading the
+       row stuck 1.1rem too early, and the points would vanish in the gap
+       above it. That is why .point-section also has padding-top: 0 — the
+       air at the top has always come from here. */
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--ground-2);
+    margin: 0 -.6rem .15rem;
+    padding: .55rem 1.2rem .3rem;
+}
+
+.sort-buttons {
+    display: flex;
+    gap: .1rem;
+    flex: none;
+}
+
+/* .sort-button lives in app.css since 24.08.2026 — Organisieren's Touren
+   column has the same pair of buttons, and the administration loads only
+   app.css: here they would have been invisible chrome, there they are
+   the same control. Only .sort-buttons above stays, it is the sidebar's
+   own row. */
+
+.point-row {
+    display: flex;
+    /* Anchor for the accent bar of the open row (.is-active::before) —
+       without it the bar would position itself against some ancestor
+       further out and land somewhere in the sidebar. */
+    position: relative;
+    /* The color dot on the first line, not in the middle of two: it
+       belongs to the name, not to the entry as a block. Centered WITHIN
+       it, it sits via the offset further down. */
+    align-items: flex-start;
+    gap: .55rem;
+    width: 100%;
+    padding: .5rem .55rem;
+    background: none;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-size: .88rem;
+    color: var(--text-quiet);
+    text-align: left;
+    cursor: pointer;
+}
+
+.point-row:hover { background: var(--ground-3); color: var(--text); }
+
+/* THE OPEN POINT MUST DIFFER FROM THE ONE UNDER THE MOUSE. The surface
+   alone was the same in both states, so the row you were reading and the
+   row you happened to hover over looked alike — and while the detail
+   window is open, that is exactly the question: which one am I editing?
+   The name gets the full color and weight, and a hairline of the accent
+   frames the row, damped to 55 per cent like every chosen row of the
+   administration.
+
+   EVEN ON ALL FOUR SIDES (28.10.2026: „an allen vier Seiten
+   gleich dick, also nicht die linke Seite etwas dicker"). Until then a
+   3 px accent bar ran down the left edge, the sidebar's old dialect for
+   „chosen"; under the frame it read as a thicker left side. */
+.point-row.is-active {
+    background: var(--ground-3);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.point-row.is-active .point-row-title { color: var(--text); font-weight: 600; }
+
+/* As with the list rows: taller under the finger. The value mainly
+   lifts the single-line rows over the 44 — whoever carries a fact line
+   lies above it by itself and only gets a bit more air. */
+@media (max-width: 860px) {
+    .point-row { padding-block: .7rem; }
+}
+
+/* --- Time filter -----------------------------------------------------------
+ *
+ * One row under the heading: the day list, the two dates, and — only when
+ * something applies — the clear button.
+ *
+ * IT USED TO FOLD OUT, and the reason was space: permanently visible the
+ * fields cost eighty pixels, on the phone half of what you saw of the
+ * list at a glance. Since the filter section scrolls on its own
+ * (.filter-panel), those eighty pixels no longer take anything away from
+ * anybody, and the fold cost a press before every date.
+ */
+.time-filter {
+    flex: none;
+    padding: 0 .8rem .5rem;
+}
+
+.time-filter-buttons {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+/* A chip, not a button: it toggles a state, it triggers nothing. You
+   should see that on it before you press it — the corner nevertheless
+   stays rounded like .button (the call, 14.08.2026): at first the
+   full pill stood here, round instead of angular as its own mark — but
+   with that the filter button fell out of line against "Listen …" and
+   the other buttons in Organisieren instead of falling in. What distinguishes
+   the chip from the button remains the fill (quiet until it takes hold)
+   and the height: it comes from the small field size, not from the
+   button padding, because in the time-range row "Letzte Tour" and two
+   date fields stand side by side and the line has to be right there. */
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    height: var(--field-height-small);
+    padding-inline: .7rem;
+    font: inherit;
+    font-size: var(--field-font-small);
+    color: var(--text-quiet);
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.filter-chip:hover { color: var(--text); }
+
+.filter-chip.is-active {
+    color: var(--accent-text);
+    background: var(--accent);
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.time-filter-fields {
+    display: flex;
+    align-items: flex-end;   /* "Letzte Tour" has no label above it */
+    gap: .5rem;
+    margin-top: .45rem;
+}
+
+/* Only there when there is something to clear — and then as narrow as its
+   icon, so the two calendars keep the width. */
+.time-filter-clear {
+    flex: none;
+    padding-inline: .45rem;
+    color: var(--text-quiet);
+}
+.time-filter-clear:hover { color: var(--text); }
+
+/* Not growing along like the date fields: the button is as wide as its
+   word, and the two calendars share the rest. The other way round, the
+   computed value would get a third of the row for four syllables. */
+/* HERE ONCE STOOD padding: .36rem — six hundredths more than every other
+   filter chip, apparently to align the button with the date fields next
+   to it back when those still had their own height. Since the fields
+   come from --field-height-small, the ordinary chip measures 31.4 and the
+   field 31.2 — the manual alignment had become the cause of the
+   difference it was once meant to fix. */
+/* THE TOUR ROW ABOVE THE DATE ROW since 14.09.2026 (the maintainer: on the
+   phone the chip and the two calendars no longer fit one line once the
+   chip carries a person, „Tagestour (the maintainer)"). The chip may shrink
+   and cuts its word with an ellipsis rather than pushing the clear
+   button off the row; the range row keeps the gap of a form row below. */
+.time-filter-tour { flex: 0 1 auto; min-width: 0; }
+.time-filter-tour-name { overflow: hidden; text-overflow: ellipsis; }
+.time-filter-range { margin-top: .5rem; }
+
+.time-filter-field {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    font-size: .74rem;
+    color: var(--text-quiet);
+}
+
+/* The browser's built-in calendar field, only brought into the colors.
+   An own calendar would be wasted effort here: on the phone this one
+   opens the operating system's date picker, which everyone knows. */
+/* THE SMALL FIELD SIZE, and here it is right: in the sidebar two date
+   fields stand one above the other, and two full form rows would take
+   the height from the point list below. The values come from the tokens
+   in app.css, so "klein" means the same everywhere. */
+.time-filter-field input {
+    width: 100%;
+    height: var(--field-height-small);
+    padding: var(--field-padding-small);
+    font: inherit;
+    font-size: var(--field-font-small);
+    color: var(--text);
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+/* Without this the calendar symbol in Chrome stays almost black on dark
+   ground and cannot be found. */
+.time-filter-field input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: .55;
+    cursor: pointer;
+}
+.time-filter-field input::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+
+#time-filter-hint { margin: .4rem 0 0; }
+
+/* TWO LINES PER ENTRY, and the name gets the first all to itself.
+ *
+ * Before, name, size and date stood side by side in one line. At 375
+ * pixels of width so little was then left for the name that
+ * "Buchenaltholz am Nordhang" ended as "Buchenaltholz am Nor…" — and the
+ * name is the only thing by which you recognize a find again. The
+ * details below are accessory and may be smaller. */
+/* THE COLOR DOT CENTERED ON THE NAME LINE.
+ *
+ * align-items: flex-start sets it flush to the TOP EDGE of the line, and
+ * that is not the same as centered within it — with an 11-pixel dot in a
+ * 22-pixel-tall line it sat visibly too high.
+ *
+ * Calculated instead of guessed: 1.55 is the line height from app.css,
+ * em refers to the same font size as the title next to it. If either of
+ * the two changes, the offset stays right.
+ *
+ * Only here: in list rows and in the list choice the same dot stands in
+ * a single-line row and already sits right there. */
+.point-row > .color-point {
+    margin-top: calc((1.55em - 1em) / 2);
+}
+
+.point-row-content {
+    flex: 1;
+    min-width: 0;      /* otherwise the long name pushes the row over the edge */
+    display: flex;
+    flex-direction: column;
+    /* No gap: the two lines bring enough along via their line height
+       already, and the details belong to the name above — they should
+       sit like its continuation, not like a paragraph of their own. */
+    gap: 0;
+}
+
+.point-row-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Date, map sheet, elevation, size, photos — in fixed order, so the eye
+   always searches in the same place when going through a long list.
+   tabular-nums keeps the digits in track for that.
+ *
+ * SMALLER AND QUIETER THAN THE NAME, and both together: before, the
+ * details had the same color as the title and were only a little
+ * smaller — with that, two equally loud lines stood one below the other
+ * and there was no ranking. The name is what you search for; this is
+ * what you read afterwards.
+ *
+ * The opacity instead of an own color: it works in every state, so also
+ * when the row turns lighter on hover or selection. A fixed color would
+ * have to be set once more for each of those cases.
+ *
+ * The tighter line height moreover pulls it closer to the name — it
+ * belongs to it. */
+.point-row-facts {
+    font-size: .72rem;
+    line-height: 1.35;
+    opacity: .72;
+    font-variant-numeric: tabular-nums;
+
+    /* IT MAY WRAP, and specifically between the details, never in the
+       middle of one. With an area the size joins in, and at the latest
+       then the row no longer fits one line at 375 pixels. Before, it
+       was cut off — and cut off was of all things what stands at the
+       back and occurs most rarely.
+
+       The line spacing is tighter than that between the details: two
+       wrapped lines should be read as one detail, not as two
+       paragraphs. */
+    display: flex;
+    flex-wrap: wrap;
+    gap: .08rem .5rem;
+}
+
+/* Icon and value belong together and never separate.
+   The icon in this replaces the separator dot that used to sit between
+   the details: it says at once where something new begins and what it
+   is. */
+.fact {
+    display: inline-flex;
+    align-items: center;
+    gap: .3em;
+    white-space: nowrap;
+}
+
+/* At font size, so they grow together with the text when someone sets
+   the font larger. The slight upward offset puts the icon's optical
+   center on that of the digits — the baseline does not lie in the same
+   place for the two. */
+.fact svg {
+    flex: none;
+    width: 1em;
+    height: 1em;
+    margin-top: -.08em;
+}
+
+/* --- Grouped names ---------------------------------------------------------
+ *
+ * A group row looks like a point row but carries a fold triangle instead
+ * of the color dot: it does not lead to a spot on the map, it only
+ * opens. That this is something different must be visible on it before
+ * you press it.
+ */
+.point-group .collapse-triangle {
+    flex: none;
+    width: 12px;
+    height: 12px;
+    /* Centered on the name line, exactly like the color dot next to it —
+       the same calculation with the line height from app.css. */
+    margin-top: calc((1.55em - 12px) / 2);
+    color: var(--text-quiet);
+    transition: transform .12s ease;
+}
+
+.point-group.is-open .collapse-triangle { transform: rotate(90deg); }
+.point-group:hover .collapse-triangle { color: var(--text); }
+
+/* The points of an unfolded group indent and get a line: without it a
+   row of identical-looking lines floats under the group, and you do not
+   see where it ends. */
+.point-row.is-child {
+    margin-left: 1.15rem;
+    border-left: 1px solid var(--border);
+    border-radius: 0 8px 8px 0;
+}
+
+.sidebar-footer {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem .8rem;
+    border-top: 1px solid var(--border);
+    /* OPAQUE, NOT SEE-THROUGH. The footer carries the way out; whatever
+       happens above it, nothing may shine through it — a Schließen button
+       with filter rows behind it is unreadable and looks broken. The
+       ground of the sidebar, so the strip stays invisible as a strip. */
+    background: var(--ground-2);
+}
+/* "Neue Liste" belongs to the lists page; on the points page the button
+   has no business. Schließen stays standing on both pages —
+   margin-left: auto hangs it on the right edge, whether "Neue Liste"
+   stands next to it or not. Before, the whole footer vanished on the
+   points page; that worked as long as it carried only "Neue Liste". */
+.sidebar[data-page="points"] #list-new,
+.sidebar[data-page="points"] #folder-new { display: none; }
+/* AND SO AT THE DESK IT IS EMPTY — and therefore gone
+   (09.09.2026: „die Fußzeile, die bei Punkte ja keinen Inhalt hat, zeigt
+   aber noch eine Trennlinie"). Lately it carried only „Neue Liste" here,
+   since „Schließen" gave way to the grip; what was left was an empty
+   strip with a line above it. On the phone „Schließen" still stands in
+   it, so there it stays — see the phone block. */
+.sidebar[data-page="points"] .sidebar-footer { display: none; }
+#sidebar-close { margin-left: auto; }
+
+/* HERE STOOD .button.small a second time, with .42rem/.87rem against the
+   .35rem/.84rem in app.css. Because the map loads both sheets, the same
+   button was 37 px tall here and 34 in the administration. The rule now
+   lives in app.css alone and takes its values from the tokens there —
+   this value won, by the way, it is the more operable one. */
+
+.symbol-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    /* FLAT AS BEFORE — and since 09.09.2026 that has to be stated
+       expressly. app.css gives every symbol button a resting surface with
+       a fine frame (the why stands there); the maintainer wants that only in
+       the administration for now and will name one by one later, for the
+       map and the sidebar, which buttons follow. The map loads this file
+       last, so it is enough to take both back here — the shadow
+       expressly, because 'background' alone does not clear it. */
+    background: none;
+    box-shadow: none;
+    border: 0;
+    border-radius: 7px;
+    font-size: 1rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+
+.symbol-button:hover { background: var(--ground-3); box-shadow: none; color: var(--text); }
+/* AND THE BUCKET STAYS FULL RED HERE. In the administration it lightens
+   under the pointer, because there the SURFACE takes on the signal colour
+   and it would otherwise vanish in its own red (measured and reasoned
+   there). On the map nothing changes colour — the surface is
+   --ground-3 as ever —, so there is nothing to make up for here either.
+   Same weight as the rule over there, but on the map this file comes
+   last. */
+.symbol-button.delete:hover { color: var(--error); }
+
+.symbol-button.small { width: 28px; height: 28px; font-size: .9rem; }
+
+/* ON THE PHONE AT FINGER SIZE — every icon button, not just the header
+   row. 28 respectively 32 pixels are mouse measures: a pointer hits a
+   point, a fingertip covers a centimeter. 44 pixels are the usual lower
+   bound (Apple 44 pt, Android 48 dp).
+
+   The rule began as a special case of the header row and went global
+   when the pencil for editing a list stood out with the same 28 pixels:
+   there is no icon button here that is NOT a finger target — pencil,
+   remove field, create sublist, close window, copy coordinates. A list
+   of exceptions that do not exist only goes stale.
+
+   It is the HIT AREA that grows, hardly the image: the button is
+   invisible until tapped, the icon becomes only a touch larger, and the
+   header row's padding gives way in return. BOTH selectors are needed
+   although they say the same: .symbol-button.small weighs 0-2-0 and would
+   beat a mobile rule that read only .symbol-button (0-1-0). And the rule
+   deliberately stands AFTER the base rules — equal weight, the later
+   one wins; before them it would be ineffective, and without a word at
+   that. */
+@media (max-width: 860px) {
+    .sidebar-header { padding-block: .3rem; }
+    .header-tools { gap: .35rem; }
+    .symbol-button,
+    .symbol-button.small { width: 44px; height: 44px; font-size: 1.05rem; }
+}
+
+.text-button {
+    background: none;
+    border: 0;
+    padding: 0;
+    font: inherit;
+    color: var(--accent-light);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* --- Map area ----------------------------------------------------------- */
+
+.map-section {
+    position: relative;
+    min-width: 0;
+}
+
+#map {
+    position: absolute;
+    inset: 0;
+    background: var(--ground);
+}
+/* MapLibre's stylesheet gives its map a font of its own; the controls in
+   it keep the page's, as they do on the Leaflet map. */
+#map.is-vector { font: inherit; }
+/* WHAT THE VECTOR MAP DRAWS STAYS AT THE MAP'S HEIGHT. Leaflet shuts its
+   markers into a pane of z-index 400, so a marker's own z-index counts
+   only among markers. MapLibre hangs them loose into its canvas container,
+   and the location's 1500 lifted it with its cone over the point window
+   (1100; 30.09.2026). The same 400 shuts them in here, below
+   the tools, the bars and the windows, as on the Leaflet map. */
+#map.is-vector .maplibregl-canvas-container { position: relative; z-index: 400; }
+/* Its popups hang beside that container, not in it — they take Leaflet's
+   popup height, over the map and under the controls and windows. */
+#map.is-vector .maplibregl-popup { z-index: 700; }
+/* And they look as Leaflet's do (an area's profile, a walk): white, round,
+   dark text — the page's light text colour would otherwise reach in. The
+   corner menu dresses itself further down. */
+.maplibregl-map .maplibregl-popup-content {
+    color: #333;
+    padding: 13px 24px 13px 20px;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, .4);
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+#map.sets-point { cursor: crosshair; }
+
+.map-tools {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(1.1rem + var(--footer-bar) + env(safe-area-inset-bottom));
+    z-index: 500;
+    display: flex;
+    gap: .5rem;
+}
+
+.tool {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .62rem 1rem;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--text);
+    /* THE GLASS OVER THE MAP COMES FROM THE TOKEN, NOT AS A FIXED VALUE.
+       Here used to stand rgba(28,34,41,…) — the dark --ground-2, frozen
+       by hand. With the light theme var(--text) flipped dark, the frozen
+       ground stayed dark: scale, pills and zoom buttons were unreadable.
+       color-mix keeps the opacity and follows the theme — this mix
+       applies to ALL above-the-map glasses in this file. */
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+.tool:hover { background: var(--ground-3); }
+
+.tool.main {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--accent-text);
+}
+.tool.main:hover { background: var(--accent-light); }
+/* Every light theme: the hover ground is darkened there (double role of
+   --accent-light, see app.css) — the dark tool text then needs a light
+   substitute, otherwise it drowns. */
+:root:is([data-theme="warmlight"], [data-theme="slate"], [data-theme="taupe"]) .tool.main:hover { color: #fff; }
+.tool.main.is-active { background: var(--warn); }
+
+/* --- The excursion guest (stage 4) ---------------------------------------
+   Hidden is what the guest has no door to: the lists page of the sidebar
+   (his finds live in no list), the sorting toggle bound to it, and every
+   entry the start data already emptied hides itself. The header's gear
+   and logout never render for him (index.php). */
+.guest-access #sidebar-tab-lists { display: none; }
+/* AND THE FILTER (24.08.2026): on an excursion so few finds
+   accrue that filtering answers no question — it would be a compartment
+   full of conditions above a list of eleven. Hidden here, and map.js
+   restores no stored condition for a guest either: a borrowed phone
+   must not sift his finds by its owner's old search. */
+.guest-access .filter-header,
+.guest-access .filter-section { display: none; }
+
+/* While the positioning has not yet settled in: the button shows that
+   something is running. Without this sign a location at ±60 m looks
+   like the final result, when it is only the first estimate from the
+   Wi-Fi. */
+.tool.active span[aria-hidden] {
+    animation: standort-puls 1.2s ease-in-out infinite;
+}
+.tool.active.settled span[aria-hidden] { animation: none; }
+
+@keyframes standort-puls {
+    50% { opacity: .3; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tool span[aria-hidden] { animation: none !important; }
+}
+
+/* THE STACK the floating badges live in — see index.php. It holds the
+   position ONCE, the badges only their own shape; that is what keeps
+   them from lying on top of each other.
+
+   AND IT KEEPS THE BUTTONS FREE (12.09.2026, back from the
+   excursion: „die Exkursionsbadge wurde so breit, dass ich die Buttons,
+   Nachrichten und Sidebar sowie Maps fast nicht mehr klicken konnte").
+   Measured on a 375 px phone: „Exkursion: NABU September 2026" lay from
+   63 to 311 px and covered the speech bubble (68–112) whole; a
+   friendship request ran from edge to edge underneath all three
+   buttons. The stack stands one z-index above them — it has to, or the
+   map's controls would cut through a badge — so whatever it covers is
+   dead to the finger.
+
+   A GRID WHOSE OUTER COLUMNS ARE THE BUTTONS. The first row is as tall
+   as they are, and in that row only the middle column is a badge's to
+   take: a long name WRAPS there instead of growing (his rule:
+   „innerhalb der Buttons bleiben und vorher umbrechen"). Everything in
+   the rows BELOW spans all three columns, because below the buttons
+   there is nothing left to cover („nur unterhalb der Buttons kann sie
+   breiter werden"). The row is a minimum, not a size: a badge of three
+   lines makes it taller, and the next one still starts underneath.
+
+   ONLY THE EXCURSION STANDS IN THE BUTTON ROW. It is the one badge that
+   lasts the whole outing, and it fits the column: a name and a cross,
+   the name free to wrap. The friendship request does NOT fit there —
+   measured: beside the icon and its two answers 85 px are left for the
+   text, and „Freundschaftsanfrage" alone is 131, so the word ran on
+   under the cross. Whatever comes and goes with a moment (a request,
+   the waiting queue, the set hint) therefore always starts in the
+   second row at full width, whether an excursion stands above it or
+   not — the first row is held by an empty ::before, so auto-placement
+   passes it by. Without an excursion the momentary badges hang 44 px
+   lower than before; that is the button row, and they are its second
+   line.
+
+   NOT A FLOAT CARVE-OUT, though that was the first thought: how far a
+   block may shrink beside a float is left to the browser by CSS 2, and
+   a badge centred by auto margins beside one is centred differently in
+   every engine. The grid says the same thing in numbers. */
+.map-badges {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 600;
+    display: grid;
+    grid-template-columns: var(--keepout-left) minmax(0, 1fr) var(--keepout-right);
+    grid-template-rows: minmax(var(--keepout-height), auto);
+    grid-auto-rows: auto;
+    row-gap: .4rem;
+    justify-items: center;
+    /* start, not the default stretch: the first row is at least a
+       button tall, and a stretched badge would be one too — 44 px for
+       one line of text, which is what the cross once did to it. */
+    align-items: start;
+    /* The column itself is air: only its badges catch a finger, the map
+       underneath stays reachable everywhere else. */
+    pointer-events: none;
+
+    /* THE KEEP-OUTS ARE THE NEIGHBOURS' OWN MEASURES, taken from the
+       stack's edge (1rem in from the map's). Right: Leaflet's layer
+       switch — 44 px a rem in from the edge since 01.10.2026, the
+       measure of every button over the map — plus air. Left at the
+       desk: the speech bubble (44 px) — but only when there is one, see
+       the sibling rule below; with no friends the corner is empty.
+       Height: one button. The phone sets its left in its block: the ☰
+       exists only there. */
+    --keepout-left: 0px;
+    --keepout-right: calc(44px + .5rem);
+    --keepout-height: 44px;
+}
+.chat-entry-floating ~ .map-badges { --keepout-left: calc(44px + .5rem); }
+/* The button row, taken. An empty box across all three columns of the
+   first row, so that no auto-placed badge lands there — a pseudo-element
+   is a grid item like any other, and this one draws nothing and, through
+   the stack, catches nothing. */
+.map-badges::before {
+    content: '';
+    grid-row: 1;
+    grid-column: 1 / -1;
+}
+/* ONE SIZE FOR ALL BADGES IN THE STACK (24.08.2026: the
+   waiting badge's size is the right one). Height and type live HERE, not
+   in each badge — that is why the excursion one had grown two pixels
+   apart from it. Each badge keeps only what is its own: its ground, its
+   colour, its horizontal padding.
+
+   Full width and an automatic row, which is always the second or later
+   — see ::before. max-width against the grid area, so a wrapping badge
+   fills its row and no more. */
+.map-badges > * {
+    grid-column: 1 / -1;
+    max-width: 100%;
+    pointer-events: auto;
+    padding-block: .3rem;
+    font-size: .8rem;
+    line-height: 1.35;
+}
+/* THE EXCURSION STAYS ON TOP (24.08.2026). It says WHERE one
+   currently is — the frame around everything else in the stack —, and it
+   lasts as long as the outing, while the others come and go with a
+   moment. Placed by row and column since 12.09.2026, no longer by
+   `order: -1`: the first row is the button row, and this is the only
+   badge allowed in it. */
+.map-badges > .excursion-badge {
+    grid-row: 1;
+    grid-column: 2;
+}
+/* AND THE BUTTONS INSIDE FOLLOW THE BADGE, they do not set its height:
+   „Jetzt versuchen" made the waiting badge two pixels taller than the
+   excursion one, the cross had made the excursion one nine pixels taller
+   than everything (both measured). A badge is a line of text; whatever
+   sits in it is that line, not its own control. */
+.map-badges button { font-size: inherit; line-height: inherit; }
+
+.set-hint {
+    padding: .55rem 1rem;
+    font-size: .88rem;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 95%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+/* The phone's point peek — the same spot and make as the status row
+   below it: one floating line over the map, above the bottom tools. It
+   is interface rather than a message, so it takes its surfaces from the
+   tokens like everything else. The title gives way, the button does not
+   — the button is the whole reason the peek exists. */
+.point-peek {
+    position: absolute;
+    bottom: calc(4.6rem + var(--footer-bar) + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    max-width: min(90%, 26rem);
+    padding: .4rem .5rem .4rem .95rem;
+    background: color-mix(in srgb, var(--ground-2) 95%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+#point-peek-title {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* WHAT A THUMB HAS TO HIT IS 44 PX (09.09.2026: „dieser
+   Editier Button ist zu klein. Er ist sicher nicht 44 x 44"). Measured,
+   it was 38 x 25 — the rule stands in app.css and applies there expressly
+   only to the page content; the bubble lies over the MAP and was
+   therefore never meant.
+
+   WITHOUT a phone bracket, because the bubble exists only there: map.js
+   shows it only below the 860 (peekPoint), and a target that only a
+   finger ever hits needs no condition on whether a finger is there right
+   now. Square, because a sign without a word has no width of its
+   own. */
+#point-peek-open {
+    flex: 0 0 auto;
+    min-width: 44px;
+    min-height: 44px;
+}
+/* THE DESK'S NAME TAG (map.js, deskPeek; 15.10.2026): hung
+   under the point with a tip pointing at it, name and pencil in the first
+   line, the find's Hauptmotiv below as a small picture of what was found.
+   map.js sets left/top from the point's place on the map and --tip-x for
+   where the tip sits; .is-above turns it round where there is no room
+   below. */
+.point-peek.is-desk {
+    bottom: auto;
+    transform: none;
+    width: 16rem;
+    max-width: none;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: .5rem .6rem;
+    padding: .5rem .5rem .5rem .8rem;
+}
+.point-peek.is-desk #point-peek-title {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.point-peek-image {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-height: 11rem;
+    object-fit: cover;
+    border-radius: 6px;
+}
+.point-peek.is-desk::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: calc(var(--tip-x, 50%) - 6px);
+    width: 10px;
+    height: 10px;
+    background: inherit;
+    border-left: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    transform: rotate(45deg);
+}
+/* The pencil is quiet at the desk (map.js gives it .subtle) and takes the
+   accent only under the pointer — as the pencil on the Fundbrowser's
+   tiles (15.10.2026: „Nur beim Überfahren. So wie im
+   Fotobrowser"). */
+.point-peek.is-desk #point-peek-open:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+.point-peek.is-desk.is-above::before {
+    top: auto;
+    bottom: -6px;
+    transform: rotate(225deg);
+}
+
+/* THE PENCIL IN A POINT ROW, at the desk only (map.js, pointRow): it leads
+   into the Fundbrowser, where a find is edited since there is no window
+   at the desk. Under the pointer, at the row's right end; a row being
+   read without the mouse keeps its full width for the name. */
+.point-row-edit { display: none; }
+@media (min-width: 861px) {
+    /* Laid over the row's end, on the hover's own ground (--ground-3,
+       .point-row:hover), so it takes no width from the name while hidden. */
+    .point-row-edit {
+        position: absolute;
+        top: .3rem;
+        right: .35rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.9rem;
+        height: 1.9rem;
+        color: var(--text-quiet);
+        background: var(--ground-3);
+        border-radius: 6px;
+        opacity: 0;
+    }
+    .point-row:hover .point-row-edit,
+    .point-row:focus-visible .point-row-edit { opacity: 1; }
+    .point-row-edit:hover { color: var(--text); background: color-mix(in srgb, var(--text) 9%, var(--ground-3)); }
+}
+
+.status-row {
+    position: absolute;
+    bottom: calc(4.6rem + var(--footer-bar) + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 500;
+    max-width: min(90%, 30rem);
+    padding: .5rem 1rem;
+    font-size: .87rem;
+    text-align: center;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 95%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+.status-row.is-error {
+    border-color: #6d3230;
+    background: rgba(58, 31, 30, .96);
+    color: #f3c9c7;
+}
+
+/* --- The way back: a burger ---------------------------------------------
+ *
+ * HERE STOOD A HANDLE AT THE RIGHT EDGE. It worked, but was a second
+ * control for the same task in a third place — next to the ✕ in the
+ * header and the ☰ at the map's edge. Now the same applies everywhere:
+ * the ✕ closes, the ☰ opens, on every screen in the same place.
+ *
+ * And it must be its own control, not part of the sidebar: collapsed,
+ * that one is zero pixels wide, everything inside would be
+ * unreachable. */
+/* Appears only while the sidebar is collapsed — otherwise it would point
+   at something that stands open anyway. And only on narrow screens: at
+   the desk the handle does that. */
+.sidebar-open { display: none; }
+/* THE ☰ HAS BECOME SUPERFLUOUS AT THE DESK: the grip brings the sidebar
+   back, and two ways to the same goal are one too many. On the phone it
+   remains the only one — see the phone block. */
+
+.sidebar-open {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 500;
+    width: 44px;
+    height: 44px;
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* --- Markers ------------------------------------------------------------ */
+
+/* The shape comes as SVG from map.js; only the shadow remains here, so
+   the marker also stands out from a light aerial image. */
+.point-symbol svg {
+    display: block;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, .75));
+}
+
+/* No glow around the selection — the marking is the ring in the counter
+   color, drawn in map.js. A gradient next to it would look like a
+   rendering error. */
+.point-symbol.is-selected svg {
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, .8));
+}
+
+/* --- Custom fields in the list editor ----------------------------------- */
+
+.field-list { display: flex; flex-direction: column; gap: .4rem; margin-bottom: .5rem; }
+
+.field-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+}
+.field-row input { flex: 1; min-width: 0; }
+.field-row select { flex: none; width: 8.5rem; }
+
+/* The record fields in the list window: view only, quiet — they are
+   there, but there is nothing to do on them. The type or the choice
+   values stand small next to them, so it is clear what will appear on
+   the point. */
+.field-row.is-fixed { color: var(--text-quiet); font-size: .88rem; padding: .15rem 0; }
+.field-row.is-fixed .field-row-type { margin-left: auto; font-size: .78rem; text-align: right; }
+
+/* The choice values of a select field: its own full row under the field
+   row, slightly indented — they belong to the field above, not into its
+   tight row. Written as "input.…" because ".field-row input" would
+   otherwise win with flex: 1 (basis 0 %) and the wrap would never come. */
+.field-row input.field-row-options { flex: 1 1 100%; margin-left: .8rem; font-size: .88rem; }
+
+/* --- Species suggestions --------------------------------------------------
+ *
+ * The scientific name stands on top and carries the row; the German one
+ * below it, small and quiet. That is the ranking in which a find record
+ * must be readable — only the scientific one is unambiguous, and for
+ * most species there is no German one at all.
+ *
+ * The field above is 'position: relative', so the list hangs directly on
+ * it and not on the window. THE RULES LIVE IN app.css since 19.09.2026: the
+ * taxonomy filter of Organisieren draws the same list, and that page loads
+ * app.css alone. */
+
+/* Temporary marker for a spot from the trash. Deliberately different
+   from every list shape: it belongs to no saved point. */
+.show-point {
+    display: block;
+    width: 18px;
+    height: 18px;
+    margin: 2px;
+    border-radius: 50%;
+    border: 3px dashed var(--warn);
+    box-sizing: border-box;
+}
+
+/* --- What is waiting for a connection ----------------------------------- */
+
+/* SMALL, AND ESPECIALLY ON THE PHONE (24.08.2026: it had
+   grown huge and ate the map). It is a badge, not a message: three
+   words of state and one word of invitation. The wording was cut in
+   map.js — here the frame follows it. */
+.pending-bar {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding-inline: .7rem;
+    /* Never wider than the screen it floats over — with a long sentence
+       (the full store, the rejected changes) it wraps instead of pushing
+       the map aside. */
+    max-width: 100%;
+    color: #ecdcb4;
+    background: rgba(42, 37, 25, .96);
+    border: 1px solid #5c4f2c;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+}
+
+/* THE EXCURSION BADGE — same size and manners as the waiting one, and
+   deliberately beneath it: both are state over the map, and two bars of
+   different height would look like two systems. In the accent, because
+   this is no warning: it says what one is doing, not what is wrong. */
+.excursion-badge {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 100%;
+    /* The same air on both ends (13.09.2026: „das x klebt
+       noch zu sehr am Rand") — the rim is a half circle there, and a
+       cross a hair's breadth inside it reads as pressed against it. */
+    padding-inline: .7rem;
+    /* GLASS, NOT A FILLED ACCENT (24.08.2026: „gerade bei dem
+       Leimgrün doch zu kräftig"). A badge floating over the map says a
+       state; a full accent surface shouts one, and in the lime theme it
+       shouted loudest. The same glass as the waiting badge beside it —
+       and the accent stays where it identifies without glaring: on the
+       rim. */
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+/* THE NAME WRAPS, THE CROSS DOES NOT (12.09.2026: „vorher
+   umbrechen"). Until then the badge carried nowrap and an ellipsis on
+   ITSELF — which a flex container does not pass on to its text: the
+   bare text node kept its full line, and a long name pushed the cross
+   out through the clipped edge instead of shortening. And shortening
+   was the wrong answer anyway: the badge now stands in the column
+   between the buttons (see .map-badges), where a name of thirty
+   letters does not fit on one line and is still what one wants to
+   read. flex:1 with min-width:0 is what lets the text give way at all
+   — the same two lines as the friendship label beneath. */
+.excursion-badge-name {
+    flex: 1;
+    min-width: 0;
+}
+/* THE CROSS DOES NOT SET THE HEIGHT (24.08.2026: „die
+   Exkursionsbadge ist viel zu hoch"). Measured: 38 px against the
+   waiting badge's 31, at identical padding and font — a .symbol-button
+   brings its own touch-sized box, and inside a slim badge that box IS
+   the height. Here it shrinks to its icon; the badge as a whole stays
+   big enough to hit. */
+.excursion-badge .symbol-button {
+    color: inherit;
+    flex: none;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 0 .3rem;
+}
+.excursion-badge .symbol-button .icon { width: 14px; height: 14px; }
+/* THE OFFER TO MAP ALONG — the excursion badge before it is one (map.js,
+   drawMappingOffer). TWO PARTS (13.09.2026: „den
+   Exkursionsnamen oben, dann teilnehmen / nicht teilnehmen"): the name
+   on its own line, the two answers as words underneath, the yes in the
+   accent and bold AND ON THE RIGHT, the no quiet on the left — the same
+   weighting and the same order as the friendship badge's answers, said
+   in words (same day: „dass Teilnehmen auf der rechten Seite
+   steht, weil das für Rechtshänder einfach zu erreichen ist"). Measured in the column between the
+   phone's buttons, 189 px: the first draft put „Jetzt teilnehmen"
+   beside the name and broke the name into four lines; underneath, the
+   name takes two lines and the answers one. The phone's 44 px text
+   button is turned off for both (it fattened the badge to 92 px), with
+   the specificity to beat that late rule; a little padding keeps the
+   words tappable. */
+.excursion-badge.is-offer { flex-wrap: wrap; row-gap: .1rem; }
+.excursion-badge.is-offer .excursion-badge-name { flex: 1 1 100%; }
+/* BELOW THE BUTTON ROW, NOT IN IT (13.09.2026, seeing the two
+   words squeezed into the column between the buttons: „Es passt
+   natürlich nicht mehr in die Badge. Dann setz die Badge doch unterhalb
+   der Buttons"). The offer is not the excursion badge yet — it is a
+   question, and a question with two answers wants the width. So it
+   takes an automatic row like the friendship request, all three
+   columns; the badge it turns into on „Teilnehmen" then stands in the
+   button row as before. */
+.map-badges > .excursion-badge.is-offer { grid-row: auto; grid-column: 1 / -1; }
+.excursion-badge-choice {
+    flex: 1 1 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0 .6rem;
+}
+.excursion-badge .excursion-badge-join,
+.excursion-badge .excursion-badge-decline {
+    min-height: 0;
+    padding: .2rem 0 .1rem;
+    margin: 0;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.excursion-badge .excursion-badge-join { color: var(--accent); font-weight: 600; }
+.excursion-badge .excursion-badge-decline { color: var(--text-quiet); }
+
+/* THE FRIENDSHIP REQUEST — same shape and manners as the excursion
+   badge, and everything it says about size holds here too. Two
+   differences, both on purpose:
+
+   THE RIM IS THE GREETING COLOUR, not the accent. Green means yes and
+   done everywhere in this application, and a request IS a good thing —
+   but the accent is the user's chosen dress, and a badge that asks
+   something should stand apart from the one that merely reports a state
+   (the excursion). One glance has to tell them apart, and in the lime
+   theme they would otherwise be the same ring.
+
+   THE NAME WRAPS, THE BUTTONS DO NOT. „Freundschaftsanfrage von
+   Sebastian Schröder" is long and a phone is narrow: the text takes a
+   second line, the two answers keep their full width — a yes one cannot
+   reach is no answer. Until 12.09.2026 it ended in an ellipsis instead;
+   the maintainer asked for the line break the day the stack learned to keep
+   off the map's buttons („vorher umbrechen"): „Freundschaftsanfrage von
+   Lorenz Bra…" cuts the one word that matters. The badge always stands
+   below the button row at full width (see .map-badges), so two lines
+   are the most a name costs. */
+.friend-badge {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 100%;
+    padding-inline: .7rem .4rem;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--ok);
+    border-radius: 999px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+/* THE LABEL IS THE ONLY PART THAT GIVES WAY. flex:1 with min-width:0 is
+   what lets a flex child shrink below its content at all; without the
+   second half the text keeps its full width and pushes the buttons off
+   the screen — measured on a 375 px phone, where both answers were
+   simply gone. The icon and the two buttons keep their size. */
+.friend-badge-name {
+    flex: 1;
+    min-width: 0;
+}
+.friend-badge > .icon { flex: none; }
+/* THE HIT AREA IS BIGGER THAN THE SIGN. Measured on a 375 px phone the
+   drawn buttons were 21 × 16 px — fine for the excursion badge's cross,
+   which only dismisses, but these two COMMIT something: a mis-tap makes
+   a friendship or refuses one. align-self:stretch gives them the badge's
+   full height without making the badge any taller (the label sets that),
+   and the wider inline padding does the rest. 30 × 29 instead of
+   21 × 16, at an unchanged silhouette.
+
+   Still under the 44 px one would want for a thumb — the badge is slim
+   on purpose (24.08.2026), and that is the trade. The two
+   sit apart from each other, which is what actually prevents the
+   mis-tap. */
+.friend-badge .symbol-button {
+    color: inherit;
+    flex: none;
+    width: auto;
+    height: auto;
+    min-width: 0;
+    min-height: 0;
+    /* THE PADDING REACHES INTO THE BADGE'S OWN, and the negative margin
+       takes it back out of the layout. align-self:stretch alone was not
+       enough — measured: it stretches to the FLEX LINE, and the badge's
+       .3rem padding-block lies outside that line, so the button stayed
+       17 px tall inside a 29 px badge. This way the finger hits the
+       whole height and nothing moves a pixel. */
+    padding: calc(.3rem + 2px) .4rem;
+    margin-block: calc(-.3rem - 2px);
+}
+.friend-badge .symbol-button .icon { width: 16px; height: 16px; }
+/* The accepted one (13.09.2026): the same badge with the answer in it and
+   a single cross that only dismisses — the rim in the ok green like the
+   request's, the cross in the text colour, not red: nothing here is
+   refused. */
+.friend-badge.is-accepted .symbol-button { color: var(--text-quiet); }
+.friend-badge.is-accepted .symbol-button:hover { color: var(--text); }
+/* YES IN GREEN, NO IN RED (25.08.2026), and the red is a
+   deliberate step aside from the general rule. CLAUDE.md keeps red for
+   what cannot be undone alone, and declining is not that — the other
+   person may ask again tomorrow. Here it earns its colour for a
+   different reason: the two sit a few millimetres apart on a phone, one
+   makes a friendship and the other refuses it, and a pair of same-
+   coloured symbols is exactly how a thumb picks the wrong one. The
+   colour is the warning, not a verdict on the deed.
+
+   By class and not by position, so a future rearrangement cannot swap
+   the meanings along with the order. */
+.friend-badge .friend-badge-yes { color: var(--ok); }
+.friend-badge .friend-badge-no { color: var(--error); }
+/* The sibling rule that used to push the excursion badge down is gone
+   (24.08.2026): it never matched — the two hung in different parents —
+   and the stack now does the job properly, for any number of badges. */
+
+/* .tour-hint-merge is gone (27.08.2026). It coloured the tour hint amber
+   when a typed name already existed — right for as long as two identical
+   labels really were one outing. Since the tours are told apart by their
+   id, a familiar name costs nothing, and the line only says so; a warning
+   colour on a sentence that warns of nothing teaches people to ignore the
+   colour. */
+
+.pending-bar .text-button { color: #ecdcb4; }
+.pending-bar { cursor: pointer; }
+
+/* Something definitively did not get through. Red tone instead of amber —
+   but still a bar and not a window: it stands there until someone
+   looks, and interrupts nobody in doing so. */
+.pending-bar.has-error {
+    color: #f3c9c7;
+    background: rgba(58, 31, 30, .96);
+    border-color: #6d3230;
+}
+.pending-bar.has-error .text-button { color: #f3c9c7; }
+
+/* Overwritten changes: per field both versions stacked, selectable.
+   The radios stand BEFORE the values — you choose a version, not a
+   button. */
+#conflict-list .conflict-point {
+    margin: .9rem 0 .1rem;
+    font-weight: 600;
+}
+#conflict-list .conflict-field {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .55rem .7rem;
+    margin: .45rem 0;
+}
+/* THE FIELD'S NAME IS THE QUESTION — which version of it shall stand —
+   and it looks like every question (26.09.2026: „die Fragen
+   überall so"): as large as its answers, in the text's colour, the
+   answers indented beneath it, each dot on the middle of its words. */
+#conflict-list .conflict-field-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: .3rem;
+}
+#conflict-list label {
+    display: flex;
+    gap: .55rem;
+    align-items: center;
+    margin-left: 1.6rem;
+    padding: .18rem 0;
+    cursor: pointer;
+}
+#conflict-list .conflict-value { overflow-wrap: anywhere; }
+#conflict-list .conflict-time {
+    color: var(--text-quiet);
+    font-size: .82rem;
+    white-space: nowrap;
+    margin-left: auto;
+}
+
+/* Points not yet with the server: dashed ring instead of an own color —
+   the color belongs to the list. */
+.marker-pending svg { opacity: .75; }
+
+/* --- Areas for offline --- */
+
+/* NO own scroll area, although there are nine rows here.
+   A scrollbar inside a scrollbar is always an imposition: the finger
+   hits now the one, now the other, and you never know which one is
+   currently at its end. The list rather grows and the window scrolls as
+   a whole. */
+.layer-selection { display: flex; flex-direction: column; gap: .1rem; }
+.layer-selection label {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .35rem .4rem; border-radius: 6px;
+    font-size: .9rem; font-weight: 400; color: var(--text); cursor: pointer;
+    margin: 0;
+}
+.layer-selection label:hover { background: var(--ground-3); }
+.layer-selection .layer-selection-name { flex: 1; }
+.layer-selection .layer-selection-costs { font-size: .78rem; color: var(--text-quiet); font-variant-numeric: tabular-nums; }
+
+/* --- Areas: the rest --------------------------------------------- */
+
+.area-estimate {
+    margin: 0;
+    padding: .6rem .8rem;
+    background: var(--ground-3);
+    border-radius: 8px;
+    font-size: .88rem;
+}
+.area-estimate strong { font-size: 1.05rem; }
+.area-estimate.high { border: 1px solid var(--warn); }
+
+/* .area-progress, .area-bar: see app.css — the administration draws the
+   same bar in its rows, and app.css is the sheet both pages load. */
+
+/* WHILE IT LOADS, THE WINDOW HOLDS THE BAR AND NOTHING ELSE
+   (22.08.2026). Every choice above it has been made and cannot be taken
+   back mid-download; layer list, zoom slider, keeping date and estimate
+   would only be decoration around the one line that still moves. The
+   heading and the area name stay — otherwise one would not know what is
+   being loaded there — and so does the footer, because "Abbrechen" is
+   the one thing still to decide.
+
+   Hidden through a rule of its own and not through [hidden]: this is a
+   state of the window, not a property of the fields. */
+#load-window.is-loading .field,
+#load-window.is-loading .area-estimate { display: none; }
+
+/* The list rows (.gl-*) stand in app.css: they are needed in the
+   administration too, and that does not load map.css. */
+
+/* --- Outlining an area ----------------------------------------------------
+ *
+ * Crosshair instead of grab hand: the hand says "here you can drag",
+ * but what is meant is "here you can set a corner". The ID beats
+ * Leaflet's .leaflet-grab.
+ */
+#map.drawing,
+#map.drawing .leaflet-grab,
+#map.drawing .maplibregl-canvas-container,
+#map.sets-point .maplibregl-canvas-container { cursor: crosshair; }
+
+/* WHILE TRACING, NOTHING ON THE MAP SWALLOWS A TAP.
+ *
+ * Every tap is meant to set a corner, and anything drawn over the map that
+ * answers to a click takes it away instead. The maintainer ran into it with the
+ * protected areas switched on: over one of them no corner could be placed
+ * at all, because the area's own popup fired first.
+ *
+ * Three single rules stood here before — for the outline handles, the
+ * outline itself and a point's polygon. Each was written when somebody
+ * tripped over that one thing, and each time the general case was one step
+ * away: it is not about those three, it is about everything on the map that
+ * is clickable. Overlays are the ones nobody thought of, and they are the
+ * ones the user switches on to trace ALONG them.
+ *
+ * The children are named as well as the panes: Leaflet gives every
+ * interactive path a 'pointer-events: auto' of its own, and a pane that
+ * says 'none' does not reach past it. Id plus three classes beats it
+ * without an !important.
+ *
+ * The line that follows the pointer while tracing lies on the same pane and
+ * loses nothing by it — nobody clicks it. */
+#map.drawing .leaflet-overlay-pane,
+#map.drawing .leaflet-marker-pane,
+#map.drawing .leaflet-tooltip-pane,
+#map.drawing .leaflet-overlay-pane .leaflet-interactive,
+#map.drawing .leaflet-marker-pane .leaflet-interactive,
+#map.drawing .maplibregl-marker .leaflet-interactive {
+    pointer-events: none;
+}
+
+/* AND THE BAR MUST NOT BLOCK THE WAY OUT. It lies fixed across the whole
+ * width, and under it sat the layer switch — so whoever had an overlay in
+ * the way while tracing could neither tap through it nor turn it off. The
+ * height comes from JavaScript because the bar wraps: 60 px on the desktop,
+ * up to 218 on a narrow phone. */
+#map.drawing .leaflet-top {
+    margin-top: var(--draw-bar, 0px);
+}
+
+/* A dark seam around everything drawn. Underneath lies now an aerial
+   image, now a light topo map, now snow — a single light line vanishes
+   on the one as surely as a dark one on the other. The seam makes both
+   unnecessary. */
+.draw-polygon,
+.draw-line,
+.draw-rubberband,
+.draw-corner,
+.area-polygon {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, .75));
+}
+
+/* The outlined area during drawing — and the same shape for a SAVED
+   offline area that "Zeigen" lays onto the map for editing: it is the
+   same thing in two stages of life, and two looks would mean puzzling
+   at the reunion over whether that is still one's area. */
+.draw-polygon,
+.area-polygon {
+    stroke: var(--outline);
+    stroke-width: 2.5;
+    stroke-dasharray: 6 4;
+    fill: var(--outline-full);
+    fill-opacity: .18;
+}
+
+/* Two corners do not yet make an area, but a segment. */
+.draw-line {
+    stroke: var(--outline);
+    stroke-width: 2.5;
+    stroke-dasharray: 6 4;
+    fill: none;
+}
+
+/* The line that follows the pointer — more finely dashed than what is
+   set, so you see what already stands and what still wanders. */
+.draw-rubberband {
+    stroke: var(--outline);
+    stroke-width: 2;
+    stroke-dasharray: 3 5;
+    stroke-opacity: .8;
+    fill: none;
+}
+
+/* Every set corner visible: the only feedback on the first tap.
+   Light fill, not dark — a dark dot on an aerial image is exactly what
+   an aerial image is full of anyway. */
+.draw-corner {
+    stroke: var(--outline);
+    stroke-width: 2.5;
+    fill: #fff;
+    fill-opacity: 1;
+}
+
+/* --- Areas on points ------------------------------------------------------
+ *
+ * The outline of a point that is one. Color, width and opacity are set
+ * by map.js per point — they come from the list it stands in and
+ * cannot be known here at all. What remains is the seam: underneath
+ * lies now an aerial image, now a light topo map. Without it a yellow
+ * area vanishes in the autumn forest.
+ */
+.point-polygon {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, .6));
+}
+
+/* --- The handles at the corners ---------------------------------------------
+ *
+ * TWO SIZES, and that is the point: the visible dot is 14 pixels large,
+ * its hit field 44. A finger covers about 45 pixels — were the handle
+ * as large to see as it must be to grasp, the area underneath would
+ * vanish. The field itself therefore stays invisible.
+ *
+ * touch-action: none, otherwise the browser takes the dragging for the
+ * start of a swipe gesture and pushes the map away underneath. */
+.outline-handle-field { touch-action: none; }
+
+.outline-handle {
+    display: block;
+    width: 14px;
+    height: 14px;
+    /* Centered in the 44 field: (44 - 14) / 2 */
+    margin: 15px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2.5px solid var(--outline);
+    box-sizing: border-box;
+    /* As with everything drawn, a dark seam — a white dot on a snowed-in
+       slope would otherwise not be visible. */
+    box-shadow: 0 0 3px rgba(0, 0, 0, .8);
+}
+
+/* Somewhat larger while dragging: the only feedback that the finger
+   really has the handle and not the map. */
+.leaflet-drag-target .outline-handle {
+    width: 20px;
+    height: 20px;
+    margin: 12px;
+}
+
+/* The wide, invisible strip along the outline: it catches the tap with
+   which a corner is inserted in between.
+
+   pointer-events: stroke is the core here. The default visiblePainted
+   demands that paint actually lies there — at stroke-opacity: 0 none
+   does, and the strip could not be hit. With stroke the line's area
+   counts, painted or not.
+
+   WITH #map IN FRONT, and that is no ornament: Leaflet itself sets
+   ".leaflet-pane > svg path.leaflet-interactive { pointer-events: auto }
+
+"
+   — two classes and one element, thus more specific than one class
+   alone. Measured: without the id "auto" stood here, and the line could
+   not be hit. */
+#map path.outline-line {
+    pointer-events: stroke;
+    cursor: copy;
+}
+
+/* While setting a point, intercept nothing — the same rule as for the
+   area itself (while outlining, the general rule above takes care).
+
+   THE DECLARATION WAS LOST ON 19.08.2026 (5dcb99b, found 30.09.2026):
+   folding the tracing cases into the general rule took the last lines of
+   this list and left its head standing, so the selector joined the
+   corner menu's rule below — the handles took taps while setting a point
+   and wore the menu's dark box. The same happened to the area's rule
+   further down. */
+#map.sets-point .outline-handle-field,
+#map.sets-point .outline-line { pointer-events: none; }
+
+/* --- The small menu at a corner ---------------------------------------------
+ *
+ * Leaflet's popup is white with black text out of the box. Here it lies
+ * over a dark aerial image and next to a dark interface — unchanged it
+ * would be the only light spot on the screen. */
+.corner-window .leaflet-popup-content-wrapper,
+.corner-window .leaflet-popup-tip,
+.corner-window .maplibregl-popup-content {
+    background: color-mix(in srgb, var(--ground-2) 97%, transparent);
+    color: var(--text);
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .5);
+}
+
+.corner-window .leaflet-popup-content {
+    margin: .5rem .6rem;
+    line-height: 1.3;
+}
+
+/* The same menu on the vector map. MapLibre's tip is a border triangle
+   pointing from whichever side it chose to keep the menu in view — each
+   side colours a different border. */
+.corner-window .maplibregl-popup-content {
+    padding: .5rem .6rem;
+    border-radius: 12px;
+    line-height: 1.3;
+}
+.corner-window[class*="anchor-bottom"] .maplibregl-popup-tip { border-top-color: var(--ground-2); }
+.corner-window[class*="anchor-top"] .maplibregl-popup-tip { border-bottom-color: var(--ground-2); }
+.corner-window.maplibregl-popup-anchor-left .maplibregl-popup-tip { border-right-color: var(--ground-2); }
+.corner-window.maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--ground-2); }
+
+.corner-menu-hint {
+    font-size: .8rem;
+    color: var(--text-quiet);
+}
+
+/* WHILE A POINT IS BEING SET OR OUTLINED, THE AREA INTERCEPTS NOTHING.
+ *
+ * A clickable area swallows the clicks in its interior — and the
+ * interior of a mapped area is of all places the spot where the next
+ * points come into being. Without this rule it would be the only place
+ * on the map where "Punkt setzen" does nothing. */
+#map.sets-point .point-polygon { pointer-events: none; }
+
+/* AND NO FIND, NO WALK, NOTHING ELSE EITHER (15.11.2026: „wenn
+ * ich einen freisetzen kann … und ich will ihn irgendwo neben einem
+ * weiteren oder direkt auf einen weiteren Fundpunkt setzen, funktioniert
+ * das nicht, weil mir dann der Fundpunkt aufgerufen wird, der drunter
+ * liegt"). The rule above held for the areas only; a find's marker still
+ * took the tap and opened that find, and so did a walk's line with its
+ * popup — exactly where the next find comes into being: beside the last
+ * one, along the way one walked. While „Punkt setzen" waits, every tap
+ * goes to the map and the point stands where the tap was. Both engines:
+ * Leaflet's markers and paths, the vector map's DOM markers — and its
+ * drawn finds and paths, which vectormap.js lets take taps only where
+ * this stylesheet would (_takesTaps). */
+#map.sets-point .leaflet-interactive,
+#map.sets-point .leaflet-marker-icon,
+#map.sets-point .maplibregl-marker { pointer-events: none; }
+
+/* The long press on "Punkt setzen" opens outlining. Android otherwise
+   offers its selection menu at that and colors the label blue.
+
+   touch-action: none is the most important part of this and easy to
+   overlook: otherwise the browser takes the press for the start of a
+   swipe gesture, aborts it after a few millimeters with pointercancel —
+   and the long press never fires. On the buttons there is nothing to
+   swipe anyway. */
+.tool {
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* --- Move bar -------------------------------------------------------------
+ *
+ * Visible only on the phone, and only while moving. It sits at the top,
+ * not the bottom: at the bottom lie the tool buttons, and the thumb
+ * should not land on "Fertig" by accident while dragging the marker. */
+/* IT BELONGS OVER THE MAP, NOT OVER THE SIDEBAR (25.08.2026:
+   „die Bestätigungsleiste für das Polygon ragt über die Sidebar hinaus").
+   `left: 0` reached across the whole window, so with the sidebar open the
+   bar lay over the list — and the list has nothing to do with outlining.
+   There is room enough in the map column alone.
+
+   IT READS THE GRID'S OWN VARIABLE, not a repeated number: .app splits
+   itself into `var(--sidebar-width, 340px) 1fr`, and the bar starts
+   exactly where the second column does. Should the sidebar ever become
+   draggable, both follow the same value — a written-out 340 here would
+   be the copy that silently drifts apart.
+
+   ALL THREE BARS AT ONCE, and that is the point of the shared class:
+   outlining (draw-bar), editing an offline area (area-bar) and dragging
+   a point (move-bar) sit in the same shell and had the same fault. */
+.move-bar {
+    position: fixed;
+    top: var(--view-top, 0px);
+    left: var(--sidebar-width, 340px);
+    right: 0;
+    z-index: 1150;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: .7rem 1rem calc(.7rem + env(safe-area-inset-top));
+    background: color-mix(in srgb, var(--ground-2) 96%, transparent);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .4);
+}
+
+/* Collapsed the map has everything, so the bar does too — the same
+   condition the grid uses one screen further up. */
+body.sidebar-collapsed .move-bar { left: 0; }
+.move-bar strong { display: block; font-size: .95rem; }
+.move-bar span {
+    font-size: .78rem;
+    color: var(--text-quiet);
+}
+
+/* Only the coordinate runs in fixed character width — otherwise it
+   fidgets while dragging. A sentence like "4 Ecken — Fertig, wenn es
+   passt" by contrast belongs in the type of the rest of the window. */
+#move-coord {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* WRAP ON THE PHONE: text on top, buttons below.
+ *
+ * In one row, about 50 pixels remain for the heading next to three
+ * buttons — every word wraps individually there. Measured at 375 px of
+ * width: "Gebiet umranden" makes the bar 170 px tall, "Umriss neu
+ * ziehen" even 218 px. That is a quarter of the screen for a heading,
+ * while you want to see the terrain you are outlining. Wrapped it is
+ * 125 px, and the text on top of that stands in a readable line. */
+@media (max-width: 560px) {
+    .move-bar {
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+    .move-bar > div {
+        flex: 1 1 100%;
+    }
+    /* The buttons by their label, not in equal parts: divided into
+       thirds, 109 px remain for "Ecke zurück", it wraps onto two lines
+       and makes the whole bar 24 px taller. This way all three fit side
+       by side. */
+    .move-bar > button {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+    /* Only the main thing grows into the rest — it is pressed most
+       often and is otherwise the narrowest button of the three. */
+    .move-bar > button:last-child {
+        flex: 1 1 auto;
+    }
+}
+
+.location-circle {
+    stroke: #3a86c8;
+    stroke-width: 1.5;
+    fill: #3a86c8;
+    fill-opacity: .16;
+    /* The circle wanders with the positioning. Without a transition it
+       twitches at every report, with a gentle one it feels like
+       breathing. */
+    transition: r .4s linear;
+}
+
+/* One's own location. Deliberately different from every list shape — it
+   is not a marker one has set, but a measurement. Hence round, blue and
+   with a white ring: the same language as in every map app. */
+/* THE DIRECTION ONE LOOKS IN (29.09.2026, map.js: drawHeading) — a cone
+   of the dot's blue, 60° wide, fading outwards, turned by JS around the
+   dot's centre. A gradient and not a drawing: no SVG outside the library
+   (tests/icons.php), and it scales with nothing, as the dot does not.
+   Below the dot, so the dot stays the place and the cone only its hint. */
+.location-heading {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 112px;
+    height: 112px;
+    margin: -56px 0 0 -56px;
+    border-radius: 50%;
+    /* Strong at the dot, gone at the rim: on the aerial image a paler
+       first try (.55, fading from a quarter) read as a smudge. */
+    background: conic-gradient(from -30deg, rgba(58, 134, 200, .85) 0deg 60deg, transparent 60deg);
+    -webkit-mask: radial-gradient(closest-side, #000 12%, rgba(0, 0, 0, .55) 50%, transparent 100%);
+    mask: radial-gradient(closest-side, #000 12%, rgba(0, 0, 0, .55) 50%, transparent 100%);
+    pointer-events: none;
+    will-change: transform;
+}
+.location-point {
+    position: relative;
+    display: block;
+    width: 14px;
+    height: 14px;
+    margin: 2px;
+    border-radius: 50%;
+    background: #3a86c8;
+    border: 2.5px solid #fff;
+    box-sizing: border-box;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .5);
+    transition: opacity .3s ease;
+}
+
+/* NO REPORT FOR A WHILE — the mark is where one WAS.
+   It stays put and keeps its shape: a measured position is worth more than
+   none. It only must not look like the current one, because whoever
+   believes it walks on and sets a point in the wrong place. Hence pale and
+   hollow instead of solid, and the tooltip names the age.
+   Deliberately not red: nothing is broken, the report is merely old. */
+.location-point.is-stale {
+    opacity: .45;
+    background: transparent;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .35);
+}
+.location-circle.is-stale { fill-opacity: .06; stroke-opacity: .45; }
+
+/* --- „Richtung zeigen" (29.09.2026, assets/js/direction.js) -------------
+ *
+ * The arrow at the edge and the small badge beside it. ABOVE the markers,
+ * BELOW Leaflet's controls and our tools (z 1000), and letting every tap
+ * through but the badge's own. The arrow is a clipped square, not a
+ * drawing (tests/icons.php), in the accent — the user's colour marks what
+ * he asked for, as the chosen rows do — with a dark rim, so it stands on
+ * the aerial image as on the paper map. The badge floats over the map like
+ * the tools and takes the page's own grounds; its height is the small
+ * field's, the height of the filter chips. */
+.direction-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 650;
+    overflow: hidden;
+    pointer-events: none;
+}
+.direction-arrow {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, .9)) drop-shadow(0 1px 3px rgba(0, 0, 0, .6));
+}
+.direction-arrow::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    clip-path: polygon(100% 50%, 12% 8%, 34% 50%, 12% 92%);
+}
+.direction-badge {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    height: var(--field-height-small);
+    padding: 0 .3rem 0 .65rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ground) 92%, transparent);
+    color: var(--text);
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .45);
+    font-size: .82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: auto;
+}
+/* Without a distance yet (no location), only the ✕ — round, not a pill
+   with a hole in it. */
+.direction-badge:has(> span[hidden]) { padding: 0 .2rem; }
+.direction-close {
+    display: inline-grid;
+    place-items: center;
+    width: 1.45rem;
+    height: 1.45rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text) 14%, transparent);
+    color: inherit;
+    font-size: .75rem;
+    cursor: pointer;
+}
+/* The find itself, once it is on the screen: a ring around its marker and
+   the badge right beneath it, centred. */
+.direction-mark { position: relative; width: 34px; height: 34px; }
+.direction-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .45);
+}
+.direction-badge.is-under {
+    left: 50%;
+    top: calc(100% + 4px);
+    transform: translateX(-50%);
+}
+.direction-badge.is-under.is-over {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
+/* Button states: on, and additionally following along. */
+.tool.active {
+    border-color: #3a86c8;
+    color: #cfe4f6;
+}
+.tool.active.following {
+    background: #24455f;
+    border-color: #5aa3dd;
+    color: #eaf4fd;
+}
+
+/* --- Detail window ------------------------------------------------------ */
+
+/* --- The point window: grip, width, collapsing --------------------------
+ *
+ * 10.09.2026: „wie die Linke mit einem Handle zum Verschieben
+ * und zum Größe ändern". It is deliberately the same mechanism as for the
+ * sidebar — dragging changes the width, clicking folds, told apart by
+ * the movement (map.js) —, only the mounting is a different one: the
+ * sidebar is a column in the page's grid, this window lies absolutely at
+ * the right edge over the map. So it cannot get the same grid column;
+ * instead it is itself a row of grip and content, and its width stands
+ * as a token on the root element.
+ *
+ * THE TOKEN AND NOT A NUMBER IN THE WINDOW: the Leaflet controls step
+ * aside by the same width (.app.detail-open further down), and two places
+ * with the same number are the ones of which one lags behind some
+ * day. */
+
+/* THE TRACK POPUP: name, a quiet fact line, the profile, and the deeds
+   beneath — cut, delete, file. Peer actions side by side, so the row
+   stays left.
+
+   ALL THREE IN ONE LINE (13.09.2026: „versuch mal alle drei
+   Buttons in eine Zeile zu setzen"). Measured: „Hier teilen", „Löschen"
+   and „Zuordnen" with their icons wanted 327 px of the popup's 320, and
+   the third dropped down. Now they share the row in equal thirds and
+   may shrink below their content (min-width: 0 — without it a flex
+   child never does), the labels centred; „Hier teilen" became „Teilen"
+   in map.js, which is what made the thirds wide enough. */
+.track-popup .track-popup-actions { margin-top: .5rem; gap: .4rem; flex-wrap: nowrap; }
+.track-popup .track-popup-actions .button {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    padding-inline: .5rem;
+}
+.track-popup .hint-text { margin: .15rem 0 0; }
+/* THE ELEVATION PROFILE (map.js, trackProfile). The popup is Leaflet's
+   own white one, so the chart takes the popup's text colour rather than
+   the accent: the accent is the map's line and, on white, a ghost (the
+   light-theme lesson of CLAUDE.md). Width of the popup, height by the
+   viewBox — the chart scales with the box, uniformly, so the two height
+   labels scale with it and never distort. */
+.track-popup .track-profile {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: .45rem;
+}
+.track-profile-area { fill: currentColor; opacity: .12; }
+.track-profile-line { fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+.track-profile-here { stroke: currentColor; stroke-width: 1; opacity: .55; }
+.track-profile-label { font-size: 10px; fill: currentColor; opacity: .7; }
+
+/* The button size of this footer stands in app.css, together with that
+   of the two other footers — three bars with three values were two too
+   many. */
+
+/* HERE STOOD #d-delete { margin-right: auto; } — it pushed the delete
+   button to the left edge, far away from Zeigen and Speichern. The
+   button now sits in the header (see .detail-header); Schließen, Zeigen
+   and Speichern group at the right edge without a special rule, as
+   everywhere else in the application. */
+
+/* Pending change: the field highlighted, the save button emphasized. */
+.is-unsaved {
+    border-color: var(--warn) !important;
+    box-shadow: 0 0 0 2px rgba(217, 139, 58, .22);
+}
+
+.button.is-due {
+    box-shadow: 0 0 0 2px rgba(106, 168, 79, .35);
+}
+
+/* The tour row atop the list-selection window: name and "Neue Tour" side
+   by side. min-width: 0 so a long name shrinks instead of pushing the
+   button out of the dialog. */
+/* THE TOUR FIELD: the name on its own line, below it „Ohne Tour" and
+   „Neue Tour" side by side. „Ohne Tour" is a MODE and looks like one
+   (22.09.2026): pressed, it wears the accent, and everything
+   about the tour — label, name, „Neue Tour" — fades almost to nothing,
+   so that nobody mistakes the window for the tour mode it is not in.
+   The hint stays readable: it is what says which mode this is. */
+.tour-row { display: flex; gap: .5rem; margin-top: .5rem; justify-content: space-between; }
+.tour-field #tour-name { width: 100%; }
+/* Pressed „Ohne Tour", and „Neue Tour" while an outing runs: the accent,
+   the way a primary button wears it. */
+.tour-row .button.is-active { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+/* A running tour: the name field carries the damped accent hairline of a
+   chosen row (same expression as .list-row.is-active) — this is the outing
+   the point will join. */
+.tour-field.is-running #tour-name { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.tour-field.is-tourless > :not(.tour-row):not(#tour-hint), .tour-field.is-tourless #tour-new { opacity: .18; }
+.tour-field { margin-bottom: 1rem; }
+.tour-field .hint-text { margin: .35rem 0 0; }
+
+/* IN THE CHOICE WINDOW AS TALL AS THE SCREEN ALLOWS.
+   Nothing stood here before, so the base form's 11rem applied — 5.2
+   entries. The window thus started scrolling at as few as six lists,
+   while around it half the screen stayed empty; with subcategories that
+   limit is reached even faster. 60vh leaves heading, hint and footer
+   comfortable room beside it, and scrolling only starts when there
+   really are more lists than fit on the screen. */
+#list-selection-lists { max-height: 60vh; }
+
+/* On the phone no own height at all: there the window fills the screen
+   and scrolls as a whole. A scroll area inside a scroll area is the
+   most unpleasant operation there is under the finger — while swiping
+   you catch now the one, now the other. */
+@media (max-width: 860px) {
+    #list-selection-lists { max-height: none; }
+}
+
+/* The triangle itself — one size for all three fold sites. It measures
+   what stands here, and no longer what the device's font makes of it.
+   Pointing right means closed; open it is rotated, not swapped. */
+.collapse-triangle {
+    width: .82rem;
+    height: .82rem;
+    transition: transform .12s ease;
+}
+.is-open > .collapse-triangle { transform: rotate(90deg); }
+
+/* Whoever has switched off rapid image changes gets the jump instead of
+   the rotation — the same answer, just without motion. */
+@media (prefers-reduced-motion: reduce) {
+    .collapse-triangle { transition: none; }
+}
+
+.hint-text.small { font-size: .8rem; margin: .35rem 0 0; }
+
+/* --- Adapting Leaflet to the dark interface ----------------------------- */
+
+.leaflet-container { background: #10141a; font-family: var(--font); }
+
+/* NO FOCUS RING AROUND THE MAP (13.09.2026: „an der Sidebar
+   erscheint neuerdings manchmal ein blauer Streifen, wenn die Karte den
+   Fokus hat" — reproducible for him: out of the administration, one
+   click on the map, and „der blau-weiße Balken" stands on the sidebar's
+   right edge, toward the map). Leaflet makes its container focusable
+   for the keyboard (arrows pan, + and − zoom) and focuses it on every
+   mousedown, and the browser then decides by its own guesswork whether
+   that focus deserves its ring — Chrome's blue-and-white one, drawn a
+   pixel OUTSIDE the box. Three of the map's edges lie on the window's
+   edge, so nothing shows there; the fourth runs along the sidebar's
+   grip, and that is the stripe. The guess differs between browsers and
+   turns out true after a page change, which is why it comes and goes.
+   The map IS the page, and a ring around the page marks nothing: the
+   keyboard keeps working, only the mark goes. Every other control on
+   this map keeps its ring, in the accent (app.css). */
+.leaflet-container:focus,
+.leaflet-container:focus-visible { outline: none; }
+
+/* Let the right-hand controls step aside while the detail window is
+   open — otherwise zoom and layer choice lie underneath it and are
+   unreachable. */
+.leaflet-right { transition: margin-right .2s ease; }
+/* The controls step aside by the width of the window — grip included, for
+   it belongs to it and takes space. Collapsed, exactly the grip's width is
+   left over, and the rule stays right without anyone having to rewrite
+   it. */
+.app.detail-open .leaflet-right {
+    margin-right: calc(var(--detail-width, 340px) + var(--grip-width));
+    transition: margin-right .2s ease;
+}
+body.detail-collapsed .app.detail-open .leaflet-right { margin-right: var(--grip-width); }
+/* AND THE CENTRED PAIR STEPS ASIDE WITH THEM (11.09.2026:
+   „die zwei Buttons in der Mitte, Standort und Punkt setzen, reagieren
+   nicht auf die rechte Seitenbar — sie zentrieren sich nicht, sondern
+   hängen fest an der linken"). .map-tools sits at left: 50% of the MAP
+   BOX, and the map box does not shrink when the window opens — the
+   window lies over its right edge, which is exactly why zoom and layer
+   choice get a margin above. So the middle of the box is no longer the
+   middle of what one sees: the pair has to move by half the covered
+   width, the same width the controls step aside by, and by half the
+   grip alone once the window is folded (--grip-width, the same number
+   both edges of the scene carry). */
+.map-tools { transition: left .2s ease; }
+.app.detail-open .map-tools {
+    left: calc(50% - (var(--detail-width, 340px) + var(--grip-width)) / 2);
+}
+body.detail-collapsed .app.detail-open .map-tools {
+    left: calc(50% - var(--grip-width) / 2);
+}
+/* AND SO DOES THE BADGE STACK, by its right edge: it spans the map box
+   from margin to margin (see .map-badges), so pulling its right edge in
+   by the covered width keeps its middle column centred on what one sees
+   — and keeps its right keep-out beside the layer switch, which moved
+   by the same amount above. */
+.map-badges { transition: right .2s ease; }
+.app.detail-open .map-badges {
+    right: calc(1rem + var(--detail-width, 340px) + var(--grip-width));
+}
+body.detail-collapsed .app.detail-open .map-badges {
+    right: calc(1rem + var(--grip-width));
+}
+
+.leaflet-control-layers,
+.leaflet-bar a,
+.leaflet-control-attribution {
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent) !important;
+    color: var(--text) !important;
+    border-color: var(--border) !important;
+}
+
+.leaflet-bar a { border-bottom-color: var(--border) !important; }
+.leaflet-bar a:hover { background: var(--ground-3) !important; }
+
+/* EVERY BUTTON OVER THE MAP IS 44 × 44, A REM FROM THE EDGE
+   (01.10.2026: „das Kompass-Symbol bitte an die Größe der anderen anpassen
+   … die zwei scheinen eh unterschiedlich groß zu sein"). They were not:
+   ☰ and bubble 44 on the phone and 40 at the desk, Leaflet's layer switch
+   36 on the vector map and 48 on a touch screen (its 44 toggle in a 2 px
+   border — the vector map's box lacks the leaflet-touch class), 10 px
+   from the edge where the others stand at 16. Now one measure: 44 outside,
+   1 px of border inside, 1rem from the edge, in both maps. */
+#map .leaflet-top.leaflet-right .leaflet-control-layers {
+    margin: 1rem 1rem 0 0;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius);
+    box-shadow: none;
+}
+#map .leaflet-control-layers-toggle {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius);
+}
+
+/* The compass of the vector map („Mitdrehen", map.js): a needle, red to
+   the north, turned by the map's bearing, so it always shows where north
+   lies on the screen. The accent frame says the map follows the view. A
+   needle and not an icon — it moves, and the library's drawings stand
+   still. Bottom right since 01.10.2026, the corner's one button (no zoom
+   buttons there any more: fingers pinch, the wheel turns), its middle on
+   the line of the location and point buttons beside it — measured, that
+   is their own distance above the footer. */
+#map .leaflet-bottom.leaflet-right .turn-control {
+    margin: 0 1rem 1.1rem 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: none;
+}
+.turn-control a {
+    display: grid !important;
+    place-items: center;
+    width: 42px !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    border-radius: var(--radius) !important;
+}
+.turn-control a.is-active { box-shadow: inset 0 0 0 2px var(--accent); }
+.turn-needle {
+    position: relative;
+    width: 8px;
+    height: 26px;
+    transition: transform .15s linear;
+}
+.turn-needle::before,
+.turn-needle::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+}
+.turn-needle::before { top: 0; border-bottom: 13px solid #d33b2f; }
+.turn-needle::after { bottom: 0; border-top: 13px solid var(--text); }
+
+.leaflet-control-attribution a { color: var(--text-quiet) !important; }
+.leaflet-control-attribution { font-size: .68rem; }
+
+/* --- Attribution as a footer, at every width ------------------------------
+ *
+ * As a corner box the attribution wrapped over several lines and grew
+ * upward in doing so until it covered the toolbar — first seen on the
+ * phone, then just the same in the half-width window on the desktop.
+ * How tall it gets hangs on the chosen layer ("Esri, HERE, Garmin,
+ * © OpenStreetMap-Mitwirkende" against "© swisstopo"); a fixed offset
+ * downward could not be measured for that at all.
+ *
+ * Hence it gets the lower edge all to itself, across the full width and
+ * in one single line. What does not fit is scrolled sideways instead of
+ * wrapped — with that the height is constant (--footer-bar), and
+ * everything else can rely on it. The attribution stays fully readable;
+ * it just no longer stands there at a glance but wants to be pushed.
+ *
+ * left/right INSTEAD OF width: if the detail window is open,
+ * margin-right (above) pushes the end of the line to its edge — with a
+ * fixed width it would run through underneath it. The zoom buttons live
+ * in the same corner container; they float right and thus stand above
+ * the line BY THEMSELVES. */
+.leaflet-bottom.leaflet-right {
+    left: 0;
+    right: 0;
+    width: auto;
+}
+
+.leaflet-bottom.leaflet-right .leaflet-control-attribution {
+    margin: 0 !important;
+    float: none;
+    width: 100%;
+    max-width: none;
+    /* border-box, otherwise the side padding would be added to the 100 %
+       and the line would stand wider than the screen. */
+    box-sizing: border-box;
+    /* The height follows from the line height — one line, no wrap, no
+       vertical padding. With that it is exactly --footer-bar, and the
+       offsets further up can rely on it. */
+    line-height: var(--footer-bar);
+    /* And EXPRESSLY as height too: on the desktop the browser lays its
+       classic scrollbar under a scrollable area and thereby makes it
+       16 px taller — measured 44 instead of 28. But all offsets above
+       calculate with --footer-bar; the buttons would otherwise sit ON
+       the line. Hence a fixed height and no visible bar — scrolling
+       happens by swipe, wheel or drag, as the footer on the phone
+       always held it. */
+    height: var(--footer-bar);
+    scrollbar-width: none;
+    padding: 0 .6rem env(safe-area-inset-bottom);
+    white-space: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border: 0 !important;
+    border-top: 1px solid var(--border) !important;
+    border-radius: 0;
+}
+.leaflet-bottom.leaflet-right .leaflet-control-attribution::-webkit-scrollbar { display: none; }
+
+/* Scale and legend stand in Leaflet's left column. They travel upward
+   along, otherwise they would lie on the footer. */
+.leaflet-bottom.leaflet-left { bottom: calc(var(--footer-bar) + env(safe-area-inset-bottom)); }
+
+.leaflet-control-layers-expanded { padding: .6rem .8rem; font-size: .88rem; }
+.leaflet-control-layers-separator { border-top-color: var(--border) !important; }
+.leaflet-control-scale-line {
+    background: color-mix(in srgb, var(--ground-2) 80%, transparent);
+    border-color: var(--border);
+    color: var(--text);
+    /* Leaflet puts a white shadow under the scale, offset 1px down and
+       right — meant for text DIRECTLY on the aerial image. Here it
+       stands on its own glass ground, which already separates; the
+       shadow would become an offset second line. */
+    text-shadow: none;
+}
+
+/* The contour lines' key, right above the scale and in its dress (map.js,
+   updateContourKey): the thick line over the thin one, each first the
+   line, then its number (01.10.2026). The line samples take
+   their colour from the lines. FLUSH WITH THE SCALE: Leaflet gives its
+   scale 5 px to the edge and every other control 10 — the key started
+   5 px further in and stood off by itself. */
+.leaflet-left .contour-key { margin-left: 5px; }
+.leaflet-bottom .contour-key { margin-bottom: 4px; }
+.contour-key {
+    display: grid;
+    grid-template-columns: auto auto;
+    align-items: center;
+    column-gap: .35rem;
+    padding: 1px 5px;
+    font-size: 11px;
+    line-height: 1.5;
+    background: color-mix(in srgb, var(--ground-2) 80%, transparent);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+.contour-key-line { display: block; width: 1.1rem; border-top: 1px solid; }
+.contour-key-line.is-major { border-top-width: 2.5px; }
+
+/* --- Narrow screens ----------------------------------------------------- */
+
+.narrow-only { display: none; }
+
+@media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; }
+    body.sidebar-collapsed .app { grid-template-columns: 1fr; }
+
+    /* WHAT FLOATS OVER THE MAP IS 44 TOO (09.09.2026, during the full
+       pass): the ☰ and the speech bubble stood at 40, the sidebar's tabs
+       at 41, „Feld hinzufügen" as a text button at 25. The tokens further
+       up only catch what is a .button or a field; these four carry their
+       size themselves and had to be brought in line one by one. */
+    .sidebar-open { width: 44px; height: 44px; }
+    /* AND THE BADGE STACK KEEPS OUT OF THEIR WAY BY THAT MUCH (see
+       .map-badges): the ☰ exists only here, so the left keep-out starts
+       with it, and both it and the bubble are 44 here instead of 40.
+       The bubble's rule needs the same sibling form as the base one —
+       at equal weight the later wins, and the base one stands earlier
+       in the file. */
+    .map-badges {
+        --keepout-left: calc(44px + .5rem);
+        --keepout-height: 44px;
+    }
+    .chat-entry-floating ~ .map-badges {
+        --keepout-left: calc(44px + .5rem + 44px + .5rem);
+    }
+    /* AND ON THE PHONE NOTHING STANDS IN THE BUTTON ROW AT ALL
+       (13.09.2026, watching the offer move below the buttons: „Vielleicht
+       ist das sogar die klügere Lösung in der mobilen Anzeige, die immer
+       unterhalb der Buttons einzublenden"). The column between ☰, bubble
+       and layer switch is 189 px on a 375 px phone — the excursion badge
+       broke its name in two there and gained nothing by it. So every
+       badge queues up under the buttons here, full width, and the first
+       row is the buttons' alone; at the desk the column is wide and the
+       excursion keeps its place in it. */
+    .map-badges > .excursion-badge { grid-row: auto; grid-column: 1 / -1; }
+    .sidebar-tabs [role="tab"] { min-height: 44px; }
+    .text-button { display: inline-flex; align-items: center; min-height: 44px; }
+
+    /* NO GRIP ON THE PHONE. Here the sidebar lies OVER the map instead of
+       beside it — a strip at its edge would have no edge it could stand
+       at. Instead, as before: „Schließen" in the footer, the ☰ on the
+       map. */
+    .sidebar-grip { display: none; }
+    #sidebar-close { display: inline-flex; }
+    /* On the phone the footer carries „Schließen", so it is never empty. */
+    .sidebar[data-page="points"] .sidebar-footer { display: flex; }
+    body.sidebar-collapsed .sidebar-open { display: inline-flex; }
+
+    /* Here the sidebar lies OVER the map instead of beside it (see the
+       note further down), so the map column starts at the left edge —
+       and with it the bar. Without this line it would be indented by a
+       sidebar width that takes up no space at all here. */
+    .move-bar { left: 0; }
+
+    .narrow-only { display: inline-flex; }
+
+    /* On the phone the sidebar lays itself over the map and does not
+       push it aside; the two columns then stand one below the other,
+       because 210 plus 250 pixels do not fit side by side here.
+     *
+     * And it takes the WHOLE width. Before, 12 percent of map remained
+     * standing at the right edge — a strip on which you recognize
+     * nothing, can hit nothing, and which only hints that something
+     * else is there. On a phone the list is its own step of work, not
+     * an addition to the map: either you search in the list or you look
+     * at the map. The way back is the collapse button, which sits in
+     * the header row anyway. */
+    .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100dvh;
+        transform: translateX(-101%);
+        box-shadow: none;
+
+        /* FOLDED SHUT, IT REALLY IS HIDDEN.
+         *
+         * Here used to stand a 'visibility: visible', twice at that —
+         * although in the whole rule set there was no 'visibility:
+         * hidden' that would have needed overriding. Remnants of an
+         * earlier version that did nothing except encourage the browser
+         * to draw a screen-sized list PERMANENTLY over the map — just
+         * shifted left by its own width.
+         *
+         * On a phone that costs drawing work at every map pan for
+         * something nobody sees. And it keeps a shifted compositor
+         * layer permanently alive; exactly as such the list once
+         * appeared as a backgroundless ghost layer over the map — a
+         * reload did not help, only closing the tab did. The connection
+         * cannot be proven, but not drawing the layer in the first
+         * place is the right thing anyway.
+         *
+         * THE DELAY IS THE WHOLE TRICK. 'visibility' jumps, it does not
+         * blend — hence 0s duration. On opening it takes effect
+         * immediately (no delay), otherwise the sidebar would only
+         * appear after sliding in. On closing only AFTER the .22s,
+         * otherwise it would vanish abruptly and the sliding out would
+         * not be visible. */
+        visibility: hidden;
+        transition: transform .22s ease, visibility 0s .22s;
+    }
+
+    /* And then really nothing of the map lies over the map anymore.
+     *
+     * Leaflet's controls sit at z-index 1000 — the same value as the
+     * sidebar — and come later in the document, so they win. This
+     * became visible at the layers button top right, which stood above
+     * the extended sidebar and covered exactly the collapse icon. At
+     * full width the map underneath has nothing left to say anyway: no
+     * layer switcher, no zoom buttons, no scale, no footer.
+     *
+     * 'leiste-eingeklappt' sits on the body while the sidebar is shut —
+     * the negation thus hits exactly the extended state. */
+    body:not(.sidebar-collapsed) .leaflet-control-container { display: none; }
+
+    .sidebar.is-open {
+        transform: none;
+        visibility: visible;
+        /* Without delay — see above. */
+        transition: transform .22s ease, visibility 0s;
+    }
+
+    /* HERE LISTS STOOD ABOVE POINTS, each at half height. That was the
+       reason the footer with "Verwaltung" and "Abmelden" landed in the
+       middle of the picture: it belonged to the list column, and that
+       ended in the middle. Now it is two pages side by side between
+       which you swipe, and the footer stands under both — so at the
+       bottom. */
+    .sidebar-footer { padding-block: .55rem; }
+
+    /* While swiping, the track follows the finger; the transition time
+       would turn that into a trailing lag. */
+    .sidebar.swiping .sidebar-track { transition: none; }
+
+/* --- Detail window across the whole screen ----------------------------
+     *
+     * Before, it was a sheet at the lower edge over 72 percent of the
+     * height. That was the worst of all states: too small for editing,
+     * and the strip of map above it too small to recognize anything on
+     * it.
+     *
+     * AND THE KEYBOARD. It slides over the lower edge without the
+     * layout viewport getting smaller — 'dvh' notices nothing of it. A
+     * bottom-anchored footer with the save button would thus sit under
+     * the keyboard, unreachable. Hence the height hangs on
+     * --view-height, which map.js tracks from visualViewport: the
+     * portion that is really visible. When the keyboard comes, the
+     * footer slides up along and stands directly above it.
+     *
+     * 'fixed' instead of 'absolute', because --view-top refers to the
+     * layout viewport, not to the parent box. */
+
+    .map-tools { bottom: calc(.9rem + var(--footer-bar) + env(safe-area-inset-bottom)); }
+    .tool .tool-text { display: none; }
+    .tool { padding: .7rem .85rem; font-size: 1.05rem; }
+
+    /* The attribution footer by now applies at EVERY width and stands
+       with the Leaflet rules further up — here was its first residence,
+       until the same wrapping also appeared in the half-width desktop
+       window. */
+
+    /* On narrow screens the detail window lies at the bottom, not on the
+       right — nothing has to move aside there. */
+    .app.detail-open .leaflet-right { margin-right: 0; }
+    /* On the phone the window covers the whole map — nothing to centre
+       against, and the pair keeps the middle. AFTER the base rules, or a
+       @media of equal weight loses to the later one (the trap that has
+       bitten this sheet twice). */
+    .app.detail-open .map-tools,
+    body.detail-collapsed .app.detail-open .map-tools { left: 50%; }
+    .app.detail-open .map-badges,
+    body.detail-collapsed .app.detail-open .map-badges { right: 1rem; }
+}
+
+/* Shorten the zoom animation.
+ *
+ * Leaflet lets it run 0.25 s. If another wheel tick arrives during that
+ * time, it is lost: the zoom step calculates from the old level,
+ * because the animation only records its target level at the end. At
+ * the mouse wheel, of three brisk detents only 0.85 levels arrived that
+ * way instead of 2.55.
+ *
+ * At 0.12 s the animation is over before the next detent arrives, and
+ * it still looks fluid. This is a treatment of the symptom — the clean
+ * solution would sit in Leaflet's _performZoom, and that is foreign
+ * code we do not want to touch. */
+.leaflet-zoom-anim .leaflet-zoom-animated {
+    -webkit-transition: -webkit-transform .12s cubic-bezier(0, 0, .25, 1);
+            transition:         transform .12s cubic-bezier(0, 0, .25, 1);
+}
+
+/* --- Legend ------------------------------------------------------------- */
+
+/* Appears bottom left as soon as an overlay with a color key is switched
+ * on. Leaflet stacks it there above the scale by itself. */
+.legend {
+    /* The toolbar sits centered at the lower edge. If the map is narrow —
+     * say, next to the open sidebar — the legend reached under
+     * "Standort". The offset matches the bar's height, so it stays
+     * clear at every width. NO safe area anymore: since the footer it
+     * sits in the left Leaflet column itself — here it would stand
+     * twice, and the legend would float too high. */
+    margin-bottom: 2.9rem !important;
+    max-width: 15rem;
+    padding: .55rem .7rem;
+    font-size: .78rem;
+    line-height: 1.35;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, .35);
+}
+
+.legend-title {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-align: left;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+
+.legend-title:hover { color: var(--text); }
+
+/* The color deliberately does not come from here but from the heading:
+   only that way does the triangle brighten along on hover. */
+.legend-arrow {
+    display: inline-flex;
+    align-items: center;
+}
+
+.legend-block + .legend-block,
+.legend-block.has-divider {
+    margin-top: .55rem;
+    padding-top: .55rem;
+    border-top: 1px solid var(--border);
+}
+
+.legend-content { margin-top: .4rem; }
+
+.legend-block.is-collapsed .legend-content { display: none; }
+/* Rotation happens via .is-open on the triangle itself — the same rule
+   as in the sidebar and in the list choice. Before, the rotation lay
+   here and went the other way round: closed was rotated, open was the
+   base position. With three fold sites and two kinds of base position
+   you otherwise ask yourself at every new one which direction now
+   applies. */
+
+.legend-list {
+    /* Multi-column as long as the width allows it: eleven tree species
+     * stacked would otherwise be half a screen height. The column count
+     * follows from the width itself — on the phone one remains, without
+     * needing an own rule for it. */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr));
+    gap: .1rem .7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+/* Entries whose name is too long for one column run across the full
+ * width. This is indicated via 'wide' in the registry — the CSS rule
+ * cannot know the text length. */
+.legend-list li.legend-wide { grid-column: 1 / -1; }
+
+.legend-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    min-width: 0;
+}
+
+/* Deselectable classes. The button carries color swatch and text, so
+   the whole row is the control and not just the word. */
+.legend-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: .05rem .15rem;
+    background: none;
+    border: 0;
+    border-radius: 4px;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.legend-toggle:hover { background: rgba(255, 255, 255, .09); }
+
+/* Deselected: color out, text pulled back — recognizably off, but still
+   readable, so you know what can be switched on again. */
+.legend-list li.is-off .legend-color { background: none !important; opacity: .35; }
+.legend-list li.is-off { color: var(--text-quiet); text-decoration: line-through; }
+
+/* Wrap long names instead of cutting them off. "Kronendachverlust"
+ * otherwise became "Kronend…", and with that a legend is useless. */
+.legend-list li > span:last-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.legend-color {
+    flex: none;
+    width: .8rem;
+    height: .8rem;
+    border-radius: 3px;
+    /* Light border, so black is visible at all against dark ground. */
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+}
+
+.legend-footnote {
+    margin: .45rem 0 0;
+    font-size: .7rem;
+    color: var(--text-quiet);
+}
+
+@media (max-width: 860px) {
+    /* On the phone the legend stays narrow and must not cover half the
+     * map; long names then simply get cut off. */
+    .legend { max-width: 12rem; font-size: .72rem; }
+    .legend-footnote { display: none; }
+}
+
+/* --- Protected areas ---------------------------------------------------- */
+
+/* Area names lie in the middle of the area. Over an aerial image, light
+ * text needs a dark seam, otherwise it vanishes into the background — a
+ * box behind it, by contrast, would cover the map. */
+.leaflet-tooltip.area-name {
+    padding: 0;
+    font-size: .74rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+    max-width: 9rem;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    /* A strong dark seam in all directions. The text itself carries the
+       color of its area type and must stay readable on light map ground
+       as well as on dark forest — only the seam manages that. */
+    text-shadow:
+         0 0 3px rgba(0, 0, 0, .95), 0 0 7px rgba(0, 0, 0, .9),
+         1px 1px 0 rgba(0, 0, 0, .85), -1px -1px 0 rgba(0, 0, 0, .85),
+         1px -1px 0 rgba(0, 0, 0, .85), -1px 1px 0 rgba(0, 0, 0, .85);
+    /* Otherwise the label intercepts clicks meant for the area. */
+    pointer-events: none;
+}
+
+.leaflet-tooltip.area-name::before { display: none; }   /* pointer arrow gone */
+
+.area-profile { display: flex; flex-direction: column; gap: .2rem; }
+.area-profile strong { font-size: .95rem; }
+.area-type { font-size: .78rem; font-weight: 600; }
+.area-profile a { color: var(--accent-light); }
+
+/* Steps back while a profile is open — see map.js. */
+.legend.is-back { opacity: 0; pointer-events: none; transition: opacity .12s ease; }
+
+/* --- List window -------------------------------------------------------- */
+
+.color-selection, .shape-selection { display: flex; flex-wrap: wrap; gap: .45rem; }
+
+/* NO BORDER OF THEIR OWN. It used to be 2px and transparent: the swatch's
+   colour ran under it, and the inset line below then drew a second edge
+   2px inside — every colour looked framed in itself. Now the line sits
+   on the outer edge, and the field is the colour to its rim. */
+.color-button, .shape-button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.color-button { box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35); }
+
+.shape-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-quiet);
+    background: var(--ground-3);
+}
+
+/* 20 pixels, as they stood as width on the SVG until the icon library —
+   sizes belong in the stylesheet, for the marker shapes too. */
+.shape-button svg { width: 20px; height: 20px; }
+
+/* Show the selection via a ring, not via the fill — otherwise in the
+   color choice it would no longer be recognizable which color is
+   actually chosen.
+
+   ONE RING (24.09.2026: „wir bekommen immer einen
+   Doppelrand"). The chosen field wore a border in the text colour AND
+   the accent ring outside it — white and accent round one swatch. The
+   accent alone says chosen, as it does everywhere: chosen is the user's
+   own doing, and the accent is his colour. The gap in the ground colour
+   keeps the ring off a swatch of the same hue; the colour field keeps
+   its hairline inside. */
+.color-button[aria-checked="true"] {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35), 0 0 0 2px var(--ground-2), 0 0 0 4px var(--accent);
+}
+
+.shape-button[aria-checked="true"] {
+    color: var(--text);
+    box-shadow: 0 0 0 2px var(--ground-2), 0 0 0 4px var(--accent);
+}
+
+/* .checkbox — the tick with its words — lives in app.css since
+   26.09.2026: the administration never loads this file, and there the
+   second line of a long label slid under its box. Only the map's smaller
+   size stays here. */
+.checkbox { font-size: .87rem; }
+
+/* Same order as in the detail window: main function right, delete left. */
+/* Buttons of a footer stand on the right — where the hand arrives while
+   reading and where they stand in every other window too. The exception
+   remains the delete: it pushes itself to the left edge via
+   margin-right, so a slip needs the whole way across the bar. */
+.list-window-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .5rem;
+    margin-top: .2rem;
+    padding-top: .9rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Button size: see app.css, together with the other footers. */
+#list-delete { margin-right: auto; }
+/* Why there is no delete, in its place and in red (index.php, 12.11.2026). */
+.list-window-footer .list-hint { margin: 0 auto 0 0; align-self: center; font-size: .85rem; color: var(--error); }
+.list-window-footer .list-hint:empty { display: none; }
+
+/* --- Modal windows on the phone --------------------------------------------
+ *
+ * At the very end of the file, and that on purpose: the rules here
+ * override base rules that stand further up. A media query does not
+ * raise the weight — at equal weight the later rule wins. An
+ * earlier-standing block was overridden by .list-window-footer, and the
+ * footer sat 18 pixels above the edge.
+ */
+@media (max-width: 860px) {
+    /* Full screen, like the detail window. A centrally floating card
+     * with a margin all around wastes half the surface on a phone, and
+     * what remains then has to be scrolled.
+     *
+     * THE HEIGHT HANGS ON --view-height, not on dvh: the keyboard
+     * slides over the lower edge without the layout viewport getting
+     * smaller. The same calculation as with the detail window, the same
+     * source — visualViewport via map.js. */
+    .list-window {
+        position: fixed;
+        top: var(--view-top, 0px);
+        left: 0;
+        width: 100vw;
+        max-width: none;
+        height: var(--view-height, 100dvh);
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* EXACTLY ONE SCROLL AREA: this one. Header and footer stay put via
+     * sticky instead of sitting in areas of their own — that way there
+     * is nowhere a scrollbar inside a scrollbar, and "Speichern" is
+     * reachable without scrolling to the end.
+     *
+     * The children carry the inner spacing, not the form: only that way
+     * can header and footer sit flush against the screen edge without
+     * negative margins shifting the sticky calculation. */
+    .list-window form {
+        height: 100%;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0;
+    }
+    /* With its parts (index.php) the form scrolls no more — the parts' box
+       does, between the head with its tabs and the foot. */
+    .list-window form:has(.list-window-columns) { overflow: hidden; gap: 0; }
+    .list-window .list-window-columns { padding: .9rem 0 1.2rem; }
+    .list-window .list-window-tabs { margin-inline: 0; padding-inline: .6rem; }
+
+    /* The double negation is intent and no gimmick: it lifts this
+       rule's weight to 0-2-2. With the plain '.list-window form > *'
+       (0-1-1), '.hint-text.small' (0-2-0) won with its
+       'margin: .35rem 0 0' — and the explanatory texts stuck to the
+       left screen edge while everything else was indented. */
+    .list-window form > :not(h2):not(.list-window-footer):not(.list-window-columns):not(.list-window-tabs),
+    .list-window .list-window-col > * { margin-inline: 1.1rem; }
+
+    .list-window h2 {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        margin: 0;
+        padding: 1.1rem 1.1rem .7rem;
+        background: var(--ground-2);
+        border-bottom: 1px solid var(--border);
+    }
+
+    /* margin-top: auto keeps the footer at the bottom even when the
+     * content is short and does not need scrolling at all. */
+    .list-window-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 1;
+        margin: auto 0 0;
+        padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom));
+        background: var(--ground-2);
+    }
+}
+
+/* THE LIST WINDOWS' FOOT STAYS IN SIGHT AT THE DESK TOO (app.css,
+   .pinned-footer; 12.11.2026). On the phone the block above
+   has pinned it all along; at the desk the window scrolled and took
+   „Speichern" with it. Its own line on top stays — it was always there. */
+@media (min-width: 861px) {
+    .pinned-footer .list-window-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin: .2rem -1.1rem -1.1rem;
+        padding: .9rem 1.1rem 1.1rem;
+        background: var(--ground-2);
+    }
+}
+
+/* The checkbox for species suggestions in the field row. Kept narrow:
+   it stands next to label and type, and those need the room. */
+.field-row-species {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    flex: 0 0 auto;
+    font-size: .8rem;
+    color: var(--text-quiet);
+    white-space: nowrap;
+    cursor: pointer;
+}
+.field-row-species input { margin: 0; }
+
+/* --------------------------------------------------------------------------
+   Evidence photos
+   -------------------------------------------------------------------------- */
+
+/* WHERE THE LINE "ERKANNT ALS …" HAS GONE. It stood here and justified
+   itself by a silent misreading being worse than a follow-up question:
+   whoever throws in "3476000 5553000" and lands in Hesse must see that
+   the numbers were read as Gauss-Krüger.
+
+   The argument has not become wrong, but moot. Since the map jumps
+   there immediately and the crosshair marks the spot, a misreading
+   shows itself where it belongs — on the map. Whoever searches in the
+   Alps and arrives in Hesse needs no line of text telling them that
+   once more. A line that only repeats what you see anyway costs room
+   and attention. */
+
+/* The search button stays highlighted while the flap is open —
+   otherwise you go looking for the way back. */
+.symbol-button.is-active { background: var(--ground-3); color: var(--text); }
+
+/* --- Place suggestions --------------------------------------------------- */
+
+.place-list { display: flex; flex-direction: column; gap: .1rem; }
+
+.place-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .1rem;
+    width: 100%;
+    padding: .42rem .5rem;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.place-row:hover { background: var(--border); }
+
+.place-row-name { font-size: .9rem; color: var(--text); }
+
+/* The surroundings small below instead of in the same line: Nominatim
+   delivers "Muenchen, Bayern, Deutschland" in one piece, and that
+   cannot be read in a 320-pixel-wide sidebar. */
+.place-row-where {
+    font-size: .76rem;
+    color: var(--text-quiet);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+/* --- „Eigener Speicher" at the point -------------------------------------
+ *
+ * The recordings lie in the user's cloud; only their previews stand here.
+ * THE SAME TILE AS THE VOUCHER PHOTOS BESIDE THEM, and since 18.08.2026 in
+ * the same grid: they are pictures of the same find and must not look like
+ * two systems. Hence no size of its own — the grid cell decides, exactly as
+ * for .photo-thumbnail.
+ */
+
+
+/* --- The mark on the sidebar button --------------------------------------
+ *
+ * A DOT AT THE CORNER, not a number in the row. Whether something is
+ * waiting is the question; how much of it is not — and a number would be
+ * the one thing in that row that changes while one reads.
+ */
+.chat-button { position: relative; }
+.chat-button.has-unread::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: var(--accent);
+    /* A ring in the row's own colour, so the dot stands off the icon
+       underneath it instead of merging with it. */
+    box-shadow: 0 0 0 1.5px var(--ground);
+}
+
+/* „Weitere zeigen" under the excursion rows — a row-wide, quiet button,
+   not a list row: it stands FOR the list, not IN it, and a shape of its
+   own says that without a word. */
+.sidebar-more {
+    display: block;
+    width: calc(100% - 1.2rem);
+    margin: .2rem .6rem .4rem;
+    text-align: center;
+}
+
+/* --- The mark on a folded section heading ---------------------------------
+ *
+ * THE SAME DOT, ON A HEADING (26.08.2026). Folded, „Geteilt" builds no
+ * container rows at all, so the bubbles that carry the mark never come
+ * into being — a waiting message was invisible to anyone who keeps the
+ * block shut. The heading takes over the statement while it is folded,
+ * and gives it back the moment it opens.
+ *
+ * NO NUMBER HERE EITHER, and for the reason written above: whether
+ * something waits is the question; which container it is stands one click
+ * away.
+ */
+.section-unread {
+    position: relative;
+    display: inline-flex;
+    /* AT THE FAR RIGHT (26.08.2026), not glued to the count
+       beside it: the heading is a flex row, so auto takes the whole
+       remaining width and pushes the mark to the edge. There it always
+       sits in the same place — whether a count stands in front of it or
+       not, and however long the section is called. */
+    margin-left: auto;
+    color: var(--text-quiet);
+}
+.section-unread .icon { width: .95em; height: .95em; }
+.section-unread::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    right: -2px;
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 1.5px var(--ground);
+}
+
+/* --- The personal chats: bubble and flyout --------------------------------
+ *
+ * The bubble in the sidebar's corner and its floating twin next to the ☰
+ * (visible only while the sidebar is collapsed — the corner one is zero
+ * pixels wide then). The dot is the same drawing as on the container rows
+ * but GREEN: the word (22.08.2026), and a defensible one — this
+ * dot stands far from any container row and says "a person has written",
+ * not "this row here has news". --ok and not a written-out green, because
+ * it is a statement, not a surface (CLAUDE.md on meaning colours).
+ */
+/* Hugs the brand and pushes the header tools back to the right — the
+   header is a space-between row, and a lone middle child would float to
+   the centre instead of standing in the corner. */
+.sidebar-header .chat-entry { margin-right: auto; }
+
+/* THE SPEECH BUBBLE ALWAYS STANDS — since 09.09.2026 it is the only one.
+   Before, it showed only while the sidebar was collapsed, because the
+   sidebar's header row carried a second one; that one is gone, so this
+   one has to be there also when the list stands open.
+
+   ITS REFERENCE IS THE MAP (.map-section is position:relative), not the
+   window — so it sits in the map's corner, however wide the sidebar
+   beside it happens to be. At the desk that is the spot where the ☰
+   stood until today („jetzt, wo wir in der Desktopversion
+   kein Menüsymbol mehr haben, ist das Chatsymbol zu weit rechts"). On
+   the phone the ☰ still exists, and there it moves beside it — see the
+   phone block. */
+.chat-entry-floating {
+    display: inline-flex;
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 500;
+    width: 44px;
+    height: 44px;
+    background: color-mix(in srgb, var(--ground-2) 94%, transparent);
+    border: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* ON THE PHONE IT MOVES BESIDE THE ☰. This rule MUST stand here and not
+   in the phone block further up: that one lies in the file BEFORE the
+   base rule above, and at equal specificity the later one wins — measured
+   09.09.2026, the bubble sat at 16 px despite the rule. */
+@media (max-width: 860px) {
+    /* The ☰'s 1 rem offset plus its 44 px plus a gap — and the size
+       stands HERE and not in the phone block further up, for the same
+       reason as the offset: that one lies in the file before the base rule
+       with its 40 px, and at equal specificity the later one wins.
+       Measured 09.09.2026: the bubble stayed at 40 despite the rule. */
+    .chat-entry-floating {
+        left: calc(1rem + 44px + .5rem);
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* The flyout and its rows stand in app.css since 10.10.2026 — the
+   header of the other pages opens the same list (page.php, header_chat). */
+
+
+
+/* The logout form in the sidebar head sits in the row as its button alone. */
+.logout-form { display: contents; }
+
+/* ---------------------------------------------------------------------------
+   „Teilen" in the window „Liste bearbeiten" (recipients.js, 09.10.2026)
+
+   THE PICTURE OF „DIREKT TEILEN": every friend and group in sight with
+   its box; a ticked row adds a quiet second line with exactly what
+   applies and the gear at the row's right end. The rows stripe instead of
+   dividing (CLAUDE.md), and both tones lift off the ground.
+   --------------------------------------------------------------------------- */
+#list-recipients { display: flex; flex-direction: column; }
+/* The groups' heads are .list-label (app.css) — the surface of a group head; here only their air. */
+.recipient-subhead.list-label { margin: 1rem 0 .3rem; }
+.recipient-subhead.list-label:first-child { margin-top: .3rem; }
+/* The part's title above them: the text's size, bold (index.php). As a tab
+   the tab says it already. */
+.list-window-part-title { margin: 0; font-size: 1rem; font-weight: 700; color: var(--text); }
+@media (max-width: 1099px) { .list-window-part-title { display: none; } }
+.recipient-row {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-height: var(--field-height);
+    padding: .3rem .5rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.recipient-row:nth-child(even of .recipient-row) { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.recipient-who { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.recipient-name { cursor: pointer; }
+.recipient-row.is-active .recipient-name { font-weight: 600; }
+.recipient-what { color: var(--text-quiet); font-size: .82rem; line-height: 1.35; }
+.recipient-gear { flex: none; }
+.recipient-hint { margin: .2rem 0; }
+
+/* The gear's window: one row per right, the box at the row's right end. */
+.recipient-rights-window { width: min(34rem, calc(100vw - 2rem)); }
+/* THE FOOT STAYS, THE REST SCROLLS — by the rule every chosen window
+   follows since 12.11.2026 (app.css, .pinned-footer). Its own solution of
+   the same day (the form bounded, the rights' box the one scroll area,
+   two pixels of border that made a second scroll bar) went with it: one
+   rule for all is one rule that cannot drift. */
+/* AT THE DESK, TWO COLUMNS of rights: wide enough for both, the rows
+   flowing down the first column and on into the second; each row keeps
+   its box at its right end. The table's head says only who — „erlaubt"
+   would stand over one column of two. */
+@media (min-width: 861px) {
+    .recipient-rights-window { width: min(60rem, calc(100vw - 4rem)); }
+    .recipient-rights-table, .recipient-rights-table tbody, .recipient-rights-table thead { display: block; }
+    .recipient-rights-table thead tr { display: flex; }
+    .recipient-rights-table thead th { flex: 1; }
+    .recipient-rights-table thead th.recipient-allowed { display: none; }
+    .recipient-rights-table tbody { columns: 2; column-gap: 1.6rem; }
+    .recipient-rights-table tbody tr { display: flex; align-items: flex-start; justify-content: space-between; gap: .8rem; break-inside: avoid; }
+    .recipient-rights-table tbody td:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+    /* The box's cell as wide as its box: the table's „width: 1px" shrank it
+       to nothing as a flex item, and the box hung over the column's edge. */
+    .recipient-rights-table tbody td.check-cell { flex: none; width: auto; }
+}
+.recipient-rights-table { width: 100%; margin: .6rem 0 0; }
+.recipient-rights-table td.check-cell { width: 1px; text-align: right; }
+.recipient-rights-table th.recipient-allowed { text-align: right; }
+.recipient-rights-table td.is-clickable { cursor: pointer; }
+.recipient-right-note { display: block; color: var(--text-quiet); font-size: .82rem; line-height: 1.35; margin-top: .15rem; }
+.recipient-filter-line { display: flex; align-items: center; gap: .4rem; margin: .5rem 0 0; color: var(--text-quiet); font-size: .9rem; }
+.recipient-filter-line.is-set { color: var(--text); }
+.recipient-filter-chip { border: 1px solid var(--border); border-radius: 999px; padding: .15rem .65rem; }
+/* The recipient's filter window: the sidebar's groups, open one under the
+   other — the window scrolls, the groups do not (trap 4). */
+.recipient-filter-window .filter-section { display: block; }
+.recipient-filter-window .filter-group { margin-bottom: 1rem; }
+.recipient-filter-dates { display: flex; flex-wrap: wrap; gap: .8rem; margin-bottom: .4rem; }
+.recipient-filter-dates input { height: var(--field-height); }
+
+/* A FIND SHARED DIRECTLY, under „Von <Name>" (09.10.2026): set apart from
+   the lists above it — upright, not in the lists' italics, with a small
+   „direkt geteilt" and the eye behind the name. */
+.list-row.is-hint .list-row-name { font-style: normal; }
+/* The small heading „Direkt geteilt" under „Von <Name>": quiet capitals,
+   at the rows' indent, no fold — what stands under it is always in sight. */
+.list-subhead {
+    padding: .55rem .5rem .2rem calc(.5rem + var(--depth, 0) * var(--indent, 1.1rem) + 1.6rem);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+
+/* The quiet dot: only status lines wait (see .chat-flyout-row.has-status
+   in app.css, 10.10.2026). */
+.chat-button.has-status::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: var(--text-quiet);
+    box-shadow: 0 0 0 1.5px var(--ground);
+}
+
+/* WHAT A LIST HOLDS — the groups as ticks in the window „Liste bearbeiten"
+   (map.js, listGroupsDraw; 12.11.2026): two columns where the
+   window is wide enough, each tick with the group's shape before its name. */
+.list-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 0 .9rem; }
+.list-groups-shape { display: inline-flex; color: var(--text-quiet); }
+
+/* THE LIST WINDOW IN THREE PARTS (index.php, 12.11.2026):
+   how it looks, what it holds, who shares it. HEAD, TABS AND FOOT STAY
+   PUT, only the parts scroll — Speichern was out of sight at the desk,
+   below a window as tall as its content. Where the window is narrow (the
+   phone, a desk below 1100 px) the parts are tabs and one stands at a
+   time; from 1100 px they stand side by side as three columns and the
+   tabs go. One scroll area either way: the parts' box. */
+.list-window form { display: flex; flex-direction: column; }
+.list-window-tabs { flex: none; }
+.list-window-columns { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.list-window-col { display: flex; flex-direction: column; gap: .9rem; min-width: 0; }
+.list-window-col:not(.is-active) { display: none; }
+.list-window-footer { flex: none; }
+@media (min-width: 861px) {
+    .list-window:has(.list-window-columns) { width: min(36rem, calc(100vw - 4rem)); overflow: hidden; }
+    .list-window form:has(.list-window-columns) { max-height: calc(100vh - 3rem); }
+}
+/* As tabs at the desk ONE HEIGHT for all three: a centred window that grew
+   and shrank with each tab moved its own tabs under the pointer. */
+@media (min-width: 861px) and (max-width: 1099px) {
+    .list-window form:has(.list-window-columns) { height: min(46rem, calc(100vh - 3rem)); }
+}
+@media (min-width: 1100px) {
+    .list-window:has(.list-window-columns) { width: min(80rem, calc(100vw - 4rem)); }
+    .list-window-tabs { display: none; }
+    .list-window-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 1.8rem; align-items: start; }
+    .list-window-col, .list-window-col:not(.is-active) { display: flex; }
+    /* A rule between the columns, IN THE MIDDLE OF THE GAP — as each later
+       column's own edge, pulled back by half the gap. Pulled back by the
+       whole gap it lay on the earlier column's edge, and the name field ran
+       into it (12.11.2026). */
+    .list-window-col + .list-window-col { padding-left: .9rem; margin-left: -.9rem; border-left: 1px solid var(--border); align-self: stretch; }
+}

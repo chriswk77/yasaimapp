@@ -1,0 +1,44 @@
+# Caching of the delivered files.
+#
+# Two kinds of file sit here side by side, and they need the opposite of
+# each other.
+#
+# WITH VERSION TAG (?v=…) — app.css, map.css, the five modules, Leaflet
+# and data/areas.json. Such a URL points to the same content forever: if
+# the file changes, the tag changes, and the browser requests a different
+# URL anyway. A year of shelf life is not generous here but correct, and
+# "immutable" additionally spares the revalidation on page reload — without
+# it the browser still checks back on every reload.
+#
+# WITHOUT TAG — the five Leaflet images. They sit as relative paths inside
+# leaflet.css and cannot be tagged from outside. For them "no-cache" is
+# right: cache yes, but ask back every time. That costs one request with an
+# empty answer (304) and is the only honest way to treat a URL that cannot
+# vouch for its own freshness.
+#
+# WHY SetEnvIfExpr AND NOT mod_rewrite: rewrite rules in a subdirectory
+# replace those of the parent directory instead of extending them. The rules
+# in ../.htaccess — forced HTTPS, the Authorization header, the block on
+# export files — would all lapse for everything under assets/. SetEnvIf
+# extends instead of replacing.
+
+<IfModule mod_setenvif.c>
+    SetEnvIfExpr "%{QUERY_STRING} =~ /(^|&)v=[0-9]+/" WITH_TAG
+</IfModule>
+
+<IfModule mod_headers.c>
+    # Order matters: the second line only applies when the tag was present,
+    # and then overrides the first.
+    Header set Cache-Control "no-cache"
+    Header set Cache-Control "public, max-age=31536000, immutable" env=WITH_TAG
+</IfModule>
+
+# MODULES THAT END IN .mjs (MapLibre 6, 29.09.2026, assets/vendor/maplibre)
+# come with no type from Apache, and the browser refuses a module script
+# without a JavaScript type — measured locally: „Expected a JavaScript-or-
+# Wasm module script but the server responded with a MIME type of ''".
+# AddType needs the same override as the Header lines above, which already
+# work here.
+<IfModule mod_mime.c>
+    AddType text/javascript .mjs
+</IfModule>

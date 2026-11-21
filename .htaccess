@@ -1,0 +1,170 @@
+# Karte — server rules
+#
+# The core: anything holding credentials, raw data or photos is never served.
+# PHP files are executed rather than delivered anyway — but should PHP ever
+# fail, the server hands them out in plain text. That is exactly what the
+# following rules protect against.
+
+# Pass the Authorization header through to PHP. Apache drops it otherwise,
+# and the REST interface never sees the bearer token — token login then fails
+# with "Nicht angemeldet" even though everything was sent correctly.
+# CGIPassAuth exists from Apache 2.4.13 on; the rewrite rule below is the
+# path for older versions. The two do each other no harm.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+<IfModule mod_cgi.c>
+    CGIPassAuth On
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # ONE CANONICAL NAME, and it is the short one. Both wkpilz.de and
+    # www.wkpilz.de answered, and the server kept whichever was asked for.
+    # That is not merely untidy: the OAuth return address is built from the
+    # requested host, so whoever opened the administration with www sent
+    # pCloud a different address than the one registered there — and got
+    # "This 'redirect_uri' is not authorized" without having changed a thing.
+    #
+    # BEFORE the HTTPS rule and with https written into the target: that way
+    # http://www... is done in one hop instead of two. localhost does not
+    # start with www, so locally nothing fires.
+    #
+    # %1 is the host without the www. from the condition above.
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
+    # Force HTTPS as soon as the application no longer runs on localhost.
+    RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP_HOST} !^localhost [NC]
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# Lock away configuration and data directories.
+<FilesMatch "^(config\.php|config\.sample\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# data/ and not daten/ since the move into English — the rule named the
+# old directory and barred nothing (security review, 23.09.2026).
+RedirectMatch 404 ^/.*/(migrations|data|includes)/
+RedirectMatch 404 ^/.*/\.git
+
+# A module's registration is read by the application, never called by its
+# address (includes/modules.php). It answers 404 by itself too — this is the
+# second net, the same one includes/ has. Its language catalogs likewise
+# (modules/<name>/lang/, 21.11.2026). A module's includes/ and migrations/
+# are barred by the rule above already: it asks for the folder's name at
+# any depth.
+RedirectMatch 404 ^/.*/modules/[^/]+/(module\.php$|lang/)
+
+# Markdown is not served.
+#
+# CLAUDE.md sat here and answered with 200 — measured, not assumed. It
+# describes the layout, the administration paths and the window between
+# deployment and migration; nothing secret, but nothing a stranger needs to
+# know either.
+#
+# Deployment no longer takes .md along (see AUSSCHLUSS in deploy.yml). That
+# alone is not enough: it deletes nothing that is already up there. This rule
+# takes effect immediately and also covers the case of someone placing a
+# file by hand.
+RedirectMatch 404 \.md$
+
+# Do not serve stray data files.
+#
+# A Google Takeout export in the project root was reachable through its URL —
+# and it holds the find locations. Exports are produced by the application
+# itself through PHP; as a finished file in the directory none of this has
+# any business here. The rule covers everything that import and export leave
+# behind.
+#
+# assets/ is exempt, because the country borders live there as GeoJSON.
+# Without them the aerial-imagery switch by region fails — a block across
+# all directories caused exactly that.
+<IfModule mod_rewrite.c>
+    RewriteCond %{REQUEST_URI} !/assets/
+    RewriteRule \.(zip|csv|gpx|kml|kmz|geojson|json|sql|sqlite|db|bak|log)$ - [R=404,L]
+</IfModule>
+
+# Switch off directory listings.
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+
+    # 'strict-origin-when-cross-origin' instead of 'same-origin', and the
+    # reason is measured: 'same-origin' sends third parties NO referer at
+    # all. OpenStreetMap however demands one — whoever arrives without gets
+    # no map but a tile with the text "Access Blocked" on it. With status
+    # 200, which is why it shows up neither in the error log nor when
+    # checking status codes.
+    #
+    # That was exactly the difference between here and the live server:
+    # locally this file does not apply, there it does — and that is why the
+    # map was fine locally and blocked live.
+    #
+    # Nothing sensitive is given away. The new default sends third parties
+    # only the ORIGIN, never the path: 'https://wkpilz.de/' and nothing
+    # else. Measured, OpenStreetMap returns the same tile for that as for a
+    # full referer — byte for byte.
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# COMPRESSION (24.09.2026). Measured the day before: the live server sent
+# map.js with all its 927 KB although the browser asked for gzip — there
+# is no build step, so the comments travel along, and after every
+# deployment the phone fetched some 2.4 MB of scripts and styles unpacked.
+# Packed, map.js is 302 KB. Only text is packed: pictures and tiles are
+# compressed already, and a second pass would cost time and gain nothing.
+#
+# BOTH GUARDS, NOT ONE: AddOutputFilterByType lives in mod_filter since
+# Apache 2.4. Guarded by mod_deflate alone, a host without mod_filter
+# would read an unknown command — and answer every request of the site
+# with a 500. Without either module the block simply does nothing.
+#
+# What sets its own Content-Encoding (the species packages gzip themselves,
+# includes/species_packages.php) is left alone by mod_deflate; the database
+# dump streams as application/sql and is not in the list.
+# WebAssembly by its own type — older Apache mime lists do not know .wasm
+# and answer octet-stream, and the DEFLATE line further down goes BY TYPE:
+# without this one it would never reach the file it was written for. Since
+# 11.11.2026 for the „Entfernen" tool (assets/vendor/lama, inpaint.js),
+# which sets the type of its stored copy itself and needs nothing else.
+AddType application/wasm .wasm
+
+<IfModule mod_filter.c>
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+        AddOutputFilterByType DEFLATE text/javascript application/javascript
+        AddOutputFilterByType DEFLATE application/json application/geo+json application/manifest+json
+        AddOutputFilterByType DEFLATE application/xml image/svg+xml
+        # The „Entfernen" tool's runtime (assets/vendor/lama): 28.7 MB
+        # that pack to 7.1 — measured, gzip -9. The model beside it does
+        # not pack (66.4 → 58.7 MB, and the server would pay for that on
+        # every download), so it is not listed: octet-stream stays raw.
+        AddOutputFilterByType DEFLATE application/wasm
+    </IfModule>
+</IfModule>
+
+# The service worker must be served from the application root and must not
+# be cached, or the phone gets stuck on an old version.
+<Files "sw.js">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Service-Worker-Allowed "/"
+    </IfModule>
+</Files>

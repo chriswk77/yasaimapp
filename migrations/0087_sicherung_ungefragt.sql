@@ -1,0 +1,23 @@
+-- The backup switch goes — a connected storage IS the consent
+-- (28.08.2026: „Das ist ein Automatismus. Das heißt, habe ich
+-- eine Cloud, werden meine Daten dort auch gesichert. Ungefragt.").
+--
+-- 0085 argued the switch IN two days ago: on by default, and whoever does
+-- not want it turns it off. The ruling turns the reasoning one
+-- step further: whoever connects a storage wants their data in it — that
+-- is what connecting IS — and an off-switch on a backup is an invitation
+-- to regret it the one time it would have mattered. The only off-switch
+-- is Trennen, and that one already exists.
+--
+-- THE SWITCH NEVER VISIBLY WORKED, which is how its removal came up: the
+-- tab read the checkbox state (and backup_at) off a clobbered variable in
+-- backup_summary() and showed it unsaved after every save. The write side
+-- was fine — no row on any installation can hold a deliberate 0, because
+-- nobody ever saw their 0 stick. Dropping the column therefore loses no
+-- decision anyone made.
+--
+-- backup_at stays: the sweep's fairness order and the tab's „zuletzt
+-- gelaufen" read it. backup_ready() now witnesses 0085 by that column
+-- instead of this one.
+ALTER TABLE map_cloud_accounts
+    DROP COLUMN backup_enabled;

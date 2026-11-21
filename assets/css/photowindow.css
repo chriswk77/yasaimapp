@@ -1,0 +1,3143 @@
+/* ==========================================================================
+   The picture viewer — its own stylesheet since 30.09.2026
+   ==========================================================================
+
+   Out of map.css as step two of ONE viewer for the map and the
+   administration (photowindow.js says how it came about). The rules are
+   the ones that stood in map.css, in their old order; nothing in them was
+   changed. The map loads this file right after map.css, the
+   administration after app.css — every token it uses lives in app.css's
+   :root, which both pages load.
+
+   WHY A FILE OF ITS OWN and not app.css: the administration needs these
+   rules only where the viewer is, and app.css is the stylesheet of every
+   page there is. Measured when it moved: every element of the viewer,
+   its question windows included, computes to the same style as before —
+   on the desk with a photo and with a cloud recording and its fold open,
+   on the phone with the picture, the flap and the tool menu. */
+
+/* The large image.
+   Dark background and no padding: only the photo counts here. */
+/* AS BIG AS THE SCREEN ALLOWS, and that is not greed. The reasoning that
+   already stood below for the phone applies at the desk just as much: a
+   recording in a small card while room lies unused all around makes no
+   sense — and here it costs something real, because what one is looking at
+   is a stack or a micrograph, and detail is the whole point of opening it.
+   52 rem were 832 px on a screen with twice that.
+
+   The upper bound stays, so the window does not run into the absurd on a
+   very wide monitor; the image inside is centred either way. */
+/* EDGE TO EDGE since 28.08.2026 (the maintainer: the viewer „sollte immer im
+   Fullscreen-Modus aufgehen") — and as a borderless dialog, NOT through
+   the Fullscreen API: Safari on the iPhone cannot put elements into
+   fullscreen, and a window that opens differently per device is the wrong
+   kind of surprise. max-width/-height beat the browser's built-in dialog
+   margins; without them the full width would be wishful thinking.
+
+   100% AND NOT 100vw (30.09.2026, when the administration began to open
+   it): vw counts the page's scroll bar in, and the administration is a
+   page that scrolls. There the window stood 15 px wider than the room
+   beside the bar and pushed its right edge under it — the tools at the
+   top and „Schließen" at the bottom cut off wherever scroll bars take
+   room of their own. The map has no scroll bar, so both came out alike
+   there and nobody saw it. A modal dialog's percentages refer to the
+   viewport WITHOUT the bar. */
+.photo-window {
+    width: 100%;
+    height: 100dvh;
+    max-width: 100%;
+    max-height: 100dvh;
+    padding: 0;
+    color: var(--text);
+    background: var(--ground-2);
+    border: none;
+    border-radius: 0;
+}
+.photo-window::backdrop { background: rgba(0, 0, 0, .78); }
+
+/* THE display BELONGS ON [open] AND NOWHERE ELSE — see CLAUDE.md, trap two.
+   A <dialog> is kept closed solely by the browser stylesheet's
+   display:none, and that is the weakest rule there is. Any own display
+   beats it, and the closed window would then lie over the whole map.
+
+   The column is what lets the picture have the room: the image area takes
+   what is left over, the footer only what it needs. */
+.photo-window[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- The tool row, at every width (04.10.2026) ---------------------------
+   Born on the phone (08./09.09.2026) and at the desk too since
+   04.10.2026 (photo_window.php says why): the sliders that drop the
+   presets down, the tool chooser that shows what is on, „Messung", and at
+   the desk the two zoom jumps at the right end. */
+.photo-phone-bar {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+/* The reference boxes the two menus hang from. */
+.photo-presets,
+.photo-phone-tools { position: relative; display: flex; }
+
+/* THE PRESETS DROP DOWN from their button (04.10.2026: „statt in
+   der Fußzeile … als Dropdown-Menü runterfährt"): Motivname and Maßstab,
+   the two set once per picture. Out of the flow, so opening it never
+   moves the picture under a calibration — the flap's old reason, kept.
+   CLOSED IT IS GONE, not merely shifted: a hidden layer still costs the
+   compositor on every pinch, so visibility goes too, with the delay only
+   when closing, or the panel would vanish before it has faded. */
+.photo-window-top {
+    position: absolute;
+    top: calc(100% + .35rem);
+    left: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .7rem;
+    padding: .8rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .45);
+    opacity: 0;
+    transform: translateY(-.4rem);
+    visibility: hidden;
+    transition: opacity .16s ease, transform .16s ease, visibility 0s .16s;
+}
+.photo-window.is-measure-open .photo-window-top {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    transition: opacity .16s ease, transform .16s ease, visibility 0s;
+}
+/* THE MEASURING BUTTONS STAY IN THE MARKUP, NEVER SEEN: the tool chooser
+   arms them (it presses nothing of its own), and „Messungen leeren" in its
+   menu presses the one here, which asks and clears — writing that twice
+   would be the pair that drifts apart. */
+.photo-topbar-measure { display: none; }
+
+/* THE TOOL CHOICE: one button that shows the current tool, and beneath it
+   real buttons (09.09.2026: „Kannst Du nicht richtige
+   Schaltknöpfe nehmen?"). */
+.photo-phone-menu {
+    position: absolute;
+    top: calc(100% + .35rem);
+    left: 0;
+    /* Above the statistics drawer (4): whatever is open right now lies on
+       top. */
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 12rem;
+    padding: .35rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .45);
+}
+/* Drawing on the left, word beside it — a list is read along its left
+   edge, not in its middle. Two lines since 04.10.2026: the tool's name,
+   and beneath it, quieter, an example (photowindow.js, PHONE_TOOLS). */
+.photo-phone-menu { min-width: 19rem; }
+.photo-phone-menu .button {
+    justify-content: flex-start;
+    align-items: center;
+    gap: .55rem;
+    height: auto;
+    text-align: left;
+}
+.photo-tool-text { display: flex; flex-direction: column; line-height: 1.2; }
+.photo-tool-hint { font-size: .75rem; font-weight: 400; color: var(--text-quiet); }
+/* THE GROUPS' HEADS — „Messen", „Beschriften" — behind a line, so
+   „Auswählen" on top stands alone: it measures nothing, it picks. */
+.photo-phone-menu-head {
+    margin-top: .3rem;
+    padding: .55rem .5rem .15rem;
+    border-top: 1px solid var(--border);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+/* CLEARING STANDS BEHIND A LINE, because it is not a tool: it arms
+   nothing, it takes something away. Red like every step that does that.
+   The spacing is the protection: whoever misses the last tool does not
+   land on it. */
+.photo-phone-menu-danger {
+    margin-top: .4rem;
+    padding-top: .4rem;
+    border-top: 1px solid var(--border);
+}
+.photo-phone-menu-danger .button { width: 100%; color: var(--error); }
+
+/* THE DESK'S TOOL RAIL (30.10.2026): the symbols alone, one
+   above the other between the picture strip and the picture, and the
+   dropdown goes. The phone keeps the dropdown and has no rail. */
+.photo-tool-rail { display: none; }
+@media (min-width: 861px) {
+    .photo-phone-tools { display: none; }
+    .photo-tool-rail {
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+        padding: .35rem;
+        background: var(--ground-2);
+        border-right: 1px solid var(--border);
+        /* Under the slid-out strip (4), which lies over the rail while it
+           peeks; under the pointer above everything in the picture
+           (badges and hints climb to 4), so the words that unfold lie on
+           top — and still below the menus (9). */
+        position: relative;
+        z-index: 3;
+    }
+    .photo-tool-rail:hover,
+    .photo-tool-rail:focus-within { z-index: 8; }
+    .photo-tool-rail .button {
+        position: relative;
+        width: var(--field-height);
+        height: var(--field-height);
+        padding: 0;
+        justify-content: center;
+    }
+    .photo-tool-rail .is-active {
+        border-color: var(--accent);
+        color: var(--accent-light);
+    }
+    /* The groups part at a line — „Auswählen" alone on top, then Messen,
+       Beschriften, Für die Tafel, as the menu's heads part them. */
+    .photo-tool-rail-line {
+        height: 1px;
+        margin: .2rem .15rem;
+        background: var(--border);
+    }
+    /* CLEARING SITS AT THE FOOT, as far from the tools as the rail allows:
+       whoever misses the last tool does not land on it. Quiet until the
+       pointer is on it, then red — like the delete buttons below. */
+    .photo-tool-rail-clear { margin-top: auto; }
+    .photo-tool-rail-clear:hover {
+        background: var(--error);
+        border-color: var(--error);
+        color: #fff;
+    }
+    /* THE WORDS UNFOLD AT ONCE beside the symbol under the pointer (or
+       the keyboard's focus): name, and beneath it the example, the same
+       two lines the menu showed. Out of the flow, so nothing in the rail
+       moves; no delay, because the rail is where one looks for a tool and
+       the words are the answer to „which one is that". */
+    .photo-tool-rail .photo-tool-text {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: calc(100% + .45rem);
+        transform: translateY(-50%);
+        padding: .45rem .65rem;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--ground-2);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, .4);
+        pointer-events: none;
+    }
+    .photo-tool-rail .button:hover .photo-tool-text,
+    .photo-tool-rail .button:focus-visible .photo-tool-text { display: flex; }
+}
+
+/* An open menu says so on its button, the same accent every chosen state
+   wears. */
+.photo-phone-bar .is-active {
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+
+/* THE HEAD AT THE DESK: the close X at the top left, then the tool row,
+   set apart from the X by a wider gap (04.10.2026: „die beiden
+   Button noch ein bisschen optisch von dem Schließen X trennen"). Ground
+   and rule are the head's, so the strip keeps its height while the
+   measuring part is hidden (a guest, a picture nobody can measure). On the
+   phone the head dissolves, see below. */
+@media (min-width: 861px) {
+    .photo-window-head {
+        display: flex;
+        align-items: center;
+        background: var(--ground-2);
+        border-bottom: 1px solid var(--border);
+    }
+    /* Its size is .window-x's (app.css); only its place is the head's. */
+    .photo-window-head > .window-x { margin: .45rem 0 .45rem .8rem; }
+    .photo-phone-bar {
+        flex: 1;
+        min-width: 0;
+        margin-left: 1.4rem;
+        padding: .45rem .8rem .45rem 0;
+    }
+    /* „Messung" keeps its word at the desk — there is room for it. */
+    .photo-phone-bar > .photo-topbar-scale { margin-left: .4rem; }
+    /* TWO MENUS OF THEIR OWN IN THE BAR, NOT ONE FLAP
+       (04.11.2026: „Nein, ich meinte tatsächlich zwei getrennte Dropdowns,
+       einmal eins für den Motivnamen und ein zweites für den Maßstab").
+       At the desk the presets' panel is no panel: Motivname and Maßstab
+       stand in the bar beside „Messung", each its word and its menu
+       (photowindow.js, pickMount), and the sliders that opened the panel
+       go. The phone keeps the panel under its button. */
+    .photo-presets > #photo-phone-measure { display: none; }
+    .photo-window-top,
+    .photo-window.is-measure-open .photo-window-top {
+        position: static;
+        flex-direction: row;
+        align-items: center;
+        gap: .4rem 1rem;
+        padding: 0;
+        background: none;
+        border: 0;
+        box-shadow: none;
+        opacity: 1;
+        transform: none;
+        visibility: visible;
+        transition: none;
+    }
+    /* NO WORD IN FRONT OF THEM (04.11.2026: „ohne Motivname und
+       ohne Maßstab. Nur Messung bekommt ein Label … zur Not ein kleines Icon
+       vorne dran … hier müssen wir Platz sparen"): the menus say what they
+       hold — „Hauptmotiv", „40x", „ohne" — behind a small sign, the label
+       and the ruler (photowindow.js, pickSay); the word is the tooltip. */
+    .photo-window-top .photo-topbar-scale > span:first-child { display: none; }
+    /* A picture one may only look at says so beside them, small. NO WIDTH
+       OF ITS OWN (12.11.2026: „Warum wird mir dieser Text denn
+       hier 3-zeilig angezeigt? Das ist doch eigentlich rechts noch genug
+       Platz"): a cap of 22rem broke it into three lines beside an empty
+       bar. It takes the room up to the buttons on the right and wraps
+       only where that room runs out. */
+    .photo-window-top > .photo-topbar-note { margin: 0; font-size: .78rem; min-width: 0; line-height: 1.25; }
+
+    /* WHAT THE PICTURE IS ON THE LEFT, WHAT IT WAS TAKEN WITH ON THE RIGHT
+       (18.11.2026: „lass uns den Maßstab mal auf die rechte Seite
+       rüberbringen, neben Medium … Maßstab links, Medium rechts. Und auf der
+       linken Seite behalten wir das Label für das Bild und die Messung").
+       Left: Motivname, Messung and its quick switches, the read-only note;
+       right: Maßstab, Medium, the zoom jumps. The markup keeps Motivname and
+       Maßstab together in the presets' panel — the phone drops them down
+       from one button — so at the desk that panel and its box dissolve
+       (display: contents) and their fields stand in the bar itself, placed
+       by order. The bar's ::after is the gap between the two sides; the
+       zoom box gives up its own margin-left: auto for it, or the room would
+       be split in two and Maßstab would stand alone in the middle. */
+    .photo-presets,
+    .photo-window-top,
+    .photo-window.is-measure-open .photo-window-top { display: contents; }
+    .photo-phone-bar > .photo-mode { order: 0; }
+    .photo-window-top > .photo-topbar-scale:has(#photo-title) { order: 1; }
+    .photo-phone-bar > .photo-topbar-scale:has(#photo-stats-label) { order: 2; }
+    .photo-phone-bar > .photo-layer-chips { order: 3; }
+    .photo-phone-bar::after { content: ''; order: 5; flex: 1; }
+    .photo-window-top > .photo-topbar-scale:has(#photo-scale-select) { order: 6; }
+    .photo-phone-bar > .photo-window-zoom { order: 7; margin-left: 0; }
+
+    /* ONE ROW WHERE IT FITS, AND ONLY THE QUICK SWITCHES BELOW WHERE NOT
+       (18.11.2026: „zweizeilig würde ich versuchen zu vermeiden
+       … falls wir ins Zweizeilige kommen, würde ich nur die Schnellauswahl
+       in eine Extrazeile setzen"). The bar may wrap, the switches never do
+       inside themselves — they would have shrunk to one per line first.
+       Where the right side would go down, photowindow.js
+       (chipsRowSync) gives the switches a row of their own instead. */
+    .photo-phone-bar { flex-wrap: wrap; row-gap: .4rem; }
+    .photo-phone-bar > .photo-layer-chips { flex-wrap: nowrap; }
+    .photo-phone-bar.is-chips-below > .photo-layer-chips { order: 9; flex-basis: 100%; flex-wrap: wrap; margin-left: 0; }
+    /* THE READ-ONLY NOTE ON A LINE OF ITS OWN, always
+       (18.11.2026: „diesen Hinweistext nur in eine neue Zeile bringen, in
+       der Kopfzeile, eine zweite Zeile. Denn der ist lang und bringt auf
+       kurzen Monitoren unsere ganze Kopfzeile durcheinander"). It stood
+       between Messung and Maßstab and pushed both apart. */
+    .photo-window-top > .photo-topbar-note { order: 10; flex-basis: 100%; }
+}
+.photo-topbar-scale {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .85rem;
+    color: var(--text-quiet);
+    /* The reference box for the suggestion list of the „Motivname" field:
+       it hangs off this row, and without this line it would look for an
+       ancestor further out and land somewhere in the window. */
+    position: relative;
+}
+
+/* WHERE THE SUGGESTIONS HANG, and why they do not stand by their field.
+   Two measurements led here:
+
+   FIRST, the list lay in the wrong place. The inherited rule
+   (.species-suggestions) sets no vertical edge — in the point window it
+   stands in the flow under its field and needs none. Here the parent is a
+   FLEX ROW, and the static position of an absolutely positioned child
+   lies halfway up inside it: the list began 200 px ABOVE the field's
+   lower edge.
+
+   SECOND, the flap cut it off. On the phone the measuring row carries
+   max-height: 72% and overflow-y: auto, and a scroll box clips whatever
+   reaches over its edge — of the opened list, a strip of three pixels
+   was left standing.
+
+   position: fixed solves both at once: the list hangs off nothing that
+   scrolls or clips. map.js reckons its position from the field when it
+   opens — below the field when there is room below, otherwise above. */
+#photo-title-list {
+    position: fixed;
+    margin: 0;
+    /* The inherited rule stretches it between its parent's left and right
+       edges; positioned fixed, it gets its width from the field. */
+    right: auto;
+}
+.photo-topbar-scale select { width: auto; }
+
+/* THE „MESSUNG" MENU OF OUR OWN, at the desk only (photo_window.php,
+   photowindow.js measurePick; 04.11.2026): it opens under the
+   pointer, and the select it is drawn from goes out of sight there. The
+   button wears a field's dress — it says what is chosen, as the select
+   did —, the list the phone menu's ground, frame and shadow. */
+.photo-pick { display: none; }
+@media (min-width: 861px) {
+    /* The fields the menus stand for — wiring now; the device goes into the scale's menu. */
+    .photo-topbar-scale:has(> .photo-pick) > :is(select, input, .clear-shell),
+    #photo-device-field { display: none !important; }
+    .photo-pick { position: relative; display: inline-flex; }
+}
+/* AS TALL AS THE BUTTONS BESIDE IT (18.11.2026: „Buttonhöhe
+   und Dropdownhöhe sind unterschiedlich hoch … Maßstab und Medium sind in
+   der Höhe versetzt"): the small height stood beside the bar's normal
+   buttons — the mode, the quick switches, the zoom jumps — and the bar,
+   centring all, set each menu three pixels lower than its neighbour. */
+.photo-pick-button {
+    display: inline-flex;
+    align-items: center;
+    /* Tighter since 18.11.2026 („Dann machen wir die Dropdowns wieder etwas
+       kleiner"): each menu is as wide as its longest entry, and four of them
+       with the quick switches filled a 1400-px bar. */
+    gap: .4rem;
+    height: var(--field-height);
+    padding: 0 .5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+/* The words take at least the width of the widest entry (photowindow.js, pickWidth) — inline-block, or min-width does nothing. */
+.photo-pick-button .photo-pick-text { display: inline-block; text-align: left; }
+.photo-pick-button:hover,
+.photo-pick-button[aria-expanded="true"] { border-color: var(--accent); }
+/* The triangle points down, as a select's arrow; open, it points up. */
+.photo-pick-button .photo-pick-arrow { font-size: .7em; color: var(--text-quiet); transform: rotate(90deg); transition: transform .12s; }
+.photo-pick-button[aria-expanded="true"] .photo-pick-arrow { transform: rotate(-90deg); }
+/* The sign in front of Motivname and Maßstab, quiet, standing for the word. */
+.photo-pick-button .photo-pick-lead { color: var(--text-quiet); margin-right: -.2rem; }
+.photo-pick-menu {
+    position: absolute;
+    /* Flush under the button, the air inside: a gap between the two would
+       be ground the pointer crosses with the menu closing under it. */
+    top: 100%;
+    left: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    min-width: 100%;
+    max-height: 70vh;
+    overflow-y: auto;
+    margin-top: 0;
+    padding: .35rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-2);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .45);
+}
+.photo-pick-row {
+    padding: .4rem .6rem;
+    border: 0;
+    border-radius: calc(var(--radius) / 2);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+}
+/* Hover lays a veil of the text colour over the row's own ground. */
+.photo-pick-row:hover { background: color-mix(in srgb, var(--text) 7%, transparent); }
+.photo-pick-row.is-active { color: var(--accent-light); font-weight: 600; }
+.photo-pick-row:disabled { color: var(--text-quiet); cursor: default; }
+.photo-pick-row:disabled:hover { background: none; }
+/* „Maßstab entfernen", „Namen entfernen": red, as every step that takes something away. */
+.photo-pick-row.is-danger { color: var(--error); }
+/* „Medium" in the head (photowindow.js, mediumPick): its list hangs from
+   the button's right edge, the head's right end being near. Without media
+   the word „Medium" stands quiet; on a picture one may not change, the
+   media stand as plain words — no frame, no arrow (a frame means
+   writable). Ticked media in the accent, as a chosen row elsewhere. */
+.photo-medium-pick .photo-pick-menu { left: auto; right: 0; }
+.photo-medium-pick .photo-pick-button.is-empty .photo-pick-text { color: var(--text-quiet); }
+.photo-medium-pick.is-read .photo-pick-button { border-color: transparent; background: none; cursor: default; }
+.photo-medium-pick.is-read .photo-pick-arrow { display: none; }
+.photo-medium-pick .photo-pick-row.is-active::before { content: '✓ '; }
+/* „Motivname" in two columns, Makro and Mikro (15.11.2026, photowindow.js):
+   each its own list under its head, the closing rows across both below. */
+/* Each column as wide as its longest word: the menu hangs from a narrow
+   button and would otherwise squeeze both into its width. */
+/* AND WHERE THE MENU IS WIDER THAN THEY ARE, THEY SHARE IT
+   (20.11.2026, on a macro picture: Makro and Ascomycota stood narrow under
+   „Frei", which keeps the width of the whole list — „die können sich dann
+   die Breite teilen"). */
+.photo-pick-columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(max-content, 1fr); gap: .35rem; margin-top: .35rem; }
+/* A group across the menu below the columns — „Beschriften" (photowindow.js, measurePick). */
+.photo-pick-block { margin-top: .35rem; }
+.photo-pick-column { display: flex; flex-direction: column; }
+/* A column's words, broken into columns of their own where the menu
+   would scroll (photowindow.js, pickFold) — a faint hairline between them,
+   the group's ground around all of them. */
+.photo-pick-rows { display: block; column-gap: .7rem; column-rule: 1px solid color-mix(in srgb, var(--text) 14%, transparent); }
+.photo-pick-rows > * { display: flex; width: 100%; break-inside: avoid; }
+/* EACH GROUP ON A FAINT GROUND OF ITS OWN (18.11.2026: „mit
+   Hintergrundfarben etwas differenzieren oder Trennlinien, auch die Spalten
+   voneinander dezent trennen, farblich. Das Gleiche dann natürlich auch bei
+   Motivnamen"): the columns, the menu's own ground
+   in the gaps between as the divider — no rule that would have to be drawn
+   twice where two grounds meet. The ground from the text colour, as every
+   surface of a control (CLAUDE.md), the hover veil laid over it. */
+.photo-pick-column {
+    padding-bottom: .2rem;
+    border-radius: calc(var(--radius) / 2);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+/* „FREI" ACROSS THE TOP, SPORES AND CONIDIA AS TWO HALVES BELOW IT
+   (photowindow.js, measurePick, 20.11.2026: they were read past
+   as two small words under a head). A button's resting surface and fine
+   frame (CLAUDE.md: a button looks like one) — the surface from the text
+   colour, the hover deepening it; the chosen one in the accent's words
+   and a hairline of it, as a chosen row. */
+.photo-pick-pair { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin-top: .35rem; }
+.photo-pick-row.photo-pick-tile {
+    padding: .55rem .8rem;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    text-align: center;
+    font-weight: 600;
+}
+.photo-pick-row.photo-pick-tile:hover { background: color-mix(in srgb, var(--text) 15%, transparent); }
+.photo-pick-row.photo-pick-tile.is-active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+/* A head that opens a ground needs no line above it: the ground is the division. */
+/* THE BLOCK'S HEAD A SHADE DEEPER (18.11.2026: „die
+   Blocküberschriften können noch eine dezent andere Hintergrundfarbe
+   bekommen") — a strip across the block's top, as a list's head is a
+   surface of its own (CLAUDE.md, .list-label). A further veil of the text
+   colour over the block's ground; no line above it, the ground divides. */
+.photo-pick-menu .photo-pick-column > .photo-pick-head {
+    margin: 0 0 .2rem;
+    padding: .4rem .6rem .3rem;
+    border-top: 0;
+    border-radius: calc(var(--radius) / 2) calc(var(--radius) / 2) 0 0;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+/* One's own name with its bucket at the row's end (photowindow.js,
+   titleBin): quiet until the pointer is on it, red there — it deletes. */
+.photo-pick-own { display: flex; align-items: center; }
+.photo-pick-own .photo-pick-row { flex: 1; }
+.photo-pick-bin {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .3rem;
+    border: 0;
+    border-radius: calc(var(--radius) / 2);
+    background: none;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.photo-pick-bin:hover { color: var(--error); background: color-mix(in srgb, var(--text) 7%, transparent); }
+/* The first head opens the list — no line above it. */
+.photo-pick-head:first-child { margin-top: 0; border-top: 0; padding-top: .3rem; }
+/* A head without words is the line before the closing rows. */
+.photo-pick-head:empty { padding: 0; margin-top: .35rem; }
+/* The groups' heads, as in the phone's tool menu. */
+.photo-pick-head {
+    margin-top: .3rem;
+    padding: .55rem .6rem .15rem;
+    border-top: 1px solid var(--border);
+    font-size: .72rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+/* The quick switches between this picture's layers (06.10.2026) — as tall
+   as the chooser beside them, the shown one in the accent like the
+   statistics' order chips; at the desk only. */
+.photo-layer-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin-left: .4rem; }
+.photo-layer-chips .button { height: var(--field-height); }
+.photo-layer-chips .is-active { border-color: var(--accent); color: var(--accent-light); }
+@media (max-width: 860px) { .photo-layer-chips { display: none; } }
+/* THE NAME AS TEXT where one may not name (06.10.2026) — no frame, no
+   ground, the text's own colour and size: the house rule, a frame means
+   one can write. */
+.photo-topbar-text { color: var(--text); font-size: 1rem; }
+/* The line under the presets on a picture one may only look at — quiet, it
+   explains and asks nothing. */
+.photo-topbar-note { margin: .2rem 0 0; font-size: .8rem; color: var(--text-quiet); }
+/* THE TOOLS STAND BESIDE FIELDS, SO THEY ARE AS TALL AS THOSE (09.09.2026,
+   found in the neighbours pass): the row carries the „Messung" chooser, a
+   field at 37, and „button small" would make its neighbours 32 — small is
+   for filter chips, not for tools in a row of fields. The class stays for
+   padding and font size; the height comes from where the neighbours take
+   theirs. The phone's 44 px wins over it below. */
+.photo-phone-bar > .photo-presets > .button,
+.photo-phone-bar > .photo-phone-tools > .button,
+.photo-window-zoom .button {
+    /* A BUTTON WITH NOTHING BUT A SYMBOL IN IT IS SQUARE — „1:1" counts,
+       two characters are its sign. */
+    width: var(--field-height);
+    height: var(--field-height);
+    padding: 0;
+    justify-content: center;
+}
+
+/* Strip and image side by side; the strip scrolls on its own when a find
+   carries many pictures. position:relative anchors the statistics
+   sidebar's phone mode, where it floats over the image instead of
+   squeezing it. */
+.photo-window-middle {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    position: relative;
+}
+/* The rail holds grip, strip and the resizing edge side by side and
+   carries their ground and the rule toward the picture — one box, so the
+   grip stands on the same surface as the pictures. Without pictures there
+   is nothing to fold. Positioned: the edge and the slid-out strip are
+   placed against it. */
+.photo-window-rail {
+    flex: none;
+    display: flex;
+    position: relative;
+    background: var(--ground-2);
+    border-right: 1px solid var(--border);
+}
+.photo-window-rail:has(> .photo-window-strip:empty) { display: none; }
+.photo-window-strip {
+    width: 5.2rem;
+    flex: none;
+    overflow-y: auto;
+    padding: .5rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    background: var(--ground-2);
+}
+.photo-window-strip:empty { display: none; }
+/* The subject names over their groups — hidden until there is room. */
+.photo-strip-head { display: none; }
+/* The resizing edge exists only at the desk. */
+.photo-strip-resize { display: none; }
+
+@media (min-width: 861px) {
+    /* THE WIDTH IS THE USER'S, dragged at the grip and kept per device
+       like the statistics' (photowindow.js writes --strip-width). THE
+       MINIMUM IS THE WIDTH IT ALWAYS HAD (05.10.2026: „so wie
+       wir es gerade haben, ist das Minimum, also kleiner kann man sie
+       nicht ziehen") — narrower, a picture would be a stamp. The pictures
+       take the whole width and stay one column: wider means larger, never
+       side by side. */
+    .photo-window-strip {
+        width: var(--strip-width, 5.2rem);
+        min-width: 5.2rem;
+        container: photo-strip / inline-size;
+    }
+    .photo-window-rail.is-collapsed > .photo-window-strip { display: none; }
+
+    /* THE WIDTH IS DRAGGED AT THE RULE toward the picture, since the grip
+       moved to the outer edge: a grip that stays put cannot also be the
+       edge that moves. Seven pixels astride the rule, three of them over
+       the picture, so the pointer need not hit one pixel; under it the
+       rule lights in the accent — the accent may touch a frame under the
+       pointer, never the ink. */
+    .photo-strip-resize {
+        display: block;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: -4px;
+        width: 7px;
+        z-index: 3;
+        cursor: col-resize;
+        touch-action: none;
+    }
+    .photo-strip-resize:hover::after,
+    .photo-window-rail.is-resizing > .photo-strip-resize::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 3px;
+        width: 1px;
+        background: var(--accent);
+    }
+    .photo-window-rail.is-collapsed > .photo-strip-resize { display: none; }
+
+    /* FOLDED, THE MOUSE ON THE GRIP SLIDES THE STRIP OUT — OVER the
+       picture, not beside it (05.10.2026: „diese Vorschaubilder
+       braucht man ja nur, um zu einem anderen Motiv zu wechseln"). Beside
+       it, the picture would shift every time the mouse grazed the screen's
+       edge; over it, it stays where it is, and the strip is gone again when
+       the mouse leaves or a picture is chosen. The shadow says it floats. */
+    .photo-window-rail.is-collapsed.is-peeking > .photo-window-strip {
+        display: flex;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 100%;
+        z-index: 4;
+        border-right: 1px solid var(--border);
+        box-shadow: 8px 0 18px rgba(0, 0, 0, .35);
+    }
+    /* THE NAMES COME WITH THE ROOM FOR THEM („wenn sie größer
+       ist, sodass Platz für die Labeltitel ist, dann mit Labeltitel. Und
+       gruppiert. So wie in der Punkte-Sidebar"). The ORDER is grouped at
+       every width — widening must not shuffle the pictures, only put the
+       names over them. Seven rem of content hold „Hauptmotiv" and
+       „Sporenpulver" whole; a longer name ends in an ellipsis and says
+       itself in full on hover. A container query and not a number in
+       JavaScript: the width is the stylesheet's business, and so is what
+       fits into it. Dressed like the gallery's .photo-group-title. */
+    @container photo-strip (min-width: 7rem) {
+        /* flex: none — THE HEADING MUST NOT GIVE WAY. The strip is a
+           column that scrolls, and once wide pictures no longer fit its
+           height, flex shrinks every item it may. A picture may not (its
+           minimum is its content), but overflow: hidden — needed for the
+           ellipsis — sets a heading's minimum to nothing, and all four
+           shrank to 0 px under the pictures (05.10.2026: „bei
+           extrem großen Bildern werden die Labels verdeckt"). */
+        .photo-strip-head {
+            display: block;
+            flex: none;
+            margin: .35rem 0 -.2rem;
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            line-height: 1.2;
+            color: var(--text-quiet);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .photo-strip-head:first-child { margin-top: 0; }
+    }
+}
+.photo-window-strip button {
+    display: block;
+    flex: none;               /* a picture keeps its height, see the heading */
+    position: relative;       /* carries the measured dot */
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: calc(var(--radius) / 2);
+    background: none;
+    cursor: pointer;
+    line-height: 0;
+}
+.photo-window-strip img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: inherit;
+}
+.photo-window-strip .is-active { border-color: var(--accent); }
+/* „Hier hast du in dieser Ebene schon gemessen" — the dot sits ON the
+   picture and therefore needs a ring in the strip's own surface: a
+   photograph can be red, black or white in that corner and the mark has
+   to survive all three. --error is the red the × of a selected measure
+   already uses over the image, so the two reds in this window are one
+   colour; --accent is out of the question, it is spoken for by the
+   picture one is looking at. */
+.photo-window-strip .is-measured::after {
+    content: '';
+    position: absolute;
+    top: .2rem;
+    right: .2rem;
+    width: .45rem;
+    height: .45rem;
+    border-radius: 50%;
+    background: var(--error);
+    box-shadow: 0 0 0 2px var(--ground-2);
+}
+
+/* The statistics sidebar (stage two of the measuring tool): a slim toggle
+   strip that is always there, and a body that folds away — collapsed it
+   costs the image no more than the strip's width. The glyph on the toggle
+   is typography like the zoom row's − and +, not an icon. */
+.photo-window-stats {
+    flex: none;
+    display: flex;
+    background: var(--ground-2);
+    border-left: 1px solid var(--border);
+}
+.photo-stats-toggle,
+.photo-strip-toggle {
+    width: 1.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--text-quiet);
+    font-size: 1.15rem;
+    /* The statistics' grip is also their RESIZE grip — a drag widens, a
+       click folds (photowindow.js tells them apart by movement). */
+    cursor: col-resize;
+    touch-action: none;
+}
+/* The picture strip's grip only folds and pins — its width is dragged at
+   the strip's other edge (.photo-strip-resize). */
+.photo-strip-toggle { cursor: pointer; }
+/* IT NOW LOOKS LIKE A BUTTON (10.09.2026: „hier bei dieser
+   Sidebar können wir das Handle auch als Klickfläche markieren, also die
+   gleiche Hintergrundfarbe wie Schaltflächen"). Exactly the same material
+   as on every button of the administration: nine per cent of the text
+   colour, translucent, plus the fine frame as an inset shadow. Why from
+   the text colour and not from a ground token stands at .symbol-button in
+   app.css — here it holds word for word, because this grip stands
+   sometimes on the window's ground and sometimes over the picture.
+
+   Signal colour and hover surface once more on the element, for the same
+   reason as with the sort button: a var() in a custom property is
+   resolved at the ELEMENT that declares it. */
+.photo-stats-toggle,
+.photo-strip-toggle {
+    --signal: var(--accent);
+    --hover-fill: color-mix(in srgb, var(--signal) 18%,
+                  color-mix(in srgb, var(--text) 26%, transparent));
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+.photo-stats-toggle:hover,
+.photo-strip-toggle:hover {
+    color: var(--text);
+    background: var(--hover-fill);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 60%, var(--border));
+}
+.photo-stats-body {
+    /* The width is the user's — dragged at the toggle strip, kept per
+       device (map.js writes the variable from the settings bundle). Never
+       more than seven tenths of the window, the drag's own limit
+       (photowindow.js): a width kept on a wide screen must not cover the
+       picture in a smaller window. */
+    width: min(var(--stats-width, 15rem), 70vw);
+    overflow-y: auto;
+    padding: .7rem .8rem .9rem;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+.photo-window-stats.is-collapsed .photo-stats-body { display: none; }
+/* THE FOLDING SIDE'S ONE DRESS (photowindow.js, statsPaneFold; 09.11.2026):
+   open, the toggle is only the thin edge over the rule that sizes the pane
+   (the accent line under the pointer) and a small arrow in the middle of
+   the rule folds it; folded, the toggle is the thin bar on --ground-3 with
+   its small triangle, and the pointer over it lays the pane over the
+   picture — the negative margin keeps the pane's place at the bar's width. */
+/* At the desk only: on the phone the open pane's toggle stays the wide
+   bar that closes the drawer (below, max-width 860). */
+.photo-stats-fold { display: none; }
+@media (min-width: 861px) {
+    .photo-window-stats { position: relative; }
+    .photo-window-stats:not(.is-collapsed) .photo-stats-toggle {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: -4px;
+        z-index: 3;
+        width: 7px;
+        background: none;
+        box-shadow: none;
+        font-size: 0;
+    }
+    .photo-window-stats:not(.is-collapsed) .photo-stats-toggle:hover {
+        background: linear-gradient(var(--accent), var(--accent)) center / 1px 100% no-repeat;
+        box-shadow: none;
+    }
+    .photo-window-stats.is-collapsed .photo-stats-toggle {
+        display: grid;
+        place-items: center;
+        width: 1rem;
+        background: var(--ground-3);
+        box-shadow: none;
+        font-size: .6rem;
+    }
+    .photo-window-stats.is-collapsed .photo-stats-toggle:hover { color: var(--text); background: var(--ground-3); box-shadow: none; }
+    .photo-stats-toggle .icon { transform: rotate(180deg); }
+    .photo-stats-fold {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        transform: translate(-50%, -50%);
+        z-index: 4;
+        display: grid;
+        place-items: center;
+        width: 1.1rem;
+        height: 2rem;
+        padding: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--ground-3);
+        color: var(--text-quiet);
+        font-size: .65rem;
+        cursor: pointer;
+    }
+    .photo-stats-fold:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 45%, transparent); }
+    .photo-window-stats.is-collapsed .photo-stats-fold { display: none; }
+    .photo-window-stats.is-collapsed.is-peek { margin-left: calc(-1 * min(var(--stats-width, 15rem), 70vw)); z-index: 20; box-shadow: -.5rem 0 1rem rgb(0 0 0 / .35); }
+    .photo-window-stats.is-collapsed.is-peek .photo-stats-body { display: flex; }
+    /* The bar STAYS AT THE RIGHT EDGE while the pane opens to its left
+       (09.11.2026: „das Handle zum Öffnen … am rechten Rand
+       bleiben, weil momentan springt es in die Mitte. Und dort erreiche ich
+       es dann nicht") — as first in the row it rode out with the pane's
+       left edge, away from the pointer that had just found it. */
+    .photo-window-stats.is-collapsed.is-peek .photo-stats-toggle { order: 2; }
+}
+/* THREE GROUNDS, NO RULE (20.11.2026: „auf die Trennlinie
+   zwischen der Statistik und der Verteilung verzichten und stattdessen
+   beiden Bereichen eine Hintergrundfarbe geben. Sowie dem unteren Bereich
+   … die Ausschnittsbilder plus die Einstellungen"). Until then a rule
+   above „Verteilung" (05.10.2026) closed the numbers off; now the numbers,
+   the distribution and the cut-outs with their sliders each lie on a soft
+   surface of their own — the text colour's, as every control's surface
+   (CLAUDE.md), the same 5 % as the plate's panel groups. A group whose
+   distribution is hidden goes with it. */
+.photo-stats-group {
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    flex: none;
+    padding: .55rem .6rem .6rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+.photo-stats-group:has(> #photo-stats-plot[hidden]) { display: none; }
+.photo-stats-body h3 {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+/* The spore cut-outs: upright in their long axis, no numbers on them
+   (28.08.2026: „Ohne Maße, nur die Bilder") — and FRAMELESS,
+   picture against picture without a dividing line („Bild an Bild ohne
+   eine Trennlinie"): the cuts all come from the same micrograph ground,
+   and the row should read like a spore print, not like a card index.
+   Bottom-aligned, so spores of different length stand on one line. */
+/* The margin slider above the cut-outs — quiet like a field label, and
+   the range track takes what the label leaves. */
+.photo-stats-air {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .78rem;
+    color: var(--text-quiet);
+}
+.photo-stats-air input { flex: 1; min-width: 0; }
+
+/* The tiles' order above them — small, quiet, in one line with its word;
+   the chosen one in the accent like every chosen state. */
+/* The length row (along the bend or straight) wears the order row's dress
+   — two small radio rows of one pane, one look. */
+.photo-stats-sort,
+.photo-stats-length,
+.photo-stats-mark {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin: .1rem 0 .45rem;
+    font-size: .8rem;
+    color: var(--text-quiet);
+}
+.photo-stats-sort > span,
+.photo-stats-length > span,
+.photo-stats-mark > span { margin-right: .15rem; }
+.photo-stats-sort .button,
+.photo-stats-length .button,
+.photo-stats-mark .button { height: auto; padding: .15rem .5rem; font-size: .8rem; }
+.photo-stats-sort .is-active,
+.photo-stats-length .is-active,
+.photo-stats-mark .is-active { border-color: var(--accent); color: var(--accent-light); }
+/* THE STATISTICS' TABS (photowindow.js statsTabsSync): words on the
+   pane's ground, the one on view underlined in the accent — tabs, not a
+   third row of buttons beside „Zeigen" and „Länge", so they read as the
+   choice of what the whole pane is about. They wrap where the pane is
+   narrow; every tab keeps its words on one line. */
+.photo-stats-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .1rem .9rem;
+    margin: 0 0 .7rem;
+    border-bottom: 1px solid var(--border);
+}
+.photo-stats-tabs button {
+    padding: .3rem 0 .35rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--text-quiet);
+    font: inherit;
+    font-size: .85rem;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.photo-stats-tabs button:hover { color: var(--text); }
+.photo-stats-tabs button.is-active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+/* The part measures: a name in bold, its range after it — a line each. */
+.photo-stats-parts { margin: .8rem 0 .4rem; font-size: .9rem; }
+.photo-stats-parts > div { margin-bottom: .2rem; }
+.photo-stats-parts b { font-weight: 600; }
+.photo-stats-thumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    align-items: flex-end;
+}
+.photo-stats-thumbs:empty { display: none; }
+.photo-stats-thumb {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    /* Wide enough for the foot's two buttons AND 4 px beside them — a
+       slender spore's box would otherwise squeeze them, and the chosen
+       tile's frame (2 px, inside) would touch them; every tile the same,
+       as the boxes. */
+    min-width: 3rem;
+    line-height: 0;
+}
+/* The mirror buttons at the picture's lower edge, small and quiet — set
+   once per spore, never in a hurry. Over the picture like the ×, so their
+   appearing moves nothing. ALWAYS ALIKE, no mark for „mirrored"
+   (04.10.2026: „das ist wirklich irrelevant, das sieht man am Bild") — the
+   picture says how the spore stands; a lit button only said it twice. */
+.photo-stats-thumb-foot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 4px;
+    display: flex;
+    justify-content: center;
+    gap: .15rem;
+}
+.photo-stats-flip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--ground);
+    color: var(--text-quiet);
+    font-size: .75rem;
+    cursor: pointer;
+}
+.photo-stats-flip:hover { color: var(--text); }
+
+/* THE FRAME (04.10.2026: „der Kachel auch beim Überfahren oder
+   beim Draufklicken noch einen Rahmen"): a quiet one under the pointer, the
+   accent on the tile whose measure stands out in the picture (is-open,
+   one truth with measureFocus). Inside the tile, so the tiles, which touch,
+   keep their places. */
+.photo-stats-thumb.is-open { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (hover: hover) {
+    .photo-stats-thumb:hover:not(.is-open) {
+        outline: 1px solid color-mix(in srgb, var(--text) 55%, transparent);
+        outline-offset: -1px;
+    }
+}
+
+/* THE TILE'S TOOLS ONLY WHEN ASKED FOR (04.10.2026: „diese
+   beiden Buttons ebenso wie das Lösch-X immer nur anzeigen, wenn die Maus
+   drüber fährt … bei der Touch-Version sollte man erst draufklicken und
+   dann diese Buttons sehen"). Thirty spores with three buttons each were
+   ninety controls over the evidence one came to look at. With a mouse
+   the pointer over the tile shows them; without hover the tap that jumps
+   to the spore opens its tile (is-open, statsThumbs), and the next tile
+   tapped takes them along. Keyboard focus shows them everywhere. By
+   hover capability, not by width: a tablet at 1024 px has no hover.
+
+   KEYBOARD FOCUS, NOT ANY FOCUS: a mouse click on a mirror button leaves
+   the button focused, and with :focus-within the tools stood on after the
+   pointer had gone, until a click somewhere else (04.10.2026:
+   „dann bleibt das Hover … auch wenn ich mit der Maus von der Kachel
+   wegfahre"). :focus-visible is what the browser grants the keyboard and
+   withholds from the click. */
+.photo-stats-remove,
+.photo-stats-thumb-foot {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .12s ease, visibility 0s .12s;
+}
+.photo-stats-thumb:has(:focus-visible) .photo-stats-remove,
+.photo-stats-thumb:has(:focus-visible) .photo-stats-thumb-foot {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .12s ease, visibility 0s;
+}
+@media (hover: hover) {
+    .photo-stats-thumb:hover .photo-stats-remove,
+    .photo-stats-thumb:hover .photo-stats-thumb-foot {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .12s ease, visibility 0s;
+    }
+}
+@media (hover: none) {
+    .photo-stats-thumb.is-open .photo-stats-remove,
+    .photo-stats-thumb.is-open .photo-stats-thumb-foot {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity .12s ease, visibility 0s;
+    }
+    /* A FINGER NEEDS MORE than a pointer's 18 px (04.10.2026:
+       „vierundvierzig ist vielleicht ein bisschen übertrieben … so an die
+       vierundzwanzig bis dreißig Pixel für die Schaltfläche, und die
+       Kacheln breiter machen"): 27 px for ×, and the two mirrors, and the
+       tiles wide enough for both side by side. These are tools one
+       reaches for now and then, at a spore one is looking at — not the
+       thumb's main road, where 44 stays the rule. */
+    .photo-stats-thumb { min-width: 4.2rem; }
+    /* Through the tile: the ×'s own rule stands further down and would
+       otherwise keep its 16 px. */
+    .photo-stats-thumb .photo-stats-remove,
+    .photo-stats-thumb .photo-stats-flip {
+        width: 1.7rem;
+        height: 1.7rem;
+        font-size: .95rem;
+    }
+    .photo-stats-thumb-foot { gap: .25rem; }
+}
+.photo-stats-thumb canvas {
+    display: block;
+    cursor: pointer;
+}
+/* The one pruning tool the statistic has: a mis-clicked spore would sit
+   in the average for ever. Small on purpose — deleting is the rare case
+   — and INSIDE its picture, because without gaps there is no between. */
+.photo-stats-remove {
+    position: absolute;
+    /* CLEAR OF THE FRAME (04.10.2026: „dass er nicht mehr in
+       die Umrandung reinragt"): the chosen tile's accent frame lies 2 px
+       inside its edge, so the × sits 4 px in — 2 px of air to the frame.
+       The mirror buttons below keep the same distance. */
+    top: 4px;
+    right: 4px;
+    width: 1rem;
+    height: 1rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--ground);
+    color: var(--text-quiet);
+    font-size: .7rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.photo-stats-remove:hover { color: var(--error); border-color: var(--error); }
+.photo-stats-values { font-size: .85rem; display: grid; gap: .2rem; }
+.photo-stats-values .hint-text { margin: 0; }
+/* THE GRIP UNDER THE DISTRIBUTION (photowindow.js, plotHeightApply): a
+   thin full-width strip with a short bar in the middle, as a drawer's
+   handle; the pointer over it or a drag lights the bar. Gone with the
+   plot. The plot keeps its proportions in any height (the viewBox). */
+.photo-stats-plot-grip {
+    position: relative;
+    flex: none;
+    height: 12px;
+    cursor: ns-resize;
+    touch-action: none;
+}
+.photo-stats-plot-grip::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 2.6rem;
+    height: 4px;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    background: color-mix(in srgb, var(--text) 25%, transparent);
+}
+.photo-stats-plot-grip:hover::before,
+.photo-stats-plot-grip:focus-visible::before,
+.photo-stats-plot-grip.is-dragging::before { background: var(--accent); }
+.photo-stats-plot-grip:focus-visible { outline: none; }
+#photo-stats-plot[hidden] ~ .photo-stats-plot-grip { display: none; }
+/* Sized by the grip: as wide as its height allows, centred. */
+#photo-stats-plot.is-sized { width: auto; max-width: 100%; align-self: center; }
+/* Count, spread and outliers under the cloud — read with the picture, in the values' voice. */
+.photo-stats-spread { margin: 0; font-size: .85rem; color: var(--text-quiet); }
+#photo-stats-plot {
+    /* flex: none, OTHERWISE THE DISTRIBUTION GETS SQUASHED FLAT
+       (10.09.2026, with 26 measured spores: „dann steckt der untere Teil
+       unerreichbar im oder außerhalb des Viewports").
+
+       The drawer's body is a flex column, and a flex child may shrink
+       down to its minimum size. For the thumbnails that is their content
+       height, but for an <svg> with a viewBox it is ZERO — it has no
+       content a layout could measure. As soon as the content reached
+       beyond the drawer, a stroke was all that remained of the
+       distribution: measured 2 px instead of 157. One saw the heading
+       „Verteilung" and nothing under it, and because the window was
+       scrolling along at the same time, it looked as if the picture were
+       merely too far down.
+
+       aspect-ratio alone did not help (2 px as well) — the shrinking comes
+       first. */
+    flex: none;
+    width: 100%;
+    height: auto;
+    background: var(--ground);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) / 2);
+}
+
+.photo-window-image {
+    flex: 1;
+    min-height: 0;
+    /* The anchor for overlay and scale bar — both sit absolute in here. */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    border-radius: var(--radius) var(--radius) 0 0;
+    overflow: hidden;
+
+    /* WITHOUT THIS LINE THERE IS NO TWO-FINGER ZOOM. The browser
+       otherwise handles swipe and pinch gestures itself — it scrolls or
+       zooms the page — and does not even report them to the
+       application. touch-action:none means: here the browser does
+       nothing on its own, here imagezoom.js listens. */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+/* CROPPING ON A BLACK STAGE (photowindow.js, cropBarSync;
+   09.11.2026): the picture's frame lies over the whole window and shows
+   nothing but the picture, the crop's frame and the bar over it — no
+   measures, no scale bar, no badge, nothing of the application's own
+   colours. Literal black like the frame always was: it is the dark room,
+   not a surface of the page. */
+.photo-window-image.is-crop-stage {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    border-radius: 0;
+    /* A band at the top for the bar, so it never lies over the crop's
+       upper grips; the picture is fitted below it (syncOverlay). */
+    padding-top: 3rem;
+}
+.photo-window-image.is-crop-stage > :not(img, .photo-develop-canvas, .photo-develop-overlay, .photo-crop-bar, .photo-expand-plate) {
+    display: none !important;
+}
+.photo-window-image.is-zoomed { cursor: grab; }
+.photo-window-image.is-zoomed:active { cursor: grabbing; }
+.photo-window-image img {
+    max-width: 100%;
+    /* Inside the flex column the frame already has its height, and the
+       picture fits into THAT. A figure reckoned from the viewport stood
+       here before — it had to, as long as the window grew with its
+       content, and it was always a little wrong: too small when the footer
+       wrapped to one line, too large when it wrapped to two. */
+    max-height: 100%;
+    object-fit: contain;
+
+    /* The translation is calculated from the center — see imagezoom.js.
+       A different origin here, and the point under the fingers would
+       not stay put. */
+    transform-origin: center center;
+    -webkit-user-drag: none;
+}
+/* Only while it counts. Set permanently, will-change pins an own layer
+   on the graphics card, even for an image nobody touches. */
+.photo-window-image.is-zoomed img { will-change: transform; }
+
+/* The measuring plane. Its box is laid over the image's resting box by
+   JS (it has to be: the image centers itself in the frame, and only JS
+   knows where it came to rest), the transform arrives mirrored from
+   imagezoom. pointer-events stays none for good — clicks belong to the
+   frame, this plane only shows. */
+.photo-overlay {
+    position: absolute;
+    pointer-events: none;
+    transform-origin: center center;
+}
+/* THE FIELD BEHIND A TEXT BEING WRITTEN holds the keys and shows nothing —
+   the overlay draws the letters and the caret (photowindow.js, „Writing
+   onto the picture"). 16 px, or iOS zooms the page in on focus; no pointer,
+   or it would swallow the tap that ends the writing. */
+.photo-text-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    font-size: 16px;
+    opacity: 0;
+    pointer-events: none;
+    caret-color: transparent;
+    resize: none;
+    overflow: hidden;
+}
+/* The caret of the text being written blinks like any caret. */
+.photo-text-caret { animation: photo-caret 1s steps(1) infinite; }
+@keyframes photo-caret { 50% { opacity: 0; } }
+
+/* While calibrating, the frame aims instead of panning. */
+.photo-window-image.is-calibrating { cursor: crosshair; }
+/* The held space bar shows the hand — TWO classes, so it outranks the
+   crosshair above whatever mode is armed (29.08.2026). */
+.photo-window-image.is-space-pan,
+.photo-window-image.is-space-pan.is-calibrating { cursor: grab; }
+.photo-window-image.is-space-pan:active,
+.photo-window-image.is-space-pan.is-calibrating:active { cursor: grabbing; }
+
+/* THE SCALE BAR on the photo — how it LOOKS stands in app.css since
+   26.09.2026, because the live preview in the administration draws the
+   same bar (Einstellungen → Fotos → Messen) and the map loads app.css
+   too. Here stays what only the photo window needs: where the bar rests
+   and that it can be dragged.
+
+   INSIDE THE WINDOW ONLY (30.09.2026): the administration loads this
+   file since it opens the same viewer, and there the preview's bar
+   stands in a tile of its own (.measure-tile .photo-scalebar, app.css) —
+   not draggable, not in a corner. An unscoped rule would have reached
+   it. */
+/* It holds the focus on opening (photowindow.js, photoOpen) only so the keys
+   reach it — a ring round the whole viewer said nothing but „focused"
+   (03.11.2026: after a reload in the Fundbrowser it stood there
+   white and blue). As .plate-window does. */
+.photo-window:focus { outline: none; }
+/* THE FOUR ARROWS, NOT THE HAND (04.10.2026: „auch das Fahren
+   über die Skala ändert den Cursor nicht, obwohl ich die Skala ja in eine
+   andere Ecke verschieben kann"). It had the hand — and a zoomed picture
+   wears the hand all over (.is-zoomed), so passing onto the bar changed
+   nothing one could see. The hand pans the picture; the arrows move a
+   thing on it. */
+.photo-window .photo-scalebar {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+/* The four resting places — the corners of the picture in sight, not of
+   the window (photowindow.js, drawScaleBar, sets the --pic-* insets). A
+   LITTLE in from the edge, so the bar never sits on the footer's rounding
+   or under a phone's display notch. */
+.photo-window .photo-scalebar.is-tl { top: calc(var(--pic-t, 0px) + .8rem);    left: calc(var(--pic-l, 0px) + .8rem); }
+.photo-window .photo-scalebar.is-tr { top: calc(var(--pic-t, 0px) + .8rem);    right: calc(var(--pic-r, 0px) + .8rem); }
+.photo-window .photo-scalebar.is-bl { bottom: calc(var(--pic-b, 0px) + .8rem); left: calc(var(--pic-l, 0px) + .8rem); }
+.photo-window .photo-scalebar.is-br { bottom: calc(var(--pic-b, 0px) + .8rem); right: calc(var(--pic-r, 0px) + .8rem); }
+/* THE WORDS TOWARD THE PICTURE, THE BAR TOWARD THE EDGE
+   (03.11.2026: „Wenn der Maßstabsbalken unten ist, sollte die Schrift über
+   dem Balken sein. Wenn er oben ist, die Schrift unter dem Balken"). The
+   markup has the line first, so a top corner reads right as it is; a
+   bottom corner turns the column round. While dragged the bar is in no
+   corner and keeps the markup's order. */
+.photo-window .photo-scalebar.is-bl,
+.photo-window .photo-scalebar.is-br { flex-direction: column-reverse; }
+
+/* Length and unit side by side in the calibration window; the number
+   carries the row, the unit only its word. */
+.photo-scale-entry { display: flex; gap: .5rem; }
+.photo-scale-entry #photo-scale-value { flex: 1; min-width: 0; }
+/* The three units side by side, the chosen one in the accent as every
+   chosen state in this window (the statistics' order row speaks alike). */
+.photo-scale-units { display: flex; gap: .25rem; }
+.photo-scale-units .is-active { border-color: var(--accent); color: var(--accent-light); }
+/* The usual lengths under the field, a row of chips. */
+.photo-scale-quick { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.photo-scale-quick .button { min-width: 2.6rem; justify-content: center; }
+.photo-scale-caption { margin: .8rem 0 0; font-size: .85rem; color: var(--text-quiet); }
+/* An own thing and its bucket stay together when the row wraps. */
+.photo-scale-own { display: inline-flex; gap: .15rem; }
+/* A button with nothing but a symbol in it is square (CLAUDE.md). */
+.photo-scale-quick .photo-scale-forget { min-width: 0; width: var(--field-height-small); padding: 0; }
+#photo-scale-hint.is-error { color: var(--error); }
+
+/* The quality badge of a cloud recording — top left, quiet. Literal colors
+   like everything floating over a photograph. On „Vorschaubild" it is the
+   way to the original (photo_window.php): a swap sign before the word, a
+   hand over it, a frame under the pointer; once the original stands, it
+   only says so again and takes no click. */
+.photo-quality {
+    position: absolute;
+    top: .8rem;
+    left: .8rem;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem .55rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, .65);
+    color: #fff;
+    font: inherit;
+    font-size: .78rem;
+    cursor: pointer;
+}
+.photo-quality:hover:not(:disabled) { border-color: rgba(255, 255, 255, .55); }
+.photo-quality:disabled { cursor: default; opacity: 1; }
+
+/* The aiming hint, floating over the top of the image. Literal colors like
+   the bar and for the same reason — and pointer-events none, so it can
+   never swallow a tap that was aimed just under it. */
+.photo-frame-hint {
+    position: absolute;
+    top: .8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(90%, 40rem);
+    /* WITHOUT THIS THE max-width ABOVE IS A DEAD LETTER, and it was one
+       for as long as the hint existed (measured 08.09.2026 at 393 px: 197
+       px wide, the calibration's sentence over FIVE lines). An absolutely
+       positioned box with `left` set and `right` auto shrinks to fit the
+       space from `left` to the container's right edge — with left:50%
+       that is exactly half the picture, and no max-width can widen it
+       again. max-content asks for the unwrapped width instead, and only
+       then does max-width do the capping it was written for. */
+    width: max-content;
+    margin: 0;
+    padding: .35rem .7rem;
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, .65);
+    color: #fff;
+    font-size: .85rem;
+    text-align: center;
+    pointer-events: none;
+}
+/* The cutout offer's buttons (map.js frameOffer) sit IN the hint, so
+   they share its literal palette — token buttons would take the theme's
+   surface onto a bar that is deliberately black in every theme. And
+   pointer-events back on: the hint swallows nothing, its buttons must. */
+.photo-frame-hint button {
+    pointer-events: auto;
+    margin-left: .5rem;
+    padding: .1rem .55rem;
+    border: 1px solid rgba(255, 255, 255, .6);
+    border-radius: calc(var(--radius) / 2);
+    background: none;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
+.photo-frame-hint button:hover { background: rgba(255, 255, 255, .18); }
+/* THE BOX'S SIZE FIELDS (photowindow.js boxPanelBuild) stand in the same
+   line and wear its palette for the same reason: width × height, then
+   the unit as two buttons, the chosen one filled. Short fields, a line
+   tall — the hint is a sentence over the picture, not a form, and a
+   37-px field would make it a bar that covers what one counts. */
+.photo-box-size {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-right: .6rem;
+}
+.photo-box-size button { margin-left: 0; }
+/* AN ARROW'S WORDS (photowindow.js arrowHintSync): „Pfeil gesetzt." and
+   „Text dazu", or „Text ändern" on a chosen arrow. */
+.photo-arrow-words { display: inline-flex; align-items: center; gap: .25rem; }
+.photo-arrow-words button { margin-left: .3rem; }
+.photo-frame-hint button.is-active { background: #fff; color: #000; }
+/* THE CROP'S BAR (photowindow.js, cropBarSync): the shapes and „Fertig"
+   floating over the picture while cropping — the hint's dress, its
+   buttons a little apart, „Fertig" set off from the shapes. */
+.photo-crop-bar { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+/* Its rows (cropBarSync): the shapes and „Fertig" in the first, the strong model's controls in a second under it. */
+.photo-crop-row { display: flex; align-items: center; gap: .3rem; }
+/* A button of two words stays on one line — one that broke in two made the bar a line taller. */
+.photo-crop-bar button { margin-left: 0; white-space: nowrap; }
+.photo-crop-bar .photo-crop-cancel { margin-left: .7rem; }
+.photo-crop-bar .photo-crop-done { font-weight: 700; }
+/* The angle while turning — a number to read, not a button; as wide as „−45,0°" so the bar does not twitch. */
+.photo-crop-bar .photo-crop-degrees { min-width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; }
+/* „Erweitern" (photowindow.js, cropBarSync) is no shape among the shapes:
+   a switch of its own, set apart from them like „Abbrechen". */
+.photo-crop-bar .photo-crop-expand { margin-left: .7rem; }
+/* THE STRONG MODEL'S ROW UNDER IT (photowindow.js, cropBarExpandRow):
+   „Feinheit" as four buttons, „Freiheit" as a short slider with its
+   number — a second row of the same bar (.photo-crop-row). A ROW OF ITS
+   OWN, NOT A WRAPPING LINE: with flex-wrap the bar took its width from
+   one line and then broke „Fertig" off the first by a fraction of a pixel. */
+.photo-crop-bar .photo-crop-word { color: rgba(255, 255, 255, .75); }
+.photo-crop-bar .photo-crop-apart { margin-left: .7rem; }
+.photo-crop-bar .photo-crop-range { width: 7rem; pointer-events: auto; accent-color: #fff; }
+.photo-crop-bar .photo-crop-range:disabled { opacity: .4; }
+.photo-crop-bar .photo-crop-value { min-width: 2em; color: #fff; }
+/* „1" AND „2" AT AN AREA OF THE BORDER (photowindow.js, expandPicksDraw):
+   drawn in the picture's own overlay, so they take the press themselves;
+   one that waits its turn is pale. */
+.photo-develop-overlay .photo-expand-pick { pointer-events: all; cursor: pointer; }
+.photo-develop-overlay .photo-expand-pick text { pointer-events: none; user-select: none; }
+.photo-develop-overlay .photo-expand-pick:hover rect { stroke: #fff; }
+.photo-develop-overlay .photo-expand-pick.is-waiting { opacity: .45; }
+/* THE RING AND THE STATE WHILE A BORDER IS COMPUTED (photowindow.js,
+   expandPlateSync): a plate in the middle of the picture's frame, in the
+   aiming hint's dress and for its reason — it lies over a photograph and
+   must read on a bright one and a dark one alike. Centred by its margins,
+   NOT by left: 50%: that halves the room a box has to be wide in, and the
+   state wrapped into six lines (found on the test page, 14.11.2026). It
+   takes no click — the picture under it stays in the hand. */
+.photo-expand-plate {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    width: max-content;
+    max-width: 92%;
+    margin: 0 auto;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .8rem;
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, .65);
+    color: #fff;
+    font-size: .85rem;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    z-index: 3;
+}
+.photo-expand-ring {
+    flex: none;
+    width: 1.2rem;
+    height: 1.2rem;
+    border: 3px solid rgba(255, 255, 255, .25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: photo-spot-spin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) { .photo-expand-ring { animation: none; } }
+.photo-frame-hint input[type=text] {
+    pointer-events: auto;
+    width: 3.6em;
+    height: auto;
+    padding: 0;
+    padding-inline: .3rem;
+    border: 1px solid rgba(255, 255, 255, .6);
+    border-radius: calc(var(--radius) / 2);
+    background: rgba(0, 0, 0, .35);
+    color: #fff;
+    font: inherit;
+    line-height: 1.5;
+    text-align: right;
+}
+.photo-frame-hint input.is-invalid { border-color: #ff8a80; }
+/* THE MARK ROW (photowindow.js markPanelBuild): its word, its buttons, the
+   field for a word of one's own — one line with the tool's instruction
+   after it, wrapping where the picture is narrow. */
+.photo-mark-row {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .3rem;
+    margin-right: .6rem;
+}
+.photo-mark-row b { font-weight: 600; }
+.photo-mark-row button { margin-left: 0; }
+.photo-frame-hint input.photo-mark-own { width: 10em; text-align: left; }
+/* The tool's instruction under the marks, on its own line — run on after
+   the buttons it broke mid-sentence. */
+.photo-mark-row + span { display: block; margin-top: .3rem; }
+
+.photo-window-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .6rem;
+    padding: .8rem 1.1rem calc(.8rem + env(safe-area-inset-bottom));
+    /* The hairline every other part of the window has at its edge — at the
+       desk the footer lacked it (13.11.2026: „Nur die Fußzeile
+       hat diese Linie nicht"); the phone's footer below had it already. */
+    border-top: 1px solid var(--border);
+}
+.photo-window-footer .hint-text { margin: 0; }
+.photo-window-buttons { display: flex; gap: .5rem; margin-left: auto; }
+
+/* THE ZOOM JUMPS at the head's right end (04.10.2026: „die
+   Zoom-Buttons nach rechts oben"): they work on the picture below them and
+   conclude nothing, so they do not stand with the footer's farewell. Two
+   squares — „Einpassen" as its drawing, „1:1" as its two characters. */
+.photo-window-zoom { display: flex; gap: .3rem; margin-left: auto; }
+
+/* On the phone across the whole screen — the same reasoning as with the
+   other windows, and here all the more: viewing a photo in a little
+   card while room lies unused all around makes no sense. */
+@media (max-width: 860px) {
+    .photo-window {
+        width: 100%;
+        max-width: none;
+        /* HEIGHT VIA --view-height AND NOT dvh — trap 3, and since
+           08.09.2026 it applies here too: the measuring flap carries the
+           picture's name field, so a keyboard slides over the lower edge
+           without the layout viewport getting any smaller. In dvh the
+           flap's own foot would then sit under the keyboard. */
+        height: var(--view-height, 100dvh);
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        /* THE ANCHOR FOR THE FLAPS BELOW. They lie over the picture and
+           must reckon with THIS window — with the safe area it already
+           subtracts and with the height the keyboard leaves. Fixed to the
+           viewport they would ignore both. */
+        position: relative;
+    }
+
+    /* THE [open] IS VITAL HERE, AND SPECIFICALLY ON THIS RULE.
+     *
+     * A closed <dialog> is only invisible because the browser's
+     * stylesheet gives it display:none. That default is the weakest
+     * there is — every rule of ours beats it. So if display:flex stood
+     * here without the condition, the photo window lay permanently over
+     * the whole map: nothing left to pan, nothing left to tap, and at
+     * the lower edge "Foto löschen" and "Schließen" flashed up.
+     *
+     * That is why .form-window and .list-window up here set NO
+     * display — they govern their height via the <form> inside and
+     * sidestep the trap. Here that does not work, because the window
+     * holds no form but an image. So the condition, and specifically on
+     * every display declaration for a <dialog>. */
+    .photo-window[open] {
+        display: flex;
+        flex-direction: column;
+        /* THE WINDOW ITSELF DOES NOT SCROLL (10.09.2026: „das wär
+           schön, wenn da nur die Statistik-Sidebar scrollbar wäre, sodass
+           die Fußzeile und die Kopfzeile an ihrem Platz bleibt").
+
+           MEASURED WHY IT SCROLLED AT ALL: the folded measuring row lies
+           absolutely at the lower edge and is pushed out of view with
+           translateY(100%) — and a translation counts toward the
+           scrollable area. At 393 × 760 the dialog reported 883 px of
+           content, so 123 px by which it could be shifted; and with it
+           the header and the footer wandered from their places. That only
+           became visible with 26 measured spores, because that is when
+           one starts to swipe at all.
+
+           The window is as tall as the screen and has nothing to show
+           that goes beyond it: what is meant to scroll scrolls within
+           itself (the drawer, the picture strip, the measuring flap
+           itself with its 72 %). */
+        overflow: hidden;
+    }
+
+    .photo-window-image {
+        flex: 1;
+        min-height: 0;
+        border-radius: 0;
+    }
+    .photo-window-image img { max-height: 100%; }
+
+    /* On the phone the statistics body FLOATS over the image instead of
+       squeezing it — a 15-rem column beside a 375-px picture would leave
+       neither usable. The toggle strip stays in the flow, so the image
+       only ever gives up those 1.5 rem. */
+    /* THE DRAWER HAS ITS OWN GRIP, permanently
+       (09.09.2026: „können wir die Statistik auch dauerhaft als ein Handel
+       an der Seite zum Ein- und Ausklappen machen. Einfach nur eine
+       durchgehende Bar … wie wir das auch in der Desktopversion haben").
+       With that the statistics button drops out of the header, and the
+       row has room for the „Messung" chooser.
+
+       TWO WIDTHS, WRITTEN ONCE: the grip's and the drawer's. The body
+       ends where the grip begins. */
+    .photo-window-stats {
+        --stats-grip: 1.75rem;
+        --stats-phone-width: min(85vw, var(--stats-width, 16rem));
+    }
+    /* OPENED, THE BODY LIES OVER THE PICTURE, and on purpose: opening it
+       should not rearrange the visible part of the picture. Only the grip
+       stands in the flow. */
+    .photo-stats-body {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: var(--stats-grip);
+        /* AND THE MOMENTUM STAYS IN THE DRAWER. Once it reaches the end, a
+           swipe otherwise hands its movement on to the dialog — the
+           second half of the same finding: first the list of spores
+           scrolls, then the whole window slides. Under a finger that
+           happens with almost every flick. */
+        overscroll-behavior: contain;
+        width: var(--stats-phone-width);
+        background: var(--ground-2);
+        border-left: 1px solid var(--border);
+        z-index: 4;
+    }
+    /* THE PANE'S OWN HANDLE (08.09.2026: „könnte die Statistik
+       auch noch ein kleines Handel bekommen in der Mobilversion, wo man
+       das auch zuklappen kann, weil der Knopf oben in der Kopfleiste ist
+       nicht grade intuitiv"). Whoever wants a drawer gone reaches for its
+       EDGE, not for a button somewhere else on the screen.
+
+       IT IS THE DESK'S OWN GRIP, moved — the same element, so it folds
+       AND resizes through the handlers that already exist, and there is
+       no second implementation to drift. It shows only while the pane is
+       open: folded, the whole aside is gone and the header button is the
+       way back in. */
+    /* CONTINUOUS AND IN THE FLOW, as at the desk: a bar over the whole
+       height of the middle, opaque, with the ground of the surface around
+       it. It is narrow and still easy to hit — the 44-px rule applies to
+       targets that are small in BOTH directions; this one is as tall as
+       the picture. 1.75 rem instead of 44, because every pixel here is
+       taken from the picture for good. */
+    .photo-stats-toggle { width: var(--stats-grip); }
+    /* THE HINT MAY HAVE THE WHOLE WIDTH (08.09.2026: „die
+       können in der Mobilversion ruhig knapp die ganze Bildschirmbreite
+       einnehmen, damit sie nicht zu hoch werden"). It floats over the
+       picture, so its height is what it costs — and a sentence in five
+       short lines covers a third of the find. */
+    .photo-frame-hint { max-width: calc(100% - 1rem); }
+    /* EVERYTHING IN THE LINE OVER THE PICTURE IS HIT WITH A THUMB — the
+       cutout's „Gerade", „Abbrechen", „Fertig" as much as the box's size
+       and unit and a measure's mark: 44 px, and the line grows for it. The cutout's buttons
+       stood at some 24 px until 07.10.2026, when the box's fields came
+       in at 44 beside them and showed it („angleichen"). */
+    .photo-frame-hint button,
+    .photo-frame-hint input[type=text] { min-height: 44px; }
+    .photo-box-size button { min-width: 44px; }
+    /* The statistics' tabs are hit with a thumb in the drawer too. */
+    .photo-stats-tabs button { min-height: 44px; }
+
+    /* THE PRESETS ON THE PHONE: the same panel as at the desk, dropping
+       from the sliders at the top left — no longer a flap sliding up out
+       of the footer (04.10.2026). Nearly the screen's width,
+       from the row's own left padding to the same distance on the right;
+       never taller than most of the picture, because whatever is set here
+       is set WHILE looking at it. Its rows keep word and field side by
+       side, the field taking the width. */
+    .photo-window-top {
+        width: calc(100vw - 1.2rem);
+        max-height: calc(var(--view-height, 100dvh) * .6);
+        overflow-y: auto;
+    }
+    /* WHAT A THUMB HAS TO HIT IS 44 PX TALL. The rule and its
+       reasoning stand in app.css; it was written „nur im Seiteninhalt",
+       and the map was left out on purpose because its own phone version
+       was already thought through — .tool is that tall by itself. THE
+       PHOTO WINDOW NEVER WAS: its rows are ordinary .button small, 32 px,
+       and at 32 px one aims (08.09.2026: „die einzelnen Mess
+       Buttons sind zu klein. Wir hatten ja eine Regel für Mobilgeräte uns
+       abgeschaut vom iPhone"). Said once for the whole window instead of
+       per row, so the next control added in here is right without anyone
+       remembering. */
+    .photo-window .button { min-height: 44px; }
+    /* THE „MESSUNG" CHOOSER on the phone loses its word: it SHOWS the
+       current layer, and in a row of three controls a label is the first
+       thing one does without. It takes the rest of the width, so that
+       „Pleurozystiden (12)" fits in. Only the row's own chooser — the
+       presets panel hangs inside the row too, and its words stay. */
+    /* The 44 px a thumb needs, and square at that size like at the desk. */
+    .photo-phone-bar > .photo-presets > .button,
+    .photo-phone-bar > .photo-phone-tools > .button { width: 44px; }
+    .photo-phone-bar > .photo-topbar-scale { flex: 1; min-width: 0; }
+    .photo-phone-bar > .photo-topbar-scale > span { display: none; }
+    .photo-phone-bar > .photo-topbar-scale > select { min-height: 44px; width: 100%; min-width: 0; }
+
+    /* THE HEAD DISSOLVES ON THE PHONE: the tool row is the window's first
+       row, and the way out is „Schließen" in the footer under the thumb. */
+    .photo-window-head { display: contents; }
+    /* The two zoom jumps have a gesture there: the double tap. */
+    .photo-window-zoom { display: none; }
+
+    /* --- The bottom bar, permanently -----------------------------------
+       NO ZOOM BUTTONS ON THE PHONE (09.09.2026): two fingers
+       and the double tap imagezoom.js has always known do it better, and
+       a button that a gesture replaces is only surface the picture lacks.
+       Since 04.10.2026 the two that are left stand in the head anyway
+       (desk only, see above).
+
+       WHAT STAYS HAS NO GESTURE: deleting, the two cloud paths and the
+       farewell. The row carries them permanently — as a „⋯" flap it was
+       two taps away for something one needs in the trash-can moment. */
+    .photo-window-footer {
+        flex: none;
+        flex-wrap: wrap;
+        gap: .5rem;
+        padding: .45rem .7rem calc(.45rem + env(safe-area-inset-bottom));
+        background: var(--ground-2);
+        border-top: 1px solid var(--border);
+    }
+    /* ON THE PHONE THE DETAILS LINE GOES AWAY (09.09.2026: „auf
+       diese Textinfozeile verzichten. Die sagt, wie groß das Bild ist und
+       von welcher Kamera es stammt"). Date taken, dimensions, camera —
+       information one reads at the desk while sifting and in the woods
+       never. It cost a row of its own, because beside the buttons it took
+       the width and made both wrap; now it costs nothing. */
+    .photo-window-footer .hint-text { display: none; }
+    .photo-window-buttons { margin-left: 0; flex: 1; flex-wrap: wrap; }
+    /* DELETING ON THE FAR LEFT, the farewell on the far right — and
+       between them as much distance as the row allows. The two delete
+       buttons exclude each other (one is for a voucher photo, the other
+       for a cloud recording), so only one of them ever stands there; the
+       auto margin pushes everything after it to the right edge. */
+    #photo-delete,
+    #photo-cloud-delete { margin-right: auto; }
+    /* The name field may have the width — it is the one thing here one
+       actually writes into. */
+    .photo-topbar-scale { justify-content: space-between; }
+    .photo-topbar-scale input[type="text"] { flex: 1; min-width: 0; }
+
+    /* THREE ROWS AND A PICTURE BETWEEN THEM, and none of them floats
+       (08.09.2026, after the floating version lasted half a
+       day). THE PICTURE CARRIES ITS OWN MOVABLE CHROME: the scale bar,
+       which the user parks in any of the four corners, and the aiming
+       hint across the top. Anything of ours lying over it is therefore
+       bound to cover something the user put there — and covering a
+       CONTROL means it cannot even be moved out from under us. In a row
+       of its own each costs its height once, and the picture keeps a
+       rectangle whose four corners are all reachable. */
+    /* A GRID INSTEAD OF A COLUMN, and the reason is the statistics grip:
+       it is meant to be a FIXED bar at the right edge that takes room away
+       from the picture (09.09.2026: „nicht so transparent
+       machen und fest, dass es quasi den Platz für das Bild … wegnimmt,
+       sodass Texte und Skalen nicht aus Versehen dahinter verschwinden").
+       Floating over the picture, it covered exactly what the user had put
+       there — the same trap as with the header the day before.
+
+       So picture and picture strip stand one above the other in the first
+       column, the grip beside them across both rows. The grid saves the
+       extra box in the document that a row-in-a-column would need — at
+       the desk the middle stays a plain row. */
+    .photo-window-middle {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: 1fr auto;
+    }
+    .photo-window-image { grid-area: 1 / 1; }
+    .photo-window-strip { grid-area: 2 / 1; }
+    .photo-window-stats { grid-area: 1 / 2 / -1 / 3; }
+
+    /* All pictures of the find as a ROW instead of a column at the left.
+       5.2 rem off 393 is a seventh of the picture and it costs that
+       seventh permanently; lying down it costs only its own height, and
+       only when there is a choice to make. */
+    .photo-window-strip {
+        flex: none;
+        flex-direction: row;
+        width: auto;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: .4rem .5rem;
+        border-right: none;
+        border-top: 1px solid var(--border);
+    }
+    .photo-window-strip button { flex: none; width: 3.6rem; }
+    /* ONE PICTURE IS NO CHOICE. The strip would say nothing and take the
+       room regardless — and the voucher photo of a find is usually
+       exactly one. Counted among the buttons: the subject headings stand
+       in the strip too, and beside a heading one button is no longer
+       :only-child. */
+    .photo-window-strip:not(:has(> button ~ button)) { display: none; }
+    /* No grip and no folding here: the rail dissolves, and the strip is
+       the grid's item under the picture as before. */
+    .photo-window-rail { display: contents; }
+    .photo-strip-toggle { display: none; }
+
+    /* The tools at the top … */
+    .photo-phone-bar {
+        display: flex;
+        /* STRETCH AND NOT center, so all four are the same height. An
+           icon alone is 1 em tall and brings no line box with it, a word
+           does — measured 25 px against 32, and buttons of two heights in
+           one row read as a mistake (08.09.2026). Stretch
+           settles it without a single size being written out. */
+        align-items: stretch;
+        gap: .4rem;
+        flex: none;
+        padding: .4rem .6rem;
+        padding-top: calc(.4rem + env(safe-area-inset-top));
+        background: var(--ground-2);
+        border-bottom: 1px solid var(--border);
+    }
+    /* THE STATISTICS BUTTON GOES TO THE RIGHT EDGE
+       (08.09.2026): its pane comes in from the right and goes back out to
+       the right, so the button that calls it belongs on that side. A
+       control whose PLACE says where its window will appear needs no
+       explaining. */
+    #photo-phone-stats { margin-left: auto; }
+
+    /* An open flap says so, the same accent every chosen state wears —
+       and the same rule the measuring row's own buttons carry. */
+    .photo-phone-bar .is-active {
+        border-color: var(--accent);
+        color: var(--accent-light);
+    }
+}
+
+/* --- The footer's cloud button --------------------------------------------
+ * Since 29.10.2026 it opens the recording's folder at once (photo_window.php
+ * says why the flap went). A button with nothing but a symbol in it is
+ * square (CLAUDE.md), at the footer's height. */
+#photo-external { width: var(--field-height); padding: 0; justify-content: center; }
+/* Deleting is quiet until the pointer is on it (photo_window.php says why);
+   then it is what it does — the error colour, as the Fundbrowser's trash. */
+.photo-window .photo-delete-button:hover:not(:disabled) { background: var(--error); border-color: var(--error); color: #fff; }
+
+/* --- „Bearbeiten": the picture developed (migration 0190) -----------------
+   photowindow.js, the development; assets/js/develop.js renders. The
+   developed picture lies over the original in the same box and zoom, the
+   ellipses' grips over it; only the grips take the pointer. */
+.photo-develop-canvas,
+.photo-develop-overlay {
+    position: absolute;
+    pointer-events: none;
+    transform-origin: center center;
+}
+.photo-develop-overlay .photo-develop-grip { pointer-events: all; cursor: move; }
+/* The masks reach past the picture (zoomed out, a large ellipse): drawn there too. */
+.photo-develop-overlay { overflow: visible; }
+/* Beyond a chosen ellipse's outer line a drag turns it (photowindow.js) — the turning arrows say so. */
+.photo-window-image.is-turn-zone { cursor: var(--turn-cursor, alias); }
+/* A mask's line taken by its stroke alone — the inside stays free for the picture. */
+.photo-develop-overlay .photo-develop-line { pointer-events: stroke; cursor: grab; }
+/* „Ausbessern": the chosen place fades out while a slider moves, and back in
+   afterwards (photowindow.js, spotSlideStart — 12.11.2026). Both
+   ways alike and soft: „gleich schnell … schön sanft, also so 0,7 Sekunden". */
+.photo-develop-overlay .photo-spot-chosen { transition: opacity .7s ease; }
+.photo-develop-overlay.is-spot-sliding .photo-spot-chosen { opacity: 0; }
+/* The size slider's fade, a moment later and slower (photowindow.js, SPOT_SIZE_LOOK). */
+.photo-develop-overlay.is-spot-slow .photo-spot-chosen { transition-duration: 1.2s; }
+/* The frame round the place while its source is dragged — out, and in on
+   letting go (photowindow.js, spotTargetFadeStyle: an animation, so the
+   redraws on every move carry it on instead of starting it over). */
+@keyframes photo-spot-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes photo-spot-fade-in { from { opacity: 0; } to { opacity: 1; } }
+/* THE FOUR TABS of „Bearbeiten" — quiet words, the chosen one underlined in
+   the accent. Narrow side padding: with „Ausbessern" the four words fill the
+   sidebar's 22rem, and a tab cut at the edge would hide its own name. */
+.photo-develop-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    margin: 0 -1rem;
+    padding: .8rem .4rem 0;
+    /* STICKY (12.11.2026): the signs stay at the top while the
+       sidebar scrolls under them — in a long tab (Licht, a mask with all
+       its groups) the way to the next one is always in sight. AND THEY DO
+       NOT MOVE (the same evening: „dass die Symbole erst ein bisschen nach
+       oben rücken und dann erst kleben bleiben … schöner wäre es, wenn sie
+       an Ort und Stelle bleiben würden"): the air above them is no longer
+       the sidebar's top padding but the row's own, so the row starts at
+       the sidebar's edge and sticks where it stands; the ground is the
+       sidebar's, so nothing shows through. */
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--ground-2);
+}
+/* SIGNS, NOT WORDS (10.11.2026): five words no longer fitted
+   the width; each tab is an equal share of the row, its sign in the middle,
+   the word in the tooltip. */
+.photo-develop-tabs [role="tab"] {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: .5rem 0;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font: inherit;
+    font-size: 1.2rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.photo-develop-tabs [role="tab"]:hover { color: var(--text); }
+.photo-develop-tabs [role="tab"].is-active { color: var(--text); border-bottom-color: var(--accent); }
+/* THE DOT WHERE SOMETHING IS SET (11.11.2026: „einen Punkt in
+   der Akzentfarbe rechts oben"; photowindow.js, developTabsMark): on a tab
+   that holds something for this picture, and on the tool inside it that
+   made it. The same dot as a shut group's (.photo-develop-group-set). On
+   the tab it sits at the SIGN's upper right, not at the tab's — a tab is a
+   sixth of the row wide, and a dot in its far corner would belong to
+   nothing. */
+.photo-develop-tabs [role="tab"],
+.photo-develop .button.is-set { position: relative; }
+.photo-develop-tabs [role="tab"].is-set::after,
+.photo-develop .button.is-set::after {
+    content: '';
+    position: absolute;
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: var(--accent);
+    pointer-events: none;
+}
+.photo-develop-tabs [role="tab"].is-set::after { top: .35rem; left: calc(50% + .45rem); }
+.photo-develop .button.is-set::after { top: 3px; right: 3px; }
+/* The two modes as ONE button split in two halves, a sign in each; the
+   half one is in wears the accent (07.11.2026). Desk only. */
+.photo-mode { display: none; }
+@media (min-width: 861px) {
+    .photo-mode {
+        display: inline-flex;
+        margin-right: .6rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: color-mix(in srgb, var(--text) 9%, transparent);
+    }
+}
+/* Each half at the bar's normal height, the frame's two pixels inside it
+   — the whole split button as tall as the menus and buttons beside it
+   (18.11.2026; it stood 4 px lower at the small height).
+   ONE AND A HALF TIMES AS WIDE AS TALL (20.11.2026: „jede
+   Hälfte … momentan quadratisch und die soll einfach etwas breiter
+   werden. Rechteckiger"): the one deliberate exception to „a button with
+   nothing but a symbol is square" (CLAUDE.md) — the two halves are one
+   control, the switch between the window's two modes, and square they
+   read as two small icon buttons among the others. */
+.photo-mode button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc((var(--field-height) - 2px) * 1.5);
+    height: calc(var(--field-height) - 2px);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+}
+.photo-mode button + button { border-left: 1px solid var(--border); }
+.photo-mode button:not(.is-active):hover { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.photo-mode button.is-active { background: var(--accent); color: var(--accent-text); cursor: default; }
+/* WHILE DEVELOPING the measuring steps aside: its tools, its drawing, its
+   statistics, its layer chooser. They come back with „Messen". Since
+   07.11.2026 the scale goes too — the bar on the picture and its menu in
+   the head — and the medium („das stört da nur"): they say
+   what was measured in, and editing measures nothing. */
+.photo-window.is-developing :is(#photo-tool-rail, .photo-window-stats, #photo-overlay, #photo-layer-chips,
+                                #photo-scalebar, #photo-medium-pick),
+.photo-window.is-developing .photo-topbar-scale:is(:has(#photo-stats-label), :has(#photo-scale-pick)) { display: none !important; }
+/* AND THE FACT LINE UNDER THE PICTURE — name, size, author
+   (13.11.2026: „das bitte ausblenden. Ich brauche da mehr oder weniger eine
+   saubere Ansicht, die nicht ablenkt"). Its place stays, so the buttons of
+   the footer do not move; the facts themselves stand in the tab „Info". */
+.photo-window.is-developing #photo-details { visibility: hidden; }
+/* THE SIDEBAR in the statistics' place — wide, so a slider is long and a
+   step on it small („je länger die Reglerstrecke ist, desto
+   feiner können wir verstellen"). It scrolls on its own; the picture
+   beside it does not. */
+.photo-develop {
+    flex: none;
+    /* Its width is dragged at its left edge (.photo-develop-edge) and kept per device. */
+    width: var(--develop-width, 22rem);
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    /* No top padding: the sticky tab row brings its own (.photo-develop-tabs). */
+    padding: 0 1rem 1.5rem;
+    background: var(--ground-2);
+    border-left: 1px solid var(--border);
+    /* Its rails show their words once it is pulled wide (below). */
+    container: develop-side / inline-size;
+}
+/* The one thing that can stand above the tabs keeps the air the sidebar's padding gave it. */
+.photo-develop > #photo-develop-readonly { margin-top: .8rem; }
+/* THE SIDEBAR FOLDS (photowindow.js, developFold; 09.11.2026): the small
+   sign in the middle of its left rule folds it to a thin bar at the right
+   edge; the pointer over the bar lays it over the picture (is-develop-peek
+   — the negative margin keeps its place in the row at the bar's width, so
+   the picture stays), a click on the bar keeps it open. */
+.photo-develop { position: relative; }
+.photo-develop-fold {
+    position: absolute;
+    top: 50%;
+    right: var(--develop-width, 22rem);
+    transform: translate(50%, -50%);
+    z-index: 6;
+    display: grid;
+    place-items: center;
+    width: 1.1rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .65rem;
+    cursor: pointer;
+}
+.photo-develop-fold:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 45%, transparent); }
+.photo-window:not(.is-developing) .photo-develop-fold,
+.photo-window.is-develop-folded .photo-develop-fold { display: none; }
+/* THE SIDEBAR'S WIDTH IS DRAGGED AT ITS LEFT EDGE (12.11.2026:
+   „die Bearbeiten-Sidebar auch in der Breite veränderbar machen, so wie wir
+   das auf der linken Seite auch haben") — the Fundbrowser's picture rail
+   in the same make (app.css, .finds-rail-edge): seven pixels astride the
+   rule, the accent line under the pointer and while dragging; dragged
+   narrow enough the side folds (photowindow.js, developEdge). Under the
+   fold sign, which sits on the same rule. */
+.photo-develop-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(var(--develop-width, 22rem) - 4px);
+    width: 7px;
+    z-index: 5;
+    cursor: col-resize;
+    touch-action: none;
+}
+.photo-develop-edge:hover::after,
+.photo-window.is-develop-resizing .photo-develop-edge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: var(--accent);
+}
+.photo-window:not(.is-developing) .photo-develop-edge,
+.photo-window.is-develop-folded:not(.is-develop-resizing) .photo-develop-edge { display: none; }
+.photo-window.is-develop-resizing { cursor: col-resize; user-select: none; }
+@media (max-width: 860px) { .photo-develop-edge { display: none; } }
+.photo-develop-handle { display: none; }
+.photo-window.is-develop-folded .photo-develop { width: 1rem; padding: 0; overflow: hidden; }
+.photo-window.is-develop-folded .photo-develop-handle {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    /* Over the sticky tab row (z-index 3, .photo-develop-tabs): folded, its
+       signs and the accent line looked out over the top of the bar
+       (12.11.2026: „hässliche Darstellungsfehler"). */
+    z-index: 4;
+    width: 1rem;
+    padding: 0;
+    border: 0;
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .6rem;
+    cursor: pointer;
+}
+.photo-window.is-develop-folded .photo-develop-handle:hover { color: var(--text); }
+.photo-develop-handle .icon { transform: rotate(180deg); }
+/* Peeking, the bar stays at the right edge where the pointer found it —
+   the sidebar opens to its left (as the statistics' does). */
+.photo-window.is-develop-folded.is-develop-peek .photo-develop-handle { left: auto; right: 0; }
+.photo-window.is-develop-folded.is-develop-peek .photo-develop {
+    width: calc(var(--develop-width, 22rem) + 1rem);
+    margin-left: calc(-1 * var(--develop-width, 22rem));
+    /* No top padding here either: the sticky tab row brings its own. */
+    padding: 0 2rem 1.5rem 1rem;
+    overflow-y: auto;
+    z-index: 20;
+    box-shadow: -.5rem 0 1rem rgb(0 0 0 / .35);
+}
+/* „BEARBEITUNG ★1 2 +" (11.11.2026; photowindow.js versionsDraw):
+   the edits as one split button like the two modes, as tall as its
+   neighbours in the head — the open one wears the accent, the valid one a
+   star. „Gültig machen" and the bin after it, a gap before „Original". */
+.photo-versions { position: relative; display: flex; align-items: center; gap: .3rem; margin-right: .8rem; }
+.photo-versions-label { font-size: .85rem; color: var(--text-quiet); margin-right: .1rem; white-space: nowrap; }
+.photo-versions-list {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.photo-versions-list button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .15rem;
+    min-width: var(--field-height);
+    height: calc(var(--field-height) - 2px);
+    padding: 0 .45rem;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+}
+.photo-versions-list button + button { border-left: 1px solid var(--border); }
+.photo-versions-list button:not(.is-active):hover { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.photo-versions-list button.is-active { background: var(--accent); color: var(--accent-text); }
+.photo-versions-list button:disabled { opacity: .45; cursor: default; }
+.photo-versions-list .photo-versions-star { font-size: .8em; color: var(--accent); }
+.photo-versions-list .photo-versions-star path { fill: currentColor; }
+.photo-versions-list button.is-active .photo-versions-star { color: inherit; }
+.photo-versions .is-reserved { visibility: hidden; }
+/* THE MENU OF „+" (photowindow.js, versionsDraw): „Kopie …" or „Von
+   vorne anfangen", the dropdown's dress (app.css, .popup-menu) hung under
+   the plus. It opens while the pointer rests on the plus or on itself —
+   its invisible top edge bridges the gap, so the way down does not close
+   it —, on a click, and for the keyboard while one of its own has focus. */
+.photo-versions .photo-versions-menu {
+    position: absolute;
+    top: calc(100% + .3rem);
+    display: none;
+    min-width: 0;
+    white-space: nowrap;
+    z-index: 30;
+}
+.photo-versions-menu::before { content: ""; position: absolute; left: 0; right: 0; top: -.5rem; height: .5rem; }
+.photo-versions:has(.photo-versions-add:not(:disabled):hover) .photo-versions-menu,
+.photo-versions:has(.photo-versions-add:focus-visible) .photo-versions-menu,
+.photo-versions .photo-versions-menu:is(:hover, :focus-within, .is-open) { display: flex; }
+/* The others' edits (11.11.2026, „Fremdbearbeitungen"): one
+   split button per person behind his name — quieter than the bar's
+   „Bearbeitung", which names the whole. */
+/* WHOSE EDIT, small inside its number (15.11.2026: „in ganz
+   klein, von wem sie ist … einfach nur der Name") — one's own carry none. */
+.photo-versions-list .photo-versions-by { font-size: .68em; color: var(--text-quiet); margin-left: .1rem; white-space: nowrap; }
+.photo-versions-list button.is-active .photo-versions-by { color: inherit; opacity: .8; }
+.photo-versions-open { margin-left: .35rem; }
+.photo-versions-open.is-active { border-color: var(--accent); color: var(--accent); }
+.photo-window-zoom .photo-versions > .button:not(.square) { width: auto; padding: var(--button-padding); white-space: nowrap; }
+/* The white balance's frame (photowindow.js, wbPick): drawn over the
+   picture while it is dragged, a crosshair while the tool waits. */
+.photo-window-image.is-wb-picking { cursor: crosshair; }
+.photo-wb-rect {
+    position: absolute;
+    z-index: 8;
+    pointer-events: none;
+    border: 1.5px dashed #fff;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / .6);
+}
+.photo-develop-sliders,
+.photo-develop-radials,
+.photo-develop-radial { display: flex; flex-direction: column; gap: .55rem; }
+.photo-develop-sliders .list-label:not(:first-child) { margin-top: .5rem; }
+/* LESS AIR UNDER THE TABS (08.11.2026: „ein bisschen zu viel
+   Platz zwischen dem Tab und dem Inhalt"): the sidebar's 1 rem between its
+   parts is right between head and tabs, too much between a tab and what
+   it opens. */
+.photo-develop-tabs + .photo-develop-sliders { margin-top: -.5rem; }
+/* „Farbstich" at the foot of „Farbe" (photowindow.js, castBlock): its name
+   in the sliders' voice with the button beside it, the three sliders below. */
+.photo-cast { display: flex; flex-direction: column; gap: .55rem; margin-top: .4rem; }
+.photo-cast-row { display: flex; align-items: center; gap: .4rem; }
+.photo-cast-name { flex: 1; min-width: 0; }
+/* THE HISTOGRAM over „Einstellungen" (photowindow.js, histogramDraw): a
+   quiet fold above the group's head, then the curves on a dark plate. The
+   plate is dark in every theme on purpose — it carries the picture's own
+   colours added over each other, which only show on dark, as the picture
+   itself stands on black. Over the whole width, reaching the sidebar's
+   edge like the head below. */
+.photo-histogram { display: flex; flex-direction: column; gap: .3rem; padding-top: .5rem; }
+.photo-histogram-head {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    align-self: flex-start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-quiet);
+    font: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+}
+.photo-histogram-head:hover { color: var(--text); }
+.photo-histogram-head .icon { font-size: .6rem; transform: rotate(90deg); transition: transform .15s ease; }
+.photo-histogram.is-collapsed .photo-histogram-head .icon { transform: none; }
+.photo-histogram.is-collapsed .photo-histogram-canvas { display: none; }
+.photo-histogram-canvas {
+    display: block;
+    width: 100%;
+    height: 5.5rem;
+    /* SQUARE CORNERS (14.11.2026): a rounded corner cut off the
+       extremes — the clipped blacks at the left edge and the burnt whites
+       at the right are exactly what one looks for there. */
+    border-radius: 0;
+    background: #141414;
+    cursor: pointer;
+}
+/* „EINSTELLUNGEN" ON A RAIL (photowindow.js, developRailDraw;
+   13.11.2026): the group's sliders on the left, a column of signs at the
+   sidebar's right edge that chooses the group by resting on it. The rail
+   reaches the edge over the sidebar's padding and sticks under the tab
+   row while the sliders scroll; its line runs down the whole page. */
+.photo-develop-adjust {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 .8rem;
+    margin-right: -1rem;
+    /* As tall as the sidebar below the tabs, so the rail's line runs to the bottom. */
+    flex: 1 0 auto;
+}
+.photo-develop-adjust-body { display: flex; flex-direction: column; gap: .55rem; min-width: 0; padding-top: .5rem; }
+/* A PAGE WITHOUT A RAIL („Ausbessern", one tool since 14.11.2026): the body
+   takes the whole width; nothing reaches out to the edge for a rail that is
+   not there, and the head does not span one. The !important beats the wide
+   sidebar's own margin for the head further down. */
+.photo-develop-adjust.is-single { display: block; margin-right: 0; }
+.photo-develop-adjust.is-single .photo-develop-group-head.is-plain { margin-right: 0 !important; }
+.photo-develop-sliders:has(> .photo-develop-adjust),
+.photo-develop > .photo-develop-adjust { flex: 1 0 auto; margin-bottom: -1.5rem; }
+/* The masks' page (photo_window.php): the buttons over the whole width,
+   the chosen mask's settings with the rail beside them, the list below.
+   The settings take their height and no more — the list follows them. */
+.photo-mask-settings { flex: none; }
+/* The masks' fold (photowindow.js, masksPanelDraw): shut, only the top row. */
+.photo-develop-radial-list.is-folded > .photo-mask-row:not(.is-top) { display: none; }
+/* The chosen mask's groups stacked in one cell, the hidden ones only
+   invisible: the box is always as tall as the tallest, and the list under
+   it no longer jumps with each sign (photowindow.js, maskGroupShow). */
+#photo-develop-radial { display: grid; align-items: start; }
+#photo-develop-radial[hidden] { display: none !important; }
+#photo-develop-radial > .photo-develop-group { grid-area: 1 / 1; }
+#photo-develop-radial > .photo-develop-group.is-off { visibility: hidden; }
+.photo-develop-rail { padding: 0 .3rem; border-left: 1px solid var(--border); }
+.photo-develop-rail-signs {
+    position: sticky;
+    top: var(--develop-tabs-height, 3.3rem);
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    padding-top: .5rem;
+}
+.photo-develop-rail-sign {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text-quiet);
+    font-size: 1.15rem;
+    cursor: pointer;
+}
+.photo-develop-rail-sign:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+/* THE CHOSEN ONE IS A BUTTON WITH AN ACCENT FRAME (14.11.2026:
+   „dass das Tool dann einfach wie ein Button aussieht und einen Rahmen in
+   Akzentfarbe bekommt" — for every rail). Until then only a short accent
+   line on its left side marked it. Now the controls' surface and a frame
+   all round, as the tool rail left of the picture marks its tool
+   (.photo-tool-rail .is-active). The frame is a shadow inside, so the
+   chosen sign keeps its size and nothing beside it moves. */
+.photo-develop-rail-sign.is-active {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* The dot where its group holds a setting — the tabs' dot. */
+.photo-develop-rail-sign.is-set::after {
+    content: '';
+    position: absolute;
+    top: .3rem;
+    right: .3rem;
+    width: .4rem;
+    height: .4rem;
+    border-radius: 50%;
+    background: var(--accent);
+    pointer-events: none;
+}
+/* ONE GROUP STANDS, so no line above it (13.11.2026: „Das
+   Label Licht und Details hat oben drüber noch eine Trennlinie"): the
+   hidden groups before it are still its siblings, and the geometry tab's
+   rule for a group after a group (border-top, below) drew its line. */
+.photo-develop-adjust-body .photo-develop-group + .photo-develop-group { margin-top: 0; padding-top: 0; border-top: 0; }
+/* THE GROUP'S HEAD OVER THE WHOLE WIDTH, THE SIGNS BENEATH IT
+   (13.11.2026: „Die Überschriften bei den Reglern können auch noch die
+   volle Breite bekommen. Sodass die Schnellauswahl-Buttons erst darunter
+   sind"). The head reaches over the gap and the rail (.8rem + the rail's
+   2.8rem and its 1px line) to the sidebar's edge, and the rail — line and
+   signs — starts where the head ends: the body's .5rem, the head's 2.2rem
+   (measured 35 px, a sign's height), the group's .55rem gap. */
+.photo-develop-adjust-body .photo-develop-group-head.is-plain { margin-right: calc(-3.6rem - 1px); width: auto; }
+.photo-develop-adjust > .photo-develop-rail { margin-top: calc(.5rem + 2.2rem + .55rem); }
+.photo-develop-adjust .photo-develop-rail-signs { padding-top: 0; }
+/* The word beside a sign — shown only when the sidebar is wide (below). */
+.photo-develop-rail-word { display: none; }
+/* About to be chosen, the guard still waiting (hoverpick.js). */
+.photo-develop-rail-sign.is-waiting { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
+/* SIGN AND WORD FROM 30 REM (13.11.2026: „zieht man etwas
+   breiter, bekommt man noch den Labeltext dazu … aber die Slider immer
+   lang bleiben, je länger sie sind, desto feiner kann man einstellen").
+   The words cost the rail 6.2 rem. FIRST the threshold sat at 30 rem,
+   where the sliders kept more than the default's length (22 rem sidebar:
+   22 − 2 padding + 1 reach − 3.6 gap and rail = 17.4 rem); the maintainer found
+   that too generous the same evening („die Slider sind dann schon sehr
+   großzügig breit"), so the words come at 26 rem: sliders of 26 − 2 + 1 −
+   9.8 = 15.2 rem, still long, and wider from there on. The group's head
+   keeps reaching over the rail to the edge. */
+@container develop-side (min-width: 26rem) {
+    .photo-develop-rail-sign {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: .5rem;
+        width: 8.4rem;
+        padding: 0 .55rem;
+    }
+    .photo-develop-rail-sign > .icon { flex: none; }
+    .photo-develop-rail-word {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .85rem;
+    }
+    .photo-develop-adjust-body .photo-develop-group-head.is-plain { margin-right: calc(-9.8rem - 1px); }
+}
+/* The rail's sign before the plain head's name, as the left rails' heads
+   carry theirs (app.css .finds-rail-now): upright, in the head's colour —
+   not the fold triangle's quiet turned glyph. */
+.photo-develop-group-head .icon.photo-develop-head-sign { width: 1.1rem; height: 1.1rem; font-size: 1rem; color: inherit; transform: none; transition: none;
+    /* Taller than the head's text: pulled into its padding, so the head
+       keeps its measured 2.2rem and the rail still starts where it ends. */
+    margin-block: -.15rem; }
+/* The group's name over its sliders, plain — nothing folds on the rail's page. */
+.photo-develop-group-head.is-plain { cursor: default; }
+/* The groups of „Einstellungen", folding (photowindow.js, developPanelDraw). */
+.photo-develop-group { display: flex; flex-direction: column; gap: .55rem; }
+.photo-develop-group + .photo-develop-group { margin-top: .5rem; }
+.photo-develop-group.is-collapsed > :not(.photo-develop-group-head) { display: none; }
+.photo-develop-group-head {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    width: 100%;
+    margin: 0;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.photo-develop-group-head .icon {
+    font-size: .7rem;
+    color: var(--text-quiet);
+    transform: rotate(90deg);
+    transition: transform .15s ease;
+}
+.photo-develop-group.is-collapsed .photo-develop-group-head .icon { transform: none; }
+.photo-develop-group-set {
+    width: .45rem;
+    height: .45rem;
+    margin-left: auto;
+    border-radius: 50%;
+    background: var(--accent);
+}
+.photo-develop-group:not(.is-collapsed) .photo-develop-group-set { display: none; }
+.photo-develop-radials p { margin: 0; }
+/* HALF THE AIR ABOVE „+ Ellipse / + Verlauf", THAT HALF UNDER THEM
+   (09.11.2026: „über den Buttons … zu viel Platz bis zu der
+   Tab-Leiste. Das würde ich halbieren … unterhalb der Buttons … diesen
+   halben Abstand … unten drunter"). Measured: 16 px of the sidebar's gap
+   plus 22.4 of the button row's own margin = 38.4 above, the list's 8.8
+   below. Now 16 + 3.2 = 19.2 above, 8.8 + 19.2 = 28 below. */
+.photo-develop-radials > .button-row,
+.photo-develop-radials .photo-mask-add { margin-top: .2rem; margin-bottom: .3rem; }
+/* One row for the three beside the rail: they share the width, the words
+   and their digits centred. */
+.photo-mask-add { flex-wrap: nowrap; }
+.photo-mask-add .button { flex: 1 1 0; min-width: 0; justify-content: center; padding-inline: .45rem; white-space: nowrap; }
+/* THE SHORTCUT ON THE BUTTON, QUIET (13.11.2026: „ganz dezent
+   … die Shortcuts … an den Buttons anzeigen. Also 1, 2, 3"): a small,
+   faint digit in the button's lower right corner — after the word it
+   took the width the three need beside the rail, and the word lost it.
+   The dot of „holds masks" keeps the upper corner. */
+.photo-mask-add .button { position: relative; }
+.photo-key-hint {
+    position: absolute;
+    right: 3px;
+    bottom: 1px;
+    font-size: .6rem;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-quiet);
+    opacity: .75;
+    pointer-events: none;
+}
+.photo-develop-row { display: flex; flex-direction: column; gap: .1rem; }
+/* Name and number over the track; quiet at 0, in the text's colour once moved. */
+.photo-develop-row-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: .85rem;
+    color: var(--text-quiet);
+    user-select: none;
+    -webkit-user-select: none;
+}
+.photo-develop-row.is-set .photo-develop-row-head { color: var(--text); }
+.photo-develop-value { font-variant-numeric: tabular-nums; }
+/* THE TRACK IS ONE COLOUR, left and right alike (07.11.2026:
+   „einfarbig … neutral weiß, nicht mit der Akzentfarbe"). A slider here
+   runs from minus to plus with 0 in the middle; an accent filling from the
+   left edge would claim the left half as „set" at -100 and at 0 alike.
+   Drawn by hand, because accent-color always fills one side. In the text
+   colour, so it is white on the dark themes and still visible on the light.
+   THE STATISTICS' TWO SLIDERS WEAR IT TOO (20.11.2026: „die
+   zwei Schieberegler Rand und Größe sind ungestylt") — they stood in the
+   browser's own dress, blue on Chrome, beside a pane drawn in the theme.
+   AND THE PLATE PANEL'S (the same day: „die Regler in der Tafel-Seitenleiste
+   auch so gestalten" — Größe of a row, Deckkraft): plates.css is loaded
+   wherever this sheet is (index.php, pages/finds.php), so they join these
+   rules instead of a copy there. */
+.photo-develop-row input[type="range"],
+.photo-stats-air input[type="range"],
+.plate-slider input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    /* min-height and not height: a slider is no field beside a button
+       (tests/sizes.php), only room enough to take the knob by. */
+    min-height: 1.4rem;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+.photo-develop-row input[type="range"]::-webkit-slider-runnable-track,
+.photo-stats-air input[type="range"]::-webkit-slider-runnable-track,
+.plate-slider input[type="range"]::-webkit-slider-runnable-track {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--track, color-mix(in srgb, var(--text) 45%, transparent));
+}
+.photo-develop-row input[type="range"]::-moz-range-track,
+.photo-stats-air input[type="range"]::-moz-range-track,
+.plate-slider input[type="range"]::-moz-range-track {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--track, color-mix(in srgb, var(--text) 45%, transparent));
+}
+.photo-develop-row input[type="range"]::-webkit-slider-thumb,
+.photo-stats-air input[type="range"]::-webkit-slider-thumb,
+.plate-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    margin-top: -5.5px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--text);
+}
+.photo-develop-row input[type="range"]::-moz-range-thumb,
+.photo-stats-air input[type="range"]::-moz-range-thumb,
+.plate-slider input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--text);
+}
+.photo-develop-row input[type="range"]:disabled { cursor: default; opacity: .5; }
+/* A painted line (develop.js, DEVELOP_TRACKS) a little thicker, so its
+   colours read; its knob ringed in the ground's colour, so it stands off
+   the paint on every theme. The track is 5 px, the knob's top moves to
+   keep it centred: (14 − 5) / 2. */
+.photo-develop-row.has-track input[type="range"]::-webkit-slider-runnable-track { height: 5px; border-radius: 3px; }
+.photo-develop-row.has-track input[type="range"]::-moz-range-track { height: 5px; border-radius: 3px; }
+.photo-develop-row.has-track input[type="range"]::-webkit-slider-thumb { margin-top: -4.5px; box-shadow: 0 0 0 2px var(--ground-2); }
+.photo-develop-row.has-track input[type="range"]::-moz-range-thumb { box-shadow: 0 0 0 2px var(--ground-2); }
+/* NO FRAME WHILE IT MOVES (08.11.2026: „wird er aktiv und damit
+   bekommt er einen Rahmen in der Akzentfarbe. Kann man diesen Rahmen
+   unterdrücken"): the fields' focus outline (app.css) put an accent box
+   round the slider in hand, as if it were a field to type in — the frame
+   means „here you can write". The keyboard still sees where it is: a ring
+   round the knob, in the text colour, only for :focus-visible, which a
+   click with the mouse does not give. */
+.photo-develop-row input[type="range"]:focus,
+.photo-stats-air input[type="range"]:focus,
+.plate-slider input[type="range"]:focus { outline: none; }
+.photo-develop-row input[type="range"]:focus-visible::-webkit-slider-thumb,
+.photo-stats-air input[type="range"]:focus-visible::-webkit-slider-thumb,
+.plate-slider input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 35%, transparent);
+}
+.photo-develop-row input[type="range"]:focus-visible::-moz-range-thumb,
+.photo-stats-air input[type="range"]:focus-visible::-moz-range-thumb,
+.plate-slider input[type="range"]:focus-visible::-moz-range-thumb {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 35%, transparent);
+}
+.photo-develop-radial-list { display: flex; flex-direction: column; gap: .3rem; }
+/* A mask's button is its mask (photowindow.js, maskThumbDraw): the little
+   picture fills it, framed by the button; chosen, the accent rim. */
+/* ONE ROW PER MASK (photowindow.js, masksPanelDraw): its picture, its
+   name, the eye at the end. A resting surface from the text colour as every
+   roomy row; chosen, the accent's hairline damped to 55 % and the name
+   bold (CLAUDE.md, „A chosen row"); switched off, picture and name pale. */
+.photo-mask-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .3rem .3rem .3rem .35rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    cursor: pointer;
+}
+.photo-mask-row:hover { background: color-mix(in srgb, var(--text) 10%, transparent); }
+.photo-mask-row.is-active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.photo-mask-row.is-active .photo-mask-name { font-weight: 700; }
+.photo-mask-row.is-off .photo-mask-thumb,
+.photo-mask-row.is-off .photo-mask-name { opacity: .45; }
+.photo-mask-thumb { display: block; flex: none; border-radius: 2px; }
+.photo-mask-name { flex: 1; min-width: 0; }
+.photo-mask-row .photo-mask-eye { flex: none; width: var(--field-height-small); padding: 0; justify-content: center; }
+.photo-mask-row .photo-mask-eye + .photo-mask-eye { margin-left: -.3rem; }
+.photo-mask-row .photo-mask-eye.is-active { border-color: var(--accent); color: var(--accent-light); }
+#photo-develop-add.is-active { border-color: var(--accent); color: var(--accent-light); }
+.photo-develop-radial { padding-top: .3rem; }
+/* Turning and cropping (stage 2): the turns and „Zuschneiden" in a row,
+   the straightening a slider like the rest, the shapes as chips while one
+   crops. The crop's own grips lie on the picture (photowindow.js, cropDraw). */
+/* „Ausbessern" (photowindow.js, spotsPanel): the two kinds, the brush's
+   three sliders, a row per spot as the masks have. Over the picture the
+   brush's ring is the pointer; a fine dot marks its middle (--brush-cursor). */
+.photo-develop-spots { display: flex; flex-direction: column; gap: .55rem; }
+/* The four sliders of „Ausbessern" in their own box — the area over which the chosen place shows (spotsPanel). */
+.photo-spot-sliders { display: flex; flex-direction: column; gap: .55rem; }
+/* „Schnell / Stark" side by side (photowindow.js, spotModelRow): two words fit one line, and a row of two reads as one switch. */
+.photo-spot-kind { display: flex; flex-wrap: wrap; column-gap: 1.2rem; }
+/* „ANGLEICHEN / KOPIEREN / ENTFERNEN" AS BUTTONS over the sidebar's whole
+   width (14.11.2026; photowindow.js, spotKindRow): equal shares,
+   one row always — sign and word, then the word alone, then the sign
+   alone, a little larger (wordsorsigns.js). The chosen one wears what
+   the rails' chosen sign wears: the controls' surface and an accent frame. */
+.photo-spot-methods { flex-wrap: nowrap; gap: .4rem; }
+.photo-spot-methods > .button {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.photo-spot-methods > .button.is-active {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    border-color: var(--accent);
+}
+.photo-spot-methods.is-words > .button .icon,
+.photo-spot-methods.is-signs .photo-spot-method-word { display: none; }
+.photo-spot-methods.is-signs > .button .icon { font-size: 1.25em; }
+/* THE STRONG MODEL'S ROW under the sliders of a place „Entfernen" filled
+   (photowindow.js, spotModelRow): the choice „Schnell / Stark" and „Noch
+   einmal" on one line, the choice's own bottom margin taken off so the
+   button stands level with the words; alone, the one button that fills. */
+.photo-spot-model { display: flex; align-items: center; gap: .6rem; margin: .5rem 0 .2rem; }
+.photo-spot-model .photo-spot-kind { margin: 0; flex: 1; }
+.photo-spot-model-busy { color: var(--text-quiet); font-size: .85rem; }
+/* NOT YET IN THE CLOUD (editsaves.js): the cloud with the mark, in the
+   warning colour — a state to act on, not an error; a press tries at once. */
+.button.photo-unsaved { color: var(--warn); }
+.photo-develop-spots .button-row .is-active { border-color: var(--accent); color: var(--accent-light); }
+.photo-develop-spots .photo-spot-list { margin-top: .6rem; }
+/* A FINE DOT, NOT THE CROSS (11.11.2026: „bei Pinsel überall …
+   haben wir jetzt im Zentrum ein Kreuz, ein fettes. Das bitte reduzieren
+   auf einen feinen Punkt"). The ring shows what the brush takes; its
+   middle needs only a mark, and the cross's arms lay over exactly the
+   edge one paints along. Light with a dark rim, as the ring — so it reads
+   on every picture; the cross stays as the fallback where a browser takes
+   no drawn cursor. One drawing for every brush: „Ausbessern", the painted
+   mask of „Masken" (both .is-spotting) and the layers' stage (.blend-stage). */
+.photo-window-image, .blend-stage {
+    --brush-cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9'%3E%3Ccircle cx='4.5' cy='4.5' r='1.6' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3C/svg%3E") 4 4, crosshair;
+}
+.photo-window-image.is-spotting:not(.is-space-pan) { cursor: var(--brush-cursor); }
+/* Over a spot a press takes hold of, the pointer says „move" and the ring
+   is gone (photowindow.js, spotGrab); while it is moved, the closed hand. */
+.photo-window-image.is-spotting.is-spot-grab:not(.is-space-pan) { cursor: move; }
+.photo-window-image.is-spotting.is-spot-dragging:not(.is-space-pan) { cursor: grabbing; }
+/* Too far beside the picture to paint (photowindow.js, spotReaches): the plain pointer, no ring. */
+.photo-window-image.is-spotting.is-spot-out:not(.is-space-pan) { cursor: default; }
+.photo-develop-geo { display: flex; flex-direction: column; gap: .55rem; }
+.photo-develop-geo .is-active { border-color: var(--accent); color: var(--accent-light); }
+/* The bin that takes the angle back (photowindow.js, geoPanel): only a
+   symbol, so square at the small button's height. */
+.photo-develop-geo .button.square { width: var(--field-height-small); padding: 0; justify-content: center; }
+/* The straightening's degrees on „Drehen" — a reading beside the word, quieter. */
+.photo-develop-degrees { color: var(--text-quiet); font-variant-numeric: tabular-nums; }
+.photo-develop-geo .hint-text { margin: 0; }
+/* The three groups of „Drehen und zuschneiden" (photowindow.js, geoPanel):
+   turning, mirroring, cropping — air between them, the open tool's hint
+   and buttons inside its own. */
+.photo-develop-group { display: flex; flex-direction: column; gap: .55rem; }
+.photo-develop-group + .photo-develop-group { padding-top: .55rem; border-top: 1px solid var(--border); }
+/* IN „DREHEN UND ZUSCHNEIDEN" A GROUND PER GROUP, NO RULE
+   (20.11.2026: „Dort sind Bereiche mit Trennlinien getrennt. Mach mir dort
+   auch das Kacheldesign mit der Hintergrundfarbe statt den Trennlinien") —
+   turning, mirroring and cropping each on the soft surface the plate's
+   panel groups and the statistics wear (5 % of the text colour). */
+.photo-develop-geo .photo-develop-group,
+.photo-develop-geo .photo-develop-group + .photo-develop-group {
+    padding: .55rem .6rem .6rem;
+    border-top: 0;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+/* .button-row's own top margin (app.css, 1.4 rem) stood as an empty band
+   at the top of each ground — inside a group the padding is the air. */
+.photo-develop-geo .photo-develop-group > .button-row { margin-top: 0; }
+.photo-develop-shapes { display: flex; flex-wrap: wrap; gap: .3rem; }
+/* „Bild exportieren" in the footer: quiet, the accent only under the pointer
+   (07.11.2026) — the delete buttons beside it do the same in red. */
+.photo-window #photo-develop-export:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+
+/* The export window's quality (photo_window.php, photo-export-window): the
+   question's words in the question's voice, the slider indented beneath
+   like an answer, its value beside it. */
+.photo-export-question { margin: 0 0 .3rem; font-weight: 700; color: var(--text); }
+.photo-export-quality { display: flex; align-items: center; gap: .6rem; margin-left: 1.6rem; }
+.photo-export-quality input { flex: 1; min-width: 0; accent-color: var(--accent); }
+.photo-export-quality output { min-width: 3rem; text-align: right; font-variant-numeric: tabular-nums; }
+.photo-export-quality + .hint-text { margin: .3rem 0 0 1.6rem; }
+#photo-export-webp-none { margin: .2rem 0 0 1.6rem; }
+/* The export window's size answers: a number field beside its words, the
+   quick buttons for the long edge under it, indented like an answer. */
+/* Through the window's id: app.css gives every input[type=number] width
+   100 % with a selector one step stronger than a class alone, and the
+   field stretched across the row („die Inputfelder … sind zu
+   breit eigentlich"). */
+#photo-export-window .photo-export-number { flex: none; width: 6rem; height: var(--field-height-small); }
+.photo-export-quick { display: flex; flex-wrap: wrap; gap: .3rem; margin: .1rem 0 .3rem 3.2rem; }
+#photo-export-size-result { margin: .3rem 0 0 1.6rem; }
+#photo-export-sharpen-field.is-quiet { opacity: .55; }
+#photo-export-marks .choice-row { margin-left: 1.6rem; }
+/* The export window in two columns at the desk, one on the phone. */
+.photo-export-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 2rem; }
+.photo-export-column { display: flex; flex-direction: column; gap: .9rem; min-width: 0; }
+@media (max-width: 860px) {
+    .photo-export-columns { grid-template-columns: minmax(0, 1fr); gap: .9rem; }
+}
+#photo-export-name { margin-left: 1.6rem; width: calc(100% - 1.6rem); }
+.photo-export-chips { margin: .1rem 0 0 1.6rem; }
+#photo-export-name-result { margin: .4rem 0 0 1.6rem; color: var(--text); word-break: break-word; }
+/* The author in the fact line, and the pencil beside it for whoever
+   uploaded the recording (photowindow.js, authorSay). */
+.photo-author-edit {
+    display: inline-flex;
+    align-items: center;
+    margin-left: .3rem;
+    padding: .1rem .2rem;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-quiet);
+    cursor: pointer;
+    vertical-align: middle;
+}
+.photo-author-edit:hover { color: var(--text); background: color-mix(in srgb, var(--text) 9%, transparent); }
+
+/* THE INFO TAB (photowindow.js, infoPanel; 10.11.2026). The four
+   values that make an exposure as tiles, large, as a camera's display shows
+   them; the rest as a striped list of label and value. */
+.photo-develop-info { display: flex; flex-direction: column; gap: .8rem; padding-top: .5rem; }
+.photo-develop-info p { margin: 0; }
+.photo-info-tiles {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--border);
+}
+.photo-info-tiles > div {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    padding: .5rem .65rem;
+    background: color-mix(in srgb, var(--text) 5%, var(--ground-2));
+}
+.photo-info-tiles strong { font-size: 1.15rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.photo-info-tiles span { font-size: .78rem; color: var(--text-quiet); }
+.photo-info-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    margin: 0;
+    font-size: .88rem;
+}
+.photo-info-list dt, .photo-info-list dd { margin: 0; padding: .35rem .6rem; }
+.photo-info-list dt { color: var(--text-quiet); white-space: nowrap; }
+.photo-info-list dd { overflow-wrap: anywhere; }
+.photo-info-list dt:nth-of-type(odd), .photo-info-list dt:nth-of-type(odd) + dd { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.photo-info-list dt:nth-of-type(even), .photo-info-list dt:nth-of-type(even) + dd { background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+/* „Entfernen" at work (11.11.2026): the row says so quietly after its
+   name, and the painted veil on the picture breathes while the AI fills
+   it — still means done, moving means busy. */
+/* „wird berechnet …" ON A LINE OF ITS OWN under the place's name
+   (14.11.2026: „wird berechnet bricht dann natürlich um. Besser
+   wäre es, wenn man das einfach in eine neue Zeile schreibt. Darunter") —
+   behind the number it wrapped in the middle in a narrow sidebar. Not bold
+   with a chosen row's name: it is a state, not the name. */
+.photo-spot-busy { display: block; color: var(--text-quiet); font-size: .85em; font-weight: 400; }
+.photo-spot-pending { animation: photo-spot-pending 1.4s ease-in-out infinite; }
+@keyframes photo-spot-pending { 50% { opacity: .15; } }
+/* The ring that turns on a place the AI works on (photowindow.js, spotSpinner). */
+.photo-spot-spinner { transform-box: fill-box; transform-origin: center; animation: photo-spot-spin 1s linear infinite; }
+@keyframes photo-spot-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .photo-spot-pending, .photo-spot-spinner { animation: none; } }
+
+/* --- „EBENEN": several renderings of one picture painted into one --------
+   (assets/js/blend.js, 11.11.2026). A tab of „Bearbeiten": its
+   panel stands in the sidebar among the others, its stage lies over the
+   picture while one works on a set, and while one chooses the pictures
+   each tile of the rail carries a tick box. */
+
+/* THE STAGE fills the picture's frame and lies over everything in it —
+   the picture, its drawings, the badges —, taking every pointer. */
+.blend-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    overflow: hidden;
+    /* As the photo window's: a picture is judged on black. */
+    background: #000;
+    cursor: var(--brush-cursor);
+    touch-action: none;
+    outline: none;
+}
+.blend-stage.is-fill { cursor: cell; }
+.blend-stage.is-pan-ready { cursor: grab; }
+/* Aligning by hand: the whole layer is taken and moved (blend.js, handStart). */
+/* „Nachjustieren" (blend.js, adjustStart): a cross to name a place with, and the places named as numbered pins.
+   A pin is a small ring with its number beside it, white on a dark rim — it has to read on a pale cap and on dark moss alike,
+   so it carries written-out values like the brush's rings, not the theme's. Open (its partner still to come): dashed. */
+.blend-stage.is-adjust { cursor: crosshair; }
+.blend-pins { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.blend-pin {
+    position: absolute; left: -7px; top: -7px; width: 14px; height: 14px; box-sizing: border-box;
+    border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, .8), inset 0 0 0 1px rgba(0, 0, 0, .8);
+    color: #fff; font-size: .8rem; font-weight: 700; line-height: 10px; text-indent: 16px; white-space: nowrap;
+    text-shadow: 0 0 2px #000, 0 0 2px #000, 0 0 3px #000;
+}
+.blend-pin.is-open { border-style: dashed; }
+.blend-stage.is-panning { cursor: grabbing; }
+.blend-canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; }
+/* The brush's two rings (blend.js): solid where it paints whole, dashed where its soft edge ends. */
+.blend-ring {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none;
+}
+.blend-ring svg { display: block; width: 100%; height: 100%; overflow: visible; }
+
+/* THE PANEL, in the sidebar's own column. */
+/* No air between the tab row of „Bearbeiten" and „Stacking | HDR": the
+   air is the row's own padding, so the row sticks where it stands and
+   does not first climb (14.11.2026: „wandern beim Scrollen noch
+   ein Stückchen nach oben, bevor sie hängen bleiben") — as the tab row
+   above it does (.photo-develop-tabs). Measured, two gaps did it: the
+   panel's own top padding and what is left of the sidebar's gap (1rem
+   minus the sliders' −.5rem); both are gone, and the row's padding is
+   their sum, so the words stand where they stood. */
+.blend-panel { display: flex; flex-direction: column; gap: .6rem; }
+.photo-develop-sliders:has(> .blend-panel) { margin-top: -1rem; }
+.blend-pick, .blend-work, .blend-side { display: flex; flex-direction: column; gap: .6rem; }
+/* „Stacking" | „HDR" on top (blend.js, step 9): what one makes decides the
+   tools beneath. TWO BUTTONS SINCE 14.11.2026, NO LONGER TABS (
+   „als Buttons gestalten … ein bisschen abgehoben vom Rest. Dass man
+   sieht, das sind die zwei Hauptwege"): one split button over the
+   column's width, at the normal height and not the small one of the
+   settings beneath, the chosen half filled in the accent like the
+   edits' numbers in the head (.photo-versions-list). The bar it stands in
+   is set off from the settings by its own air and a rule under it.
+   STICKY (the same day: „oben … auch noch die zwei Tabs Stacking und HDR.
+   Sticky"): under the tab row of „Bearbeiten", on the sidebar's ground so
+   nothing shows through; edge to edge like the group heads beneath
+   (.blend-side .list-label), or their ends show beside it while they
+   scroll under. The air above is the bar's own padding, so it sticks
+   where it stands and does not first climb. */
+.blend-kinds {
+    position: sticky;
+    top: var(--develop-tabs-height, 3.3rem);
+    z-index: 3;
+    margin: 0 -1rem .3rem;
+    padding: 1.3rem 1rem .9rem;
+    background: var(--ground-2);
+    border-bottom: 1px solid var(--border);
+}
+.blend-kinds-switch {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.blend-kind {
+    flex: 1;
+    height: calc(var(--field-height) - 2px);
+    padding: 0 .5rem;
+    border: 0;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.blend-kind + .blend-kind { border-left: 1px solid var(--border); }
+.blend-kind:not(.is-active):hover { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.blend-kind.is-active { background: var(--accent); color: var(--accent-text); }
+.blend-kind:disabled { cursor: default; }
+.blend-kind:disabled:not(.is-active) { color: var(--text-quiet); }
+.blend-pick .field.question { margin: 0; border: 0; padding: 0; }
+/* The answers to „Welche Bilder zeigen dasselbe?" — what is ticked at the left. */
+.blend-chosen { display: flex; flex-direction: column; gap: .15rem; margin-left: 1.6rem; }
+.blend-chosen-none { margin: 0; color: var(--text-quiet); }
+.blend-chosen-line { display: flex; justify-content: space-between; gap: .8rem; }
+.blend-chosen-size { color: var(--text-quiet); font-size: .85rem; font-variant-numeric: tabular-nums; }
+.blend-problem { margin: .5rem 0 0 1.6rem; color: var(--error); }
+.blend-problem.is-quiet { color: var(--text-quiet); }
+/* What was begun at this find: to go on with, or to give up. */
+.blend-started { display: flex; flex-direction: column; gap: .4rem; }
+.blend-started-row { display: flex; gap: .4rem; align-items: stretch; }
+.blend-started-row > .button:first-child { flex: 1; min-width: 0; justify-content: flex-start; text-align: left; white-space: normal; height: auto; min-height: var(--field-height); }
+.blend-started-drop { flex: none; width: var(--field-height); padding: 0; justify-content: center; }
+
+/* A head with something at its right end: the tick „zeigen" beside
+   „Maske", the signs beside „Ebenen". */
+.blend-head { display: flex; align-items: center; justify-content: space-between; gap: .8rem; }
+/* How the work is kept, at the right end of the view buttons (the head
+   „Ansicht" it sat in went, 14.11.2026) — quiet and small, red only where
+   it is not kept. */
+.blend-saved { margin-left: auto; align-self: center; min-width: 0; font-size: .8rem; color: var(--text-quiet); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blend-saved.is-problem { color: var(--error); white-space: normal; }
+.blend-side .list-label { margin: .4rem -1rem 0; }
+.blend-views { display: flex; flex-wrap: wrap; gap: .4rem; }
+/* In the sticky bar under the two main ways (blend.js, viewRow). */
+.blend-kinds > .blend-views { margin-top: .6rem; }
+/* Signs at the right end of a head: „Ausrichten" and „Nachjustieren" in
+   „Ebenen", the eye „Maske zeigen" in „Maske" — on or off, the accent
+   frame while on (blend.js). Square at the small buttons' height, never shrunk
+   to the head — the head grows by the two pixels instead (CLAUDE.md, a
+   header bar is as tall as a button in it). Their right edge lines up with
+   the buttons at the right end of the layer rows beneath: the head reaches
+   over the sidebar's padding (1rem) and keeps .6rem of its own, the rows
+   keep .4rem and a 1px frame inside it. */
+.blend-head-signs { display: flex; gap: .3rem; margin-right: calc(.8rem + 1px); }
+.blend-head .blend-head-signs .button { width: var(--field-height-small); margin: -.3rem 0; padding: 0; justify-content: center; }
+.blend-head-signs .button.is-busy .icon { animation: photo-spot-pending 1.2s ease-in-out infinite; }
+.blend-views .is-active, .blend-head-signs .is-active { border-color: var(--accent); color: var(--accent-light); }
+.blend-layers { display: flex; flex-direction: column; gap: .3rem; }
+.blend-layer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .2rem .5rem;
+    padding: .25rem .4rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+    cursor: pointer;
+}
+.blend-layer:hover { background: color-mix(in srgb, var(--text) 10%, transparent); }
+.blend-layer.is-active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.blend-layer.is-active .blend-layer-name { font-weight: 700; }
+.blend-layer.is-ground { cursor: default; }
+.blend-layer img { flex: none; width: 3rem; height: 2rem; object-fit: cover; border-radius: calc(var(--radius) / 2); }
+.blend-layer-words { display: flex; flex-direction: column; min-width: 0; }
+.blend-layer-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blend-layer-tag { color: var(--text-quiet); font-size: .8rem; }
+.blend-eye { flex: none; width: var(--field-height-small); padding: 0; justify-content: center; }
+/* A layer's exposure under „HDR" (blend.js, exposureRow): a line of its
+   own in the row, starting under the name — past the eye and the tile —
+   and running to the row's end, so the slider stays long. */
+.blend-layer-exposure {
+    --blend-layer-lead: calc(var(--field-height-small) + 4rem);
+    flex: 0 0 calc(100% - var(--blend-layer-lead));
+    margin: 0 0 .2rem var(--blend-layer-lead);
+    cursor: default;
+}
+/* Up and down at the row's right end (blend.js, layerMove) — square, as a sign alone is. */
+.blend-moves { display: flex; gap: .25rem; margin-left: auto; flex: none; }
+.blend-move { width: var(--field-height-small); padding: 0; justify-content: center; }
+.blend-sliders { display: flex; flex-direction: column; gap: .5rem; }
+/* The mask's tools, and in their place the open proposal from sharpness (blend.js, proposeStart). */
+.blend-mask-tools, .blend-propose { display: flex; flex-direction: column; gap: .6rem; }
+.blend-adjust-say { margin: 0; }
+/* THE HEAD OF THE MASK'S TOOLS (blend.js, 14.11.2026): the proposal at
+   the left, the bucket „Maske leeren" at the right end over the rail's
+   signs. ONE LINE, NEVER WRAPPED: where the words of the proposal do not
+   fit beside the bucket, the wand stands alone (the query below), and
+   till then they are cut short rather than pushed under. The row reaches
+   to the sidebar's edge like the rail beneath, so the bucket can stand
+   centred over the signs. */
+.blend-mask-head { display: flex; flex-wrap: nowrap; align-items: center; gap: .4rem; margin-right: -1rem; }
+/* SET OFF FROM THE TOOLS BY A RULE AND AIR (14.11.2026: „hier
+   würde ich noch eine Trennlinie zu den eigentlichen Einstellungen machen,
+   oder einen etwas größeren Abstand, weil der Lösch-Button ist mir doch zu
+   gefährlich nah an den Werkzeugen"): the bucket empties the whole mask,
+   and it stood a few pixels over the brush. Both: a rule across the
+   column, edge to edge, and air on either side of it. */
+.blend-mask-tools > .blend-mask-head { margin-left: -1rem; padding: 0 0 .7rem 1rem; border-bottom: 1px solid var(--border); }
+.blend-mask-tools > .blend-mask-body { margin-top: .3rem; }
+.blend-propose-button { min-width: 0; }
+.blend-propose-button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.blend-mask-clear { flex: none; width: var(--field-height-small); padding: 0; justify-content: center; margin-left: auto; margin-right: calc(.3rem + (2.2rem - var(--field-height-small)) / 2); }
+@container develop-side (max-width: 17rem) {
+    .blend-propose-button > span { display: none; }
+    .blend-propose-button { flex: none; width: var(--field-height-small); padding: 0; justify-content: center; }
+}
+/* The sliders at the left, the tools on a rail at the sidebar's right
+   edge — the rails of „Bearbeiten" (.photo-develop-rail-sign), not sticky
+   here: the rail is as tall as the three sliders beside it. */
+.blend-mask-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 .8rem; margin-right: -1rem; }
+.blend-tool-rail { display: flex; flex-direction: column; gap: .15rem; }
+/* „Füllen" has no settings: its sliders stand grey (blend.js, slidersSync). */
+.blend-sliders .is-off { opacity: .45; }
+.blend-veil { display: flex; align-items: center; gap: .4rem; }
+.blend-invert { cursor: pointer; }
+/* THE FOOTER STAYS IN SIGHT (14.11.2026: „Die Schaltflächen
+   Ebenen auflösen und zu einem Bild verrechnen … in der Sidebar unten
+   sticky"): the column scrolls under it, as under a window's pinned footer
+   (app.css, .pinned-footer). It reaches over the sidebar's side padding and
+   its bottom one, so it sits flush at the edge from the first moment and
+   does not climb when the column ends. THE BROWSER STICKS INSIDE THE
+   PADDING (measured: bottom 0 left it 24 px above the edge, the column
+   showing beneath), so bottom is minus that padding. ONE LINE, ALWAYS: no wrapping; where
+   the two short words do not fit beside each other, the signs stand alone
+   (the container query below), square as a sign alone is. */
+.blend-side-footer {
+    position: sticky;
+    bottom: -1.5rem;
+    z-index: 3;
+    margin: .2rem -1rem -1.5rem;
+    padding: .7rem 1rem 1rem;
+    background: var(--ground-2);
+    box-shadow: 0 -1px 0 var(--border);
+}
+.blend-side-footer .button { flex: none; }
+.blend-side-buttons { flex-wrap: nowrap; margin-top: 0; }
+/* What the tool says stands in the footer, over the buttons — always in sight (blend.js, sideFooter). */
+.blend-side-footer .blend-merge-note { margin: 0 0 .5rem; }
+.blend-propose-none { margin: 0; color: var(--warn); font-size: .85rem; }
+/* AND AT THE BOTTOM WHEN THE COLUMN IS SHORT (14.11.2026: „die
+   beiden Buttons auflösen und verrechnen, wirklich ganz unten an die
+   Sidebar kleben. Sie sollen nicht mit ihrem Inhalt nach oben wandern,
+   sondern unten stehen bleiben. Als Abschluss der Sidebar"). Sticking
+   only holds once the column scrolls; a short one ended above the edge
+   with the footer under its last line. So the column fills the sidebar's
+   height — every box from the sidebar down to it grows —, and the footer
+   takes the room that is left above it. */
+.photo-develop-sliders:has(> .blend-panel) { flex: 1 0 auto; }
+.photo-develop-sliders > .blend-panel { flex: 1 0 auto; }
+.blend-panel > .blend-work:not([hidden]) { flex: 1 0 auto; }
+.blend-work > .blend-side { flex: 1 0 auto; }
+.blend-side > .blend-side-footer { margin-top: auto; }
+@container develop-side (max-width: 15.5rem) {
+    .blend-side-footer .button > span { display: none; }
+    .blend-side-footer .button { aspect-ratio: 1; padding-inline: 0; justify-content: center; }
+}
+/* How the one picture comes along — computing, uploading, lying there; red where it did not. */
+.blend-merge-note { margin: .4rem 0 0; font-size: .85rem; color: var(--text-quiet); font-variant-numeric: tabular-nums; }
+.blend-merge-note.is-problem { color: var(--error); }
+/* While the one picture is computed nothing is painted. */
+.blend-stage.is-busy { cursor: progress; }
+
+/* THE TICK BOXES ON THE RAIL'S TILES while one chooses (blend.js, ticksDraw):
+   in the box around the gallery, each over its tile's lower left corner —
+   on a plate of the ground's colour, so it reads on every picture. Under
+   the rail's sticky buttons (z-index 2), which the tiles scroll beneath. */
+.is-blend-picking { position: relative; }
+.blend-tick {
+    position: absolute;
+    z-index: 1;
+    transform: translate(.3rem, calc(-100% - .3rem));
+    padding: .3rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--ground) 82%, transparent);
+}
+
+/* „H" HIDES THE DRAWINGS (photowindow.js, photoKeys): the measures and the
+   masks' lines step aside until it is pressed again — only the brush's
+   ring stays, which shows where one paints. */
+.photo-window-image.is-drawings-hidden :is(.photo-overlay, .photo-develop-overlay) { visibility: hidden; }
+.photo-window-image.is-drawings-hidden .photo-brush-ring { visibility: visible; }
+/* …and the measure one is setting right now — its taps and the line that
+   rides with the pointer (photowindow.js, drawOverlay): hidden with the
+   rest, the next one would be measured blind. */
+.photo-window-image.is-drawings-hidden .photo-measure-setting { visibility: visible; }
+/* …and what a press would take in „Ausbessern" — the chosen place under the
+   pointer, or the place whose pin it rests on (photowindow.js, spotReveal,
+   spotPeek): the pointer asked for it. */
+.photo-window-image.is-drawings-hidden .photo-spot-reveal { visibility: visible; }
+/* THE SPACE BAR HELD TAKES THE RING TOO (11.11.2026: „wenn ich
+   die Space-Taste zum Verschieben drücke, erscheint die Hand, allerdings
+   wird der Pinsel weiterhin angezeigt"). The ring is a drawing over the
+   picture, not the pointer, so the hand's cursor alone did not take it:
+   while the picture is moved, nothing says a stroke would begin. After
+   the line above, so it wins where both hold. */
+.photo-window-image.is-space-pan .photo-brush-ring { visibility: hidden; }
+/* A tool's key beside its name in the rail. */
+.photo-tool-key { margin-left: .4em; font-size: .75em; }
+/* „Maske zeigen" under the brush's sliders in „Masken" (photowindow.js, brushVeil). */
+.photo-brush-veil { display: flex; align-items: center; gap: .5rem; cursor: pointer; }
+
+/* The AI starting (photowindow.js, spotsPanel): a bar that runs without
+   saying how far — onnxruntime tells nothing while it builds —, the words
+   beside it. Standing still where the user asked for less motion. */
+.photo-ai-starting { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; color: var(--text-quiet); }
+.photo-ai-starting-bar {
+    position: relative;
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+.photo-ai-starting-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 35%;
+    border-radius: 2px;
+    background: var(--accent);
+    animation: photo-ai-starting 1.4s ease-in-out infinite;
+}
+@keyframes photo-ai-starting { from { left: -35%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .photo-ai-starting-bar::after { animation: none; left: 0; width: 100%; opacity: .5; } }
+
+/* A NEW PICTURE ON ITS WAY (photowindow.js, pictureSwitching): the old one
+   and its development are not shown until it stands — a browser goes on
+   drawing the old picture meanwhile, and fitted it looked like the click's
+   whole answer (18.11.2026). */
+.photo-window-image.is-switching > :is(#photo-image, .photo-develop-canvas) { visibility: hidden; }
+
+/* THE COUNTS OF SECTORS IN THE STATISTICS (photowindow.js, statsCountView):
+   the summary over several caps first and bold — it is what the pane is
+   opened for —, then each sector, its kinds indented under its angle. */
+/* A footnote under the means: quieter than any of them. */
+.photo-stats-note { font-size: .85em; color: var(--text-quiet); margin-top: .25rem; }
+/* WHAT THE NEXT CLICK COUNTS — Lamellen or Lamelletten — in front of the
+   line over the picture, the hint's own buttons (sectorHintSync). */
+.photo-sector-kinds { display: inline-flex; gap: .3rem; margin-right: .6rem; }
+.photo-sector-kinds button { margin-left: 0; }
+.photo-sector-dot { display: inline-block; width: .7em; height: .7em; border-radius: 50%; margin-right: .35em; vertical-align: -.05em; box-shadow: 0 0 0 1px rgba(0, 0, 0, .45); }

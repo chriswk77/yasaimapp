@@ -1,0 +1,343 @@
+Stand: 20. November 2026
+
+YASAIMAPP ist eine Karte für Pilzfunde. Es gibt sie als Webseite unter
+wkpilz.de/map und als Android-App. Die App zeigt dieselbe Webseite an und
+kann zusätzlich Wegstrecken aufzeichnen. Diese Erklärung gilt für beides.
+
+YASAIMAPP enthält keine Werbung, kein Tracking und keine Statistikdienste.
+Skripte, Schriften und die Bilderkennung („Entfernen") kommen vom eigenen
+Server. Die Bilderkennung rechnet auf deinem Gerät, dafür verlässt kein
+Bild das Gerät.
+
+## 1. Verantwortlich
+
+Christian Weinkötz  
+Körnerstraße 1, 65185 Wiesbaden  
+E-Mail: info@wkpilz.de
+
+## 2. Konto und Anmeldung
+
+Ein Konto lässt sich nur mit einem Einladungscode anlegen. Dafür werden
+gespeichert:
+- deine E-Mail-Adresse
+- dein Vor- und Nachname
+- dein Passwort, nur als Hash, also so verschlüsselt, dass niemand es
+  zurücklesen kann
+- später deine Einstellungen, etwa Sprache und Darstellung
+
+Deine E-Mail-Adresse bestätigst du über einen Link, bei der Anmeldung und
+bei jeder Änderung. Rechtsgrundlage ist die Nutzung von YASAIMAPP
+(Art. 6 Abs. 1 lit. b DSGVO).
+
+**Cookies.** YASAIMAPP setzt nur eigene Cookies, keine von Dritten:
+- **Sitzungs-Cookie „kartenapp":** hält deine Anmeldung fest, bis du den
+  Browser schließt.
+- **„Angemeldet bleiben":** nur wenn du es wählst. Ein zweites Cookie
+  mit einem Zufallswert, 90 Tage gültig. Auf dem Server liegt davon nur
+  ein Hash, und mit dem Abmelden wird es ungültig.
+
+Beide Cookies sind technisch notwendig und werden für nichts anderes
+verwendet.
+
+**Fehlgeschlagene Anmeldungen.** Bei einer fehlgeschlagenen Anmeldung
+werden die eingegebene E-Mail-Adresse, deine IP-Adresse und die Uhrzeit
+gespeichert, ebenso bei einer Anfrage „Passwort vergessen". Nach zehn
+Fehlversuchen in 15 Minuten wird die Anmeldung
+gesperrt. Das schützt die Konten davor, dass jemand Passwörter
+durchprobiert (Art. 6 Abs. 1 lit. f DSGVO). Die Einträge zu einer Adresse
+werden gelöscht, sobald eine Anmeldung mit ihr gelingt, alle übrigen nach
+sieben Tagen.
+
+## 3. Was du in YASAIMAPP speicherst
+
+Auf unserem Server liegen deine Einträge, also Text, Zahlen und
+Koordinaten. Bilder und Dateien in voller Größe liegen in deiner eigenen
+Cloud (Abschnitt 4). Ohne Cloud gibt es nur verkleinerte Fotos.
+
+**Auf unserem Server:**
+- **Funde:** Koordinate, Höhe, Gemeinde, Datum, Art oder Titel,
+  Bestimmungssicherheit, Notizen, eigene Felder, Fundnummer und
+  Bestimmungswege
+- **Sequenzen:** als Text, mit Labor, Probennummer und Notiz
+- **Zu jedem Bild:**
+  - Verweis auf die Datei in deiner Cloud: Dateiname, Ordner, Größe,
+    Aufnahmezeit und Fotograf
+  - eine kleine Vorschau (320 Pixel)
+  - Messwerte und Maßstab als Zahlen
+  - die Bearbeitungsschritte
+- **Bildtafeln:** ihr Aufbau und eine kleine Vorschau (640 Pixel)
+- **Belegfotos ohne Cloud:** Fotos, die du ohne verbundene Cloud
+  hochlädst, verkleinert auf höchstens 2048 Pixel. Sie sind das einzige
+  Bildmaterial, das auf unserem Server selbst liegt.
+- **Logos** für den Bildexport
+- **Listen und Sammlungen:** Listen, Mappen, Flächen mit Umriss, Touren
+- **Wegstrecken** aus der App: GPS-Punkte mit Zeit
+- **Gemeinsames:** Freunde, Arbeitsgruppen, Chats, Freigaben und
+  Exkursionen samt den Namen ihrer Gäste
+- **Deine Einwilligung** zur Fundmeldung an die DGfM, falls du sie
+  gegeben hast (siehe Abschnitt 6)
+
+**Nur in deiner Cloud:**
+- deine Fotos in Originalgröße
+- Mikroskopie- und Kalibrierbilder
+- die fertigen Seiten deiner Bildtafeln
+- Masken und Retuschen der Bildbearbeitung
+- sonstige Dateien zu einem Fund, etwa Notizen oder PDFs. Diese sieht nur
+  der, der sie hochgeladen hat.
+
+**Wer was sieht.** Nichts in YASAIMAPP ist öffentlich. Ohne Konto sieht
+man nur die Anmeldeseite. Die einzige Ausnahme sind Exkursionen, die
+jemand per Link oder Code für Gäste öffnet.
+
+Ein neuer Fund ist nur für dich sichtbar. Andere sehen ihn erst, wenn du
+selbst eines davon tust:
+- Du teilst die Liste, in der er liegt, mit ausgewählten Freunden oder
+  einer eigenen Gruppe. Das gilt dann auch für Funde, die du später in
+  diese Liste legst.
+- Du teilst den einzelnen Fund direkt mit einem Freund.
+- Du legst ihn in eine gemeinsame Liste oder nimmst ihn in einer
+  Exkursion auf.
+
+Was ein Empfänger sieht, legst du für jeden einzeln fest, bis hinunter zu
+einzelnen Feldern. Diese Auswahl wird auf dem Server angewandt. Was
+jemand nicht sehen darf, erreicht sein Gerät gar nicht. Freunde und
+Gruppenmitglieder sehen deinen Vornamen und so viel vom Nachnamen, wie
+zur Unterscheidung nötig ist.
+
+**Administratoren** verwalten die Konten. Dabei sehen sie:
+- deinen Namen und deine E-Mail-Adresse
+- seit wann du dabei bist und wann du dich zuletzt angemeldet hast
+- wie viel Speicherplatz deine Fotos auf unserem Server belegen. Was in
+  deiner Cloud liegt, zählt nicht dazu.
+- die Zahl deiner Funde und Listen, aber nicht deren Inhalt
+- ob du der Fundmeldung an die DGfM zugestimmt hast
+- die Papierkörbe der Exkursionen, also von Gästen gelöschte Funde
+
+Eine Ansicht, in der sie deine Funde, Bilder, Chats oder Wegstrecken
+durchsehen könnten, gibt es nicht.
+
+**Fundstellen bleiben geheim.** Auch der Verantwortliche sieht von deinen
+Funden nur, was du ihm freigibst, über eine Freundschaft wie jeder andere
+Nutzer. Als Betreiber des Servers hat er technisch Zugriff auf alles, was
+dort gespeichert ist. Passwörter und Geräteschlüssel liegen dort nur als
+Hash, die Cloud-Zugänge verschlüsselt. Er greift darauf nur zu, wenn
+Betrieb, Fehlersuche oder Datensicherung es verlangen, und nie, um fremde
+Funde anzusehen.
+
+**Gut zu wissen:**
+- **Fotografenname:** Wer einen Fund sieht, sieht auch seine Bilder mit
+  dem Namen des Fotografen und darf sie herunterladen. Der Name des
+  Fotografen steht dann in der Bilddatei.
+- **Mitbesitz:** Hängt jemand ein Bild an deinen Fund, wird er
+  Mitbesitzer. Jeder Mitbesitzer mit verbundener Cloud bekommt eine Kopie
+  aller Bilder dieses Funds in seine Cloud. Endet die Freundschaft,
+  behält jeder seine Kopien.
+- **Angaben in der Bilddatei:** Fundort und Artname können in die
+  Bilddatei geschrieben werden und reisen dann mit ihr.
+- **Exkursionen:** Gäste können ohne eigenes Konto mitmachen. Die Leitung
+  der Exkursion kann ihre Bilder löschen.
+
+## 4. Deine Fotos und deine eigene Cloud
+
+Die Originale deiner Fotos liegen in deiner eigenen Cloud, nicht auf
+unserem Server. Den Anbieter wählst du selbst: pCloud, Google Drive,
+Microsoft OneDrive oder einen S3-kompatiblen Speicher.
+
+Zum Verbinden meldest du dich beim Anbieter an. Unser Server bewahrt
+danach dessen Zugangsschlüssel verschlüsselt auf, getrennt von der
+Datenbank. Damit kann er:
+- Ordner anzeigen und Vorschaubilder holen
+- Dateien umbenennen
+- Bilder zwischen Mitbesitzern eines Funds kopieren
+- Fundort und Namen in Bilddateien schreiben
+- dir nachts eine Sicherung deiner Funde in die Cloud legen, als eine
+  Datei je Monat. Der Server behält davon nichts.
+
+Die Bilder selbst gehen von deinem Gerät direkt in deine Cloud, nicht über
+unseren Server. Für deine Cloud gilt zusätzlich die Datenschutzerklärung
+deines Anbieters. Google und Microsoft sitzen in den USA, pCloud in der
+Schweiz. Die Verbindung kannst du jederzeit selbst trennen.
+
+## 5. Karten und Ortssuche: Dienste, die dein Gerät direkt anspricht
+
+Die Karte lädt ihre Kacheln von den Anbietern unten. Jeder von ihnen
+erfährt dabei deine IP-Adresse und den Kartenausschnitt, den du dir
+ansiehst. Deine Fundpunkte erfährt keiner von ihnen. Die Grundkarte, ihre
+Ersatzkarte und die kleinen Übersichtskarten laden von selbst. Alle
+anderen Ebenen laden nur, wenn du sie einschaltest.
+
+- OpenFreeMap: die Grundkarte
+- OpenStreetMap: Ersatzkarte und kleine Übersichtskarten
+- Mapterhorn: Gelände, Schummerung und Höhenlinien
+- Esri (ArcGIS, USA): Luftbild
+- Bundesamt für Kartographie und Geodäsie: TopPlus-Karte und
+  Ländergrenzen (© GeoBasis-DE / BKG)
+- die Vermessungsverwaltungen der Länder, je nach Ausschnitt: Baden-
+  Württemberg, Bayern, Brandenburg, Bremen, Hessen,
+  Mecklenburg-Vorpommern, Niedersachsen, Nordrhein-Westfalen,
+  Rheinland-Pfalz, Sachsen, Sachsen-Anhalt, Schleswig-Holstein, Thüringen
+- außerdem Wien, swisstopo (Schweiz), Südtirol und Venetien
+- Bundesamt für Naturschutz: Schutzgebiete
+- Europäische Umweltagentur: Natura-2000-Gebiete
+- Deutsches Zentrum für Luft- und Raumfahrt: Baumarten
+- Bundesanstalt für Geowissenschaften und Rohstoffe: Gesteinstyp
+
+Die Ortssuche fragt Nominatim (OpenStreetMap). Dorthin gehen der
+Suchtext, den du eingibst, und deine IP-Adresse.
+
+Rechtsgrundlage ist die Darstellung der Karte, die du aufrufst
+(Art. 6 Abs. 1 lit. b DSGVO).
+
+## 6. Dienste, die unser Server anspricht
+
+Diese Anbieter sehen nur die Adresse unseres Servers, nicht deine. Den
+Inhalt der Anfrage sehen sie aber:
+
+- **Höhe und Gemeinde jedes Funds:** Für jeden Fund holt der Server
+  automatisch die Geländehöhe und die Gemeinde, beim Anlegen und wenn du
+  ihn verschiebst. Dafür geht die genaue Koordinate des Funds an
+  hoehendaten.de, ersatzweise an Open-Meteo, und an Nominatim
+  (OpenStreetMap). Weitere Angaben zum Fund und zu dir gehen nicht mit.
+- **Regenkarte:** Deutscher Wetterdienst, ohne Daten von dir.
+- **DNA-Sequenzen zu einem Artnamen:** NCBI/GenBank und PlutoF/UNITE. Es
+  wird nur der Artname angefragt, ohne Bezug zu dir.
+- **Offline-Karte und Bildarchive:** Der Server holt sie über
+  pCloud-Freigabelinks.
+- **E-Mails:** Bestätigung deiner Adresse, Zurücksetzen des Passworts,
+  Einladungen und die Fundmeldung an die DGfM. Sie gehen über unseren
+  Hoster.
+- **Fundmeldung an die DGfM (MykIS):** Im Juni und im Dezember gehen
+  Fundmeldungen an die Landeskoordinatoren der Deutschen Gesellschaft für
+  Mykologie. Das geschieht nur, wenn du eingewilligt hast. Die Meldung
+  enthält den Fundort in der Genauigkeit, die du gewählt hast, und deinen
+  Namen als Finder. Du kannst die Einwilligung jederzeit widerrufen
+  (Art. 6 Abs. 1 lit. a DSGVO).
+
+## 7. Hosting und Server-Protokolle
+
+Der Server steht bei manitu in Deutschland. Beim Aufruf jeder Seite
+speichert er technische Daten in Protokolldateien: IP-Adresse, Datum und
+Uhrzeit, die aufgerufene Datei, die übertragene Datenmenge, die
+verweisende Seite sowie Browser und Betriebssystem. Das dient allein dem
+sicheren Betrieb (Art. 6 Abs. 1 lit. f DSGVO). manitu löscht die
+Protokolle nach etwa 21 Tagen, ebenso die Protokolle des Mailservers.
+
+**Sicherungskopie.** Damit bei einem Ausfall des Hosters nichts verloren
+geht, legt der Verantwortliche gelegentlich eine Sicherungskopie der
+Datenbank auf seinem eigenen Rechner ab (Art. 6 Abs. 1 lit. f DSGVO). Er
+bewahrt immer nur die letzte auf, jede neue ersetzt die vorige.
+
+## 8. Was auf deinem Gerät bleibt
+
+- **Local Storage:** deine Einstellungen, etwa Ebenen, Filter,
+  zugeklappte Listen und Fenstergrößen.
+- **Programmdateien:** Sie werden zwischengespeichert, damit YASAIMAPP
+  auch ohne Netz startet.
+- **Nur auf deinen Wunsch:** Kartenkacheln, Schutzgebiete, Namenslisten,
+  deine Punkte und Originalbilder. Du kannst sie einzeln löschen, unter
+  Verwaltung → Offline.
+- **Unterwegs ohne Netz:** Punkte, die du dann anlegst, warten auf dem
+  Gerät, bis wieder Netz da ist.
+
+## 9. Die Android-App
+
+Die App zeigt die Webseite in einem eigenen Fenster. Alles oben Gesagte
+gilt deshalb auch in der App. Ihr Speicher ist von dem deines Browsers
+getrennt. Darüber hinaus gilt für die App:
+
+**Standort.** Die App fragt nach dem genauen Standort. Sie braucht ihn für
+deine Position auf der Karte und für die Aufzeichnung von Wegstrecken.
+
+So läuft eine Aufzeichnung:
+- Du startest sie selbst.
+- Sie läuft auch bei ausgeschaltetem Bildschirm weiter. Solange sie
+  läuft, steht in der Statusleiste eine Benachrichtigung mit einer
+  Stopp-Taste.
+- Die Positionen werden auf dem Gerät gespeichert.
+- Beim Beenden entscheidest du: „Speichern" überträgt die Strecke an
+  unseren Server, „Nicht speichern" löscht sie vom Gerät.
+- Eine übertragene Strecke bleibt zur Sicherheit auch auf dem Gerät, bis
+  du sie in der App löschst.
+
+Außerhalb einer laufenden Aufzeichnung fragt die App den Standort nie im
+Hintergrund ab.
+
+**Kopplung.** Damit die App Strecken hochladen darf, koppelst du sie
+einmal mit deinem Konto. Den Geräteschlüssel dafür speichert die App
+verschlüsselt im Schlüsselspeicher von Android. Er ist von
+Datensicherungen ausgenommen. Auf dem Server liegt davon nur ein Hash,
+zusammen mit dem Gerätenamen und dem Zeitpunkt der letzten Verbindung.
+Unter Einstellungen → Geräte siehst du jedes gekoppelte Gerät und kannst
+es mit einem Klick entfernen.
+
+**Kamera und Galerie.** Fotos nimmt die Kamera-App deines Handys auf. Die
+App selbst hat keine Kamera-Berechtigung. Jedes so aufgenommene Foto legt
+die App in der Galerie deines Handys ab, im Album „YASAIMAPP". Das Original
+überträgt sie auf deinen Wunsch in deine Cloud (siehe Abschnitt 4). Ob das
+nur im WLAN oder auch über mobile Daten geschieht, legst du fest. Sobald
+das Bild in der Cloud deinem Fund zugeordnet ist, löscht die App das
+Original aus der Galerie. Ein Foto, das nie in die Cloud gelangt, bleibt
+als gewöhnliches Foto in der Galerie.
+
+**Weitere Berechtigungen:**
+- Benachrichtigungen: für die Anzeige der laufenden Aufzeichnung.
+- Ausnahme vom Energiesparen: damit die Aufzeichnung in der Tasche nicht
+  abbricht.
+- Internet.
+- Netzwerkstatus: um zu erkennen, ob du im WLAN bist.
+
+**Ohne fremde Bausteine.** Die App enthält keine Werbung, keine Analyse,
+keine Absturzberichte und keine Bausteine anderer Anbieter, die Daten
+sammeln.
+
+**Kompass.** Die Karte liest den Lagesensor deines Handys, um deine
+Blickrichtung anzuzeigen. Diese Werte bleiben auf dem Gerät.
+
+## 10. Löschen und Aufbewahrung
+
+Deine Daten bleiben gespeichert, bis du sie löschst oder dein Konto
+gelöscht wird. Ausnahmen sind die Fristen oben: das Cookie
+„Angemeldet bleiben" und die Protokolle des Servers. Was du löschst, kann
+noch in der Sicherungskopie (Abschnitt 7) stehen, bis die nächste sie
+ersetzt.
+
+Was du selbst löschen kannst:
+- **Funde:** Sie wandern zuerst in deinen Papierkorb und lassen sich von
+  dort wiederherstellen. Mit „Endgültig" sind sie gelöscht. Der
+  Papierkorb leert sich nicht von selbst.
+- **Eigene Bilder:** Löschst du ein Bild an einem gemeinsamen Fund,
+  verschwindet es bei allen. Die Datei in deiner Cloud bleibt, bis du sie
+  dort selbst löschst.
+- **Wegstrecken:** einzeln in der App und auf der Karte.
+- **Offline-Material:** einzeln unter Verwaltung → Offline.
+- **Cloud-Verbindung und gekoppelte Geräte:** jederzeit selbst trennen.
+
+**Konto:** Dein Konto löschen wir auf Anfrage an info@wkpilz.de.
+
+Was dabei gelöscht wird:
+- alle zum Konto gespeicherten Daten auf dem Server
+- deine Belegfotos, Vorschaubilder und Logos
+
+Gemeinsame Listen gehen vorher an das Mitglied über, das am längsten
+mitarbeitet. Die Bilder in deiner eigenen Cloud bleiben dir. Kopien, die
+Mitbesitzer eines Funds schon in ihrer Cloud haben, bleiben bei ihnen.
+
+## 11. Deine Rechte
+
+Du hast das Recht auf
+- Auskunft über deine Daten (Art. 15 DSGVO),
+- Berichtigung (Art. 16),
+- Löschung (Art. 17),
+- Einschränkung der Verarbeitung (Art. 18),
+- Datenübertragbarkeit (Art. 20),
+- Widerspruch (Art. 21) und
+- Widerruf einer Einwilligung (Art. 7 Abs. 3).
+
+Schreib dazu an info@wkpilz.de. Du kannst dich außerdem bei einer
+Datenschutz-Aufsichtsbehörde beschweren, etwa beim Hessischen
+Beauftragten für Datenschutz und Informationsfreiheit in Wiesbaden.
+
+## 12. Änderungen
+
+Ändert sich etwas an YASAIMAPP, das diese Erklärung berührt, wird sie
+angepasst. Es gilt die Fassung mit dem neuesten Stand.

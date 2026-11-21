@@ -1,0 +1,291 @@
+# Deployment to the live server via SFTP.
+#
+# Runs on every push to main. Can be triggered by hand, then with a dry run
+# as the default.
+#
+# WHY SFTP AND NOT FTPS
+# The first attempt went over FTPS and failed reproducibly: ECONNRESET on
+# the data channel at the first write, after which the server locked out the
+# runner IP entirely. FTP needs two connections, and the second is exactly
+# the one that breaks here. SFTP gets by with a single one.
+#
+# WHY sftp AND NOT rsync OR lftp
+# What runs on port 23 is not OpenSSH but ProFTPD's mod_sftp. It speaks the
+# SFTP protocol but provides neither a shell nor an exec channel — which
+# rules out rsync and scp. lftp would be the next candidate, but wants its
+# own password for the address and fails non-interactively with "GetPass()
+# failed"; sshpass only feeds the ssh underneath. That leaves sftp in batch
+# mode — and it has one virtue: the file list comes from "git ls-files", not
+# from the pattern language of a third-party tool. What goes up is thereby
+# verifiable locally.
+#
+# Login is by password; mod_sftp offers no publickey on this server
+# (checked: "Permission denied (password)").
+#
+# ONLY WHAT CHANGED IS UPLOADED — SINCE 24.08.2026. The full upload was
+# the right call at 47 files and 600 kB ("takes seconds"); at 253 files
+# and 5.3 MB the sequential puts took minutes, latency times file count
+# (the maintainer felt it before the numbers said it). The virtue of the full
+# run was that an aborted attempt healed itself — no state that could
+# drift. That virtue SURVIVES the rebuild, and this is how:
+#
+#   The server carries a memo file, .ht-deployed-sha — the commit of the
+#   last SUCCESSFUL run. The .ht prefix keeps Apache from serving it
+#   with zero configuration — measured on 24.08.2026: the live server
+#   answers 403 for /.htaccess, so the built-in ^.ht block is active.
+#   Should a future host not honor it, the file leaks nothing but a
+#   commit hash — the .htaccess-based hardening of config and includes
+#   would be broken long before that mattered. A run first fetches the
+#   memo, uploads only
+#   git diff against it, and writes the NEW sha as the LAST command of
+#   the same batch — sftp -b aborts on the first error, so the memo only
+#   ever advances when everything before it arrived. A broken run leaves
+#   the old memo, and the next run carries the gap along by itself.
+#
+#   THE FULL RUN REMAINS as the fallback and the lever: it happens by
+#   itself when the memo is missing or names a commit that is no
+#   ancestor of HEAD (force-push, rewritten history) — and by hand via
+#   workflow_dispatch with "full_run". Deleted files still deploy as
+#   no-ops: the diff filters them out, and this deployment never deletes
+#   anyway.
+#
+# WHAT DOES NOT GO ALONG — and why:
+#   data/taxonomie/    9 MB of reference data. Second backup in the
+#                       repository, not part of the application: applied by
+#                       hand.
+#   config.sample.php   A template for humans, purposeless on the server.
+#   export files        *.csv, *.gpx, *.kml and relatives. They sit in
+#                       .gitignore anyway; repeated here as a second net
+#                       under the one file that must never reach a server:
+#                       a Takeout export holds the find locations in plain
+#                       text.
+#
+# WHAT MUST GO ALONG and is easily overlooked:
+#   .htaccess           The entire hardening of the server sits in it.
+#   data/.htaccess     Locks the data directory ("Deny from all"). That is
+#                       why data/ is not excluded wholesale — only its
+#                       taxonomie subfolder.
+#   migrations/*.sql    includes/migrations.php reads them at runtime from
+#                       the server. If they are missing there,
+#                       admin/migrations.php has nothing to apply.
+#
+# NOTHING IS DELETED. The batch knows only "put" and "-mkdir". On the server
+# sit the uploaded photos under data/fotos/ and possibly the config.php,
+# and neither is in the repository. The flip side: a file removed from the
+# repository stays on the server and has to be removed there by hand.
+#
+# NOT AUTOMATED and still handwork:
+#   - database migrations (open admin/migrations.php on the server)
+#   - config.php resp. ../map-config.php (deliberately lives only on the
+#     server)
+
+name: Deploy zum Live-Server
+
+on:
+  push:
+    branches: [main]
+
+  # Manually triggerable — with a dry run as the default.
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Probelauf: nur anzeigen, was passieren wuerde"
+        type: boolean
+        default: true
+      full_run:
+        description: "Volllauf: alles hochladen statt nur des Diffs"
+        type: boolean
+        default: false
+
+# Two simultaneous deployments would get in each other's way on the server.
+# Running ones are not cancelled; the next one waits instead: an upload
+# strangled midway leaves a half-updated server behind.
+concurrency:
+  group: deploy-live
+  cancel-in-progress: false
+
+env:
+  ZIEL: /web/wkpilz.de/map
+  SFTP_PORT: "23"
+
+  # Regular expression over the paths from git ls-files. What matches stays
+  # home.
+  #
+  # setup.php has been in here since initial setup: the page creates the
+  # first account and makes it the administrator. It does lock itself as
+  # soon as an account exists — but only as long as map_users exists and is
+  # filled. On a set-up server it has no business anymore. For a future
+  # fresh install it stays in the repository and is then uploaded by hand;
+  # exactly that deliberateness is the point.
+  # data/taxonomie/ stays out — and that matters more than it looks: on
+  # the server, that is where the transfer files uploaded by hand live.
+  # Because this deployment deletes nothing, they stay put; because it does
+  # not know them, it also never uploads them again.
+  #
+  # .md stays out as well. Nobody reads Markdown at runtime here — they are
+  # development notes, and those have no business in an open web directory.
+  # The .htaccess does block config.php, migrations/, data/ and includes/,
+  # but no .md extension: CLAUDE.md would have been reachable under its
+  # address, along with the administration paths written in it.
+  #
+  # Exports (.csv, .gpx, .kml, .kmz, .geojson) stay out ONLY AT THE ROOT,
+  # where an export lands when someone saves one into the project folder —
+  # the same place .gitignore refuses them. Deeper down a tracked file of
+  # that kind is deliberate: data/dgfm/marks.csv is the DGfM's four lists,
+  # read by the administration (17.09.2026 — the first deployment after
+  # its commit left it home, and „Listen einlesen" found nothing to read).
+  AUSSCHLUSS: '^\.git|^\.claude/|^tests/|^data/taxonomie/|^config\.sample\.php$|^pages/setup\.php$|^takeout.*\.zip$|^[^/]+\.(csv|gpx|kml|kmz|geojson)$|\.md$|\.DS_Store$'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v7
+        with:
+          # The diff against the memoed commit needs history — the default
+          # shallow clone knows only HEAD, and every memo would look like
+          # a stranger, forcing the full run forever.
+          fetch-depth: 0
+
+      # Without this check a missing secret ends in a meaningless connection
+      # error in the middle of the log.
+      - name: Zugangsdaten vorhanden?
+        env:
+          server: ${{ secrets.FTP_SERVER }}
+          benutzer: ${{ secrets.FTP_USERNAME }}
+          passwort: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          fehlt=""
+          [ -n "$server" ]   || fehlt="$fehlt FTP_SERVER"
+          [ -n "$benutzer" ] || fehlt="$fehlt FTP_USERNAME"
+          [ -n "$passwort" ] || fehlt="$fehlt FTP_PASSWORD"
+          if [ -n "$fehlt" ]; then
+            echo "::error::Diese Geheimnisse fehlen in den Einstellungen dieses Repositories:$fehlt"
+            exit 1
+          fi
+
+      # The runner ships sftp already (openssh-client), sshpass it does not.
+      - name: sshpass einrichten
+        run: sudo apt-get install -y -qq sshpass
+
+      # The memo of the last successful run — tolerated to fail: on the
+      # first run (or after someone removed the file to force a full
+      # upload) it simply is not there, and the batch step below reads
+      # its absence as "everything". In a dry run nothing is fetched;
+      # the log then shows the full list, which is the honest worst case.
+      - name: Letzten Stand vom Server holen
+        if: ${{ inputs.dry_run != true }}
+        env:
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_USER: ${{ secrets.FTP_USERNAME }}
+          SSHPASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          sshpass -e sftp \
+            -oPort="$SFTP_PORT" \
+            -oBatchMode=no \
+            -oStrictHostKeyChecking=no \
+            -oUserKnownHostsFile=/dev/null \
+            -oLogLevel=ERROR \
+            -b - \
+            "$SFTP_USER@$SFTP_HOST" <<< "get $ZIEL/.ht-deployed-sha /tmp/deployed-sha" \
+            || echo "Keine Merkdatei auf dem Server — es wird alles hochgeladen."
+
+      # The batch is built in its own step so it can be read in the log in
+      # full — even when the transfer afterwards fails. Exactly that was
+      # missing in the FTPS attempt.
+      - name: Stapel zusammenstellen
+        env:
+          FULL_RUN: ${{ inputs.full_run == true && 'ja' || '' }}
+        run: |
+          set -euo pipefail
+
+          # The base of the diff: the memoed commit — IF it exists, is
+          # known here, and is an ancestor of HEAD. Anything else (first
+          # run, force-push, rewritten history, requested full run) falls
+          # back to everything: better minutes than a hole.
+          BASIS=""
+          if [ -z "$FULL_RUN" ] && [ -s /tmp/deployed-sha ]; then
+            KANDIDAT=$(tr -d '[:space:]' < /tmp/deployed-sha)
+            if git cat-file -e "$KANDIDAT^{commit}" 2>/dev/null \
+               && git merge-base --is-ancestor "$KANDIDAT" "$GITHUB_SHA"; then
+              BASIS="$KANDIDAT"
+            fi
+          fi
+
+          if [ -n "$BASIS" ]; then
+            echo "Diff seit $BASIS"
+            # --diff-filter=d: deleted files cannot be uploaded, and this
+            # deployment never deletes anyway. Renames appear as their new
+            # path, which is exactly what put needs.
+            LISTE=$(git diff --name-only --diff-filter=d "$BASIS" "$GITHUB_SHA" \
+              | grep -vE "$AUSSCHLUSS" || true)
+          else
+            echo "Volllauf"
+            LISTE=$(git ls-files | grep -vE "$AUSSCHLUSS")
+          fi
+          printf '%s\n' "$LISTE" | sed '/^$/d' > /tmp/dateien.txt
+          echo "Hochzuladen: $(wc -l < /tmp/dateien.txt) Dateien"
+
+          # The NEW memo, written as the LAST command of the batch below:
+          # sftp -b aborts on the first error, so the memo only advances
+          # when everything before it arrived — that is the whole
+          # self-healing.
+          printf '%s\n' "$GITHUB_SHA" > /tmp/neue-sha
+
+          # All directories including the intermediate levels. dirname alone
+          # is not enough: assets/vendor never appears in it, because no
+          # file sits there directly — only in assets/vendor/leaflet.
+          # Sorted lexicographically, parent directories precede their
+          # children, so the order is right by itself.
+          {
+            echo "-mkdir $ZIEL"
+            # -r: with an empty diff there is nothing to derive directories
+            # from — without it, xargs would run dirname argument-less and
+            # trip the pipeline.
+            xargs -r -n1 dirname < /tmp/dateien.txt \
+              | grep -v '^\.$' \
+              | awk -F/ '{p=""; for(i=1;i<=NF;i++){p=(i==1?$i:p"/"$i); print p}}' \
+              | sort -u \
+              | sed "s|^|-mkdir $ZIEL/|" || true
+            sed "s|^\(.*\)$|put \1 $ZIEL/\1|" /tmp/dateien.txt
+            # LAST, and deliberately so — see the memo note above.
+            echo "put /tmp/neue-sha $ZIEL/.ht-deployed-sha"
+          } > /tmp/stapel.txt
+
+          echo "Stapel: $(wc -l < /tmp/stapel.txt) Befehle"
+          echo "----------------------------------------"
+          cat /tmp/stapel.txt
+
+      - name: Per SFTP übertragen
+        if: ${{ inputs.dry_run != true }}
+        env:
+          SFTP_HOST: ${{ secrets.FTP_SERVER }}
+          SFTP_USER: ${{ secrets.FTP_USERNAME }}
+          # sshpass reads the password from this variable. That way it sits
+          # neither on the command line nor in the batch.
+          SSHPASS: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # BatchMode=no is needed so ssh asks for the password at all —
+          # otherwise sshpass has nothing to answer to.
+          #
+          # StrictHostKeyChecking=no, because every runner starts fresh and
+          # consequently never knows the server key. That gives up the
+          # protection against a player in the line. Whoever wants it stores
+          # the key as a repository variable and passes it in via
+          # UserKnownHostsFile.
+          sshpass -e sftp \
+            -oPort="$SFTP_PORT" \
+            -oBatchMode=no \
+            -oStrictHostKeyChecking=no \
+            -oUserKnownHostsFile=/dev/null \
+            -oLogLevel=ERROR \
+            -b /tmp/stapel.txt \
+            "$SFTP_USER@$SFTP_HOST"
+
+      - name: Probelauf — nichts übertragen
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "Probelauf — der Stapel oben wurde zusammengestellt, aber nicht ausgeführt."

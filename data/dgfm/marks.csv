@@ -1,0 +1,451 @@
+list;name;genus;species;german;value;remark;syndrome;source_date
+edible;Agaricus altipes;;Agaricus altipes;Sommer-Champignon;;RL G;;2026-05-01
+edible;Agaricus arvensis;;Agaricus arvensis;Anis-Egerling;;;;2026-05-01
+edible;Agaricus augustus;;Agaricus augustus;Riesen-Egerling;;;;2026-05-01
+edible;Agaricus bisporus;;Agaricus bisporus;Weißer und Brauner Zucht- Champignon;;;;2026-05-01
+edible;Agaricus campestris;;Agaricus campestris;Wiesen-Champignon, Feld- Champignon;;;;2026-05-01
+edible;Agaricus langei;;Agaricus langei;Großer Wald-Champignon, Blut- Egerling;;;;2026-05-01
+edible;Agaricus silvaticus;;Agaricus silvaticus;Wald-Champignon;;;;2026-05-01
+edible;Agaricus silvicola;;Agaricus silvicola;Dünnfleischiger Anis-Egerling;;;;2026-05-01
+edible;Albatrellus confluens;;Albatrellus confluens;Semmel-Porling;;§§, RL 3;;2026-05-01
+edible;Albatrellus ovinus;;Albatrellus ovinus;Gemeiner Schafeuter-Porling;;§§, RL V;;2026-05-01
+edible;Albatrellus pes-caprae;;Albatrellus pes-caprae;Ziegenfuß-Porling;;§§, RL 2;;2026-05-01
+edible;Amanita caesarea;;Amanita caesarea;Kaiserling;;§§, RL G;;2026-05-01
+edible;Amanita excelsa;;Amanita excelsa;Grauer Wulstling;;;;2026-05-01
+edible;Amanita rubescens;;Amanita rubescens;Perlpilz;;;;2026-05-01
+edible;Amanita strobiliformis;;Amanita strobiliformis;Fransen-Wulstling;;;;2026-05-01
+edible;Amanitopsis ceciliae;;Amanitopsis ceciliae;Riesen-Scheidenstreifling;;;;2026-05-01
+edible;Amanitopsis crocea;;Amanitopsis crocea;Orangegelber Scheidenstreifling;;;;2026-05-01
+edible;Amanitopsis fulva;;Amanitopsis fulva;Rotbrauner Scheidenstreifling;;;;2026-05-01
+edible;Amanitopsis vaginata s.l.;;Amanitopsis vaginata;Grauer Scheidenstreifling Vermutlich sind noch weitere Amanitopsis- Arten essbar, jedoch ist darüber zu wenig bekannt, auch kann die sichere Identifizierung der einzelnen Arten problematisch sein.;;;;2026-05-01
+edible;Aureoboletus projectellus;;Aureoboletus projectellus;Falsche Rotkappe;;;;2026-05-01
+edible;Auricularia auricula-judae;;Auricularia auricula-judae;Judasohr;;;;2026-05-01
+edible;Auricularia cornea s.l.;;Auricularia cornea;Chinesische Morchel;;;;2026-05-01
+edible;Boletus aereus;;Boletus aereus;Schwarzhütiger Steinpilz;;§§, RL V;;2026-05-01
+edible;Boletus edulis;;Boletus edulis;Steinpilz, Fichten-Steinpilz;;§;;2026-05-01
+edible;Boletus pinophilus;;Boletus pinophilus;Kiefern-Steinpilz;;RL V;;2026-05-01
+edible;Boletus reticulatus;;Boletus reticulatus;Sommer-Steinpilz;;;;2026-05-01
+edible;Butyriboletus appendiculatus;;Butyriboletus appendiculatus;Echter Anhängsel-Röhrling;;§§, RL 3;;2026-05-01
+edible;Butyriboletus fechtneri;;Butyriboletus fechtneri;Silber-Röhrling, Sommer-Röhrling;;§§, RL 2;;2026-05-01
+edible;Butyriboletus regius;;Butyriboletus regius;Königs-Röhrling;;§§, RL 2;;2026-05-01
+edible;Butyriboletus subappendiculatus;;Butyriboletus subappendiculatus;Nadelwald-Anhängsel-Röhrling und weitere Arten;;§§ §§;;2026-05-01
+edible;Calocybe gambosa;;Calocybe gambosa;Mairitterling, Maipilz;;;;2026-05-01
+edible;Cantharellus amethysteus;;Cantharellus amethysteus;Amethyst-Pfifferling;;§;;2026-05-01
+edible;Cantharellus cibarius;;Cantharellus cibarius;Gemeiner Pfifferling;;§;;2026-05-01
+edible;Cantharellus cinereus;;Cantharellus cinereus;Grauer Leistling;;§, RL 3;;2026-05-01
+edible;Cantharellus friesii;;Cantharellus friesii;Aprikosen-Pfifferling;;§, RL G;;2026-05-01
+edible;Cantharellus subpruinosus;;Cantharellus subpruinosus;Bereifter Pfifferling;;§;;2026-05-01
+edible;Cantharellus tubaeformis;;Cantharellus tubaeformis;Trompeten-Pfifferling;;§;;2026-05-01
+edible;Cathathelasma imperiale;;Cathathelasma imperiale;Wurzel-Möhrling;;RL 3;;2026-05-01
+edible;Chlorophyllum olivieri;;Chlorophyllum olivieri;Olivbrauner Safranschirmling;;;;2026-05-01
+edible;Chroogomphus helveticus;;Chroogomphus helveticus;Filziger Gelbfuß;;;;2026-05-01
+edible;Chroogomphus rutilus agg.;;Chroogomphus rutilus;Kupferroter Gelbfuß;;;;2026-05-01
+edible;Clitocybe odora;;Clitocybe odora;Grüner Anistrichterling;;;;2026-05-01
+edible;Clitopilus prunulus;;Clitopilus prunulus;Mehl-Räsling;;;;2026-05-01
+edible;Clitopilus geminus;;Clitopilus geminus;Würziger Tellerling;;;;2026-05-01
+edible;Coprinus comatus;;Coprinus comatus;Schopf-Tintling, Spargelpilz;;;;2026-05-01
+edible;Cortinarius caperatus;;Cortinarius caperatus;Reifpilz, Zigeuner;;;;2026-05-01
+edible;Cortinarius collinitus;;Cortinarius collinitus;Blaustiel-Schleimfuß;;RL G;;2026-05-01
+edible;Cortinarius elatior;;Cortinarius elatior;Langstieliger Schleimfuß;;;;2026-05-01
+edible;Cortinarius mucosus;;Cortinarius mucosus;Heide-Schleimfuß;;RL 3;;2026-05-01
+edible;Cortinarius praestans;;Cortinarius praestans;Schleiereule;;RL V;;2026-05-01
+edible;Cortinarius stillatitius;;Cortinarius stillatitius;Honig-Schleimfuß;;;;2026-05-01
+edible;Cortinarius triumphans;;Cortinarius triumphans;Gelbgegürtelter Schleimkopf;;RL 3;;2026-05-01
+edible;Cortinarius varius;;Cortinarius varius;Semmelgelber Schleimkopf;;;;2026-05-01
+edible;Cortinarius violaceus;;Cortinarius violaceus;Dunkelvioletter Dickfuß;;;;2026-05-01
+edible;Craterellus cornucopioides;;Craterellus cornucopioides;Totentrompete, Herbsttrompete;;;;2026-05-01
+edible;Craterellus lutescens;;Craterellus lutescens;Starkriechender Leistling;;§;;2026-05-01
+edible;Craterellus sinuosus, undulatus;;Craterellus sinuosus;Krauser Leistling;;RL V;;2026-05-01
+edible;Craterellus sinuosus, undulatus;;Craterellus undulatus;Krauser Leistling;;RL V;;2026-05-01
+edible;Cuphophyllus pratensis;;Cuphophyllus pratensis;Orange-Ellerling, Wiesen-Ellerling;;§§, RL 3;;2026-05-01
+edible;Cuphophyllus virgineus;;Cuphophyllus virgineus;Schneeweißer Ellerling;;§§;;2026-05-01
+edible;Cyclocybe cylindracea;;Cyclocybe cylindracea;Südlicher Ackerling, Pioppino;;;;2026-05-01
+edible;Disciotis venosa;;Disciotis venosa;Aderiger Morchelbecherling;;RL G;;2026-05-01
+edible;Entoloma clypeatum;;Entoloma clypeatum;Schild-Rötling;;RL V;;2026-05-01
+edible;Entoloma sepium;;Entoloma sepium;Hecken-Rötling, Schlehenrötling;;RL V;;2026-05-01
+edible;Flammulina velutipes s.l.;;Flammulina velutipes;Gemeiner Samtfußrübling;;;;2026-05-01
+edible;Fistulina hepatica;;Fistulina hepatica;Leberreischling;;;;2026-05-01
+edible;Gomphidius glutinosus;;Gomphidius glutinosus;Großer Schmierling, Kuhmaul;;;;2026-05-01
+edible;Gomphidius maculatus;;Gomphidius maculatus;Gefleckter Schmierling;;;;2026-05-01
+edible;Gomphidius roseus;;Gomphidius roseus;Rosenroter Schmierling;;;;2026-05-01
+edible;Gomphus clavatus;;Gomphus clavatus;Schweinsohr;;§, RL 3;;2026-05-01
+edible;Grifola frondosa;;Grifola frondosa;Gemeiner Klapperschwamm;;RL 3;;2026-05-01
+edible;Gyroporus castaneus;;Gyroporus castaneus;Hasen-Röhrling;;RL G;;2026-05-01
+edible;Gyroporus cyanescens;;Gyroporus cyanescens;Kornblumen-Röhrling;;RL G;;2026-05-01
+edible;Hemileccinum depilatum;;Hemileccinum depilatum;Gefleckthütiger Röhrling;;RL G;;2026-05-01
+edible;Hemileccinum impolitum;;Hemileccinum impolitum;Fahler Röhrling;;RL 3;;2026-05-01
+edible;Hericium coralloides;;Hericium coralloides;Ästiger Stachelbart;;RL G;;2026-05-01
+edible;Hericium erinaceum;;Hericium erinaceum;Igel-Stachelbart;;RL 2;;2026-05-01
+edible;Hortiboletus engelii;;Hortiboletus engelii;Eichen-Parkröhrling;;;;2026-05-01
+edible;Hortiboletus rubellus;;Hortiboletus rubellus;Blutroter Röhrling;;;;2026-05-01
+edible;Hydnum albidum;;Hydnum albidum;Weißer Stoppelpilz;;RL G;;2026-05-01
+edible;Hydnum rufescens;;Hydnum rufescens;Rotgelber Semmelstoppelpilz;;;;2026-05-01
+edible;Hydnum repandum;;Hydnum repandum;Semmel-Stoppelpilz;;;;2026-05-01
+edible;Hygrophorus agathosmus;;Hygrophorus agathosmus;Wohlriechender Schneckling;;;;2026-05-01
+edible;Hygrophorus discoideus;;Hygrophorus discoideus;Braunscheibiger Schneckling;;;;2026-05-01
+edible;Hygrophorus hypothejus;;Hygrophorus hypothejus;Frost-Schneckling;;;;2026-05-01
+edible;Hygrophorus latitabundus;;Hygrophorus latitabundus;Großer Kiefern-Schneckling;;RL 3;;2026-05-01
+edible;Hygrophorus marzuolus;;Hygrophorus marzuolus;März-Schneckling;;§§, RL 2;;2026-05-01
+edible;Hygrophorus nemoreus;;Hygrophorus nemoreus;Wald-Schneckling;;RL V;;2026-05-01
+edible;Hygrophorus olivaceoalbus;;Hygrophorus olivaceoalbus;Natternstieliger Schneckling;;;;2026-05-01
+edible;Hygrophorus penarius;;Hygrophorus penarius;Trockner Schneckling;;;;2026-05-01
+edible;Hygrophorus poetarum;;Hygrophorus poetarum;Isabellrötlicher Schneckling;;;;2026-05-01
+edible;Hygrophorus pustulatus;;Hygrophorus pustulatus;Pustel-Schneckling;;;;2026-05-01
+edible;Hypholoma capnoides;;Hypholoma capnoides;Rauchblättriger Schwefelkopf;;;;2026-05-01
+edible;Imleria badia;;Imleria badia;Maronen-Röhrling;;;;2026-05-01
+edible;Infundibulicybe geotropa;;Infundibulicybe geotropa;Mönchskopf;;;;2026-05-01
+edible;Infundibulicybe gibba;;Infundibulicybe gibba;Ockerbrauner Trichterling;;;;2026-05-01
+edible;Kuehneromyces mutabilis;;Kuehneromyces mutabilis;Gemeines Stockschwämmchen;;;;2026-05-01
+edible;Laccaria amethystina;;Laccaria amethystina;Violetter Lacktrichterling;;;;2026-05-01
+edible;Laccaria laccata s.l.;;Laccaria laccata;Rötlicher Lacktrichterling;;;;2026-05-01
+edible;Lactarius deliciosus;;Lactarius deliciosus;Echter Reizker, Edel-Reizker;;;;2026-05-01
+edible;Lactarius deterrimus;;Lactarius deterrimus;Fichten-Reizker;;;;2026-05-01
+edible;Lactarius lignyotus;;Lactarius lignyotus;Mohrenkopf;;RL 3;;2026-05-01
+edible;Lactarius porninsis;;Lactarius porninsis;Lärchenmilchling;;;;2026-05-01
+edible;Lactarius salmonicolor;;Lactarius salmonicolor;Lachs-Reizker;;;;2026-05-01
+edible;Lactarius sanguifluus;;Lactarius sanguifluus;Blut-Reizker;;RL 2;;2026-05-01
+edible;Lactarius semisanguifluus;;Lactarius semisanguifluus;Kiefern-Reizker;;RL 3;;2026-05-01
+edible;Lactifluus piperatus;;Lactifluus piperatus;Langstieliger Pfeffermilchling;;Kräftig durchbraten!;;2026-05-01
+edible;Lactifluus volemus s.l;;Lactifluus volemus;Brätling;;§, RL V;;2026-05-01
+edible;Langermannia gigantea;;Langermannia gigantea;Riesenbovist;;;;2026-05-01
+edible;Leccinellum crocipodium;;Leccinellum crocipodium;Gelber Raufuß;;§, RL 3;;2026-05-01
+edible;Leccinellum pseudoscabrum;;Leccinellum pseudoscabrum;Hainbuchen-Raufuß;;§;;2026-05-01
+edible;Leccinum duriusculum;;Leccinum duriusculum;Pappel-Raufuß, Pappelröhrling;;§, RL 3;;2026-05-01
+edible;Leccinum leucopodium;;Leccinum leucopodium;Espen-Rotkappe;;§;;2026-05-01
+edible;Leccinum quercinum;;Leccinum quercinum;Eichen-Rotkappe;;§, RL G;;2026-05-01
+edible;Leccinum scabrum s.l.;;Leccinum scabrum;Birkenpilz;;§;;2026-05-01
+edible;Leccinum versipelle;;Leccinum versipelle;Birken-Rotkappe, Heide-Rotkappe;;§;;2026-05-01
+edible;Leccinum vulpinum s.l.;;Leccinum vulpinum;Nadelwald-Rotkappe, Kiefern- Rotkappe;;§, RL 2;;2026-05-01
+edible;Lentinula edodes;;Lentinula edodes;Shiitake;;Selten: Shiitake- Dermatitis;;2026-05-01
+edible;Lepista nuda;;Lepista nuda;Violetter Rötelritterling;;;;2026-05-01
+edible;Lepista panaeolus;;Lepista panaeolus;Marmorierter Rötelritterling;;RL V;;2026-05-01
+edible;Lepista personata;;Lepista personata;Lilastiel-Rötelritterling;;RL 3;;2026-05-01
+edible;Lepista sordida;;Lepista sordida;Schmutziger Rötelritterling;;;;2026-05-01
+edible;Aspropaxillus giganteus giganteus;;Aspropaxillus giganteus;Riesen-Krempenritterling;;RL G;;2026-05-01
+edible;Limacella guttata;;Limacella guttata;Getropfter Schleimschirmling;;RL V;;2026-05-01
+edible;Lycoperdon perlatum;;Lycoperdon perlatum;Flaschen-Stäubling;;;;2026-05-01
+edible;Lycoperdon utriformis;;Lycoperdon utriformis;Hasen-Stäubling;;;;2026-05-01
+edible;Lyophyllum decastes s.l.;;Lyophyllum decastes;Büschel-Rasling;;;;2026-05-01
+edible;Macrolepiota excoriata;;Macrolepiota excoriata;Acker-Riesenschirmling;;RL 3;;2026-05-01
+edible;Macrolepiota mastoidea s.l.;;Macrolepiota mastoidea;Zitzen-Riesenschirmling;;;;2026-05-01
+edible;Macrolepiota procera s.l.;;Macrolepiota procera;Parasol, Riesenschirmling;;;;2026-05-01
+edible;Marasmius oreades;;Marasmius oreades;Nelkenschwindling;;;;2026-05-01
+edible;Mycetinis scorodonius;;Mycetinis scorodonius;Mousseron, Echter Knoblauchschwindling;;;;2026-05-01
+edible;Mycentinis alliaceus;;Mycentinis alliaceus;Langstieliger Knoblauchschwindling;;;;2026-05-01
+edible;Melanolecua cognata;;Melanolecua cognata;Frühlings-Weichritterling;;;;2026-05-01
+edible;Meripilu giganteus;;Meripilu giganteus;Riesenporling;;;;2026-05-01
+edible;Neoboletus erythropus praestigiator;;Neoboletus erythropus;Flockenstieliger Hexenröhrling;;;;2026-05-01
+edible;Otidea onotica;;Otidea onotica;Eselsohr;;;;2026-05-01
+edible;Phallus impudicus;;Phallus impudicus;Gemeine Stinkmorchel;;Jung essbar als Hexeneier;;2026-05-01
+edible;Phylloporus pelletieri s.l.;;Phylloporus pelletieri;Goldblatt;;;;2026-05-01
+edible;Pisolithus arhizus;;Pisolithus arhizus;Gemeiner Erbsenstreuling;;RL G;;2026-05-01
+edible;Pleurotus cornucopiae;;Pleurotus cornucopiae;Rillstieliger Seitling;;;;2026-05-01
+edible;Pleurotus ostreatus;;Pleurotus ostreatus;Austern-Seitling;;;;2026-05-01
+edible;Pleurotus pulmonarius;;Pleurotus pulmonarius;Lungen-Seitling, Cremeweißer S.;;;;2026-05-01
+edible;Pluteus cervinus;;Pluteus cervinus;Rehbrauner Dachpilz;;;;2026-05-01
+edible;Polyporus squamosus;;Polyporus squamosus;Schuppiger Porling;;Jung essbar;;2026-05-01
+edible;Polyporus tuberaster;;Polyporus tuberaster;Sklerotien-Porling;;Jung essbar;;2026-05-01
+edible;Polyporus umbellatus;;Polyporus umbellatus;Eichhase, Ästiger Stielporling;;RL V;;2026-05-01
+edible;Psathyrella candolleana candolleanus;;Psathyrella candolleana;Behangener Faserling;;;;2026-05-01
+edible;Psathyrella piluliformis;;Psathyrella piluliformis;Wässriger Mürbling;;;;2026-05-01
+edible;Psathyrella spadicea;;Psathyrella spadicea;Schokoladenbrauner Mürbling;;;;2026-05-01
+edible;Psathrella spadiceogrisea;;Psathrella spadiceogrisea;Früher Mürbling;;;;2026-05-01
+edible;Pseudoclitocybe cyathiformis;;Pseudoclitocybe cyathiformis;Kaffeebrauner Gabeltrichterling;;;;2026-05-01
+edible;Rheubarbariboletus armeniacus;;Rheubarbariboletus armeniacus;Aprikosenfarbiger Röhrling;;;;2026-05-01
+edible;Russula aurea;;Russula aurea;Gold-Täubling;;RL V;;2026-05-01
+edible;Russula claroflava;;Russula claroflava;Gelber Graustiel-Täubling;;RL 3;;2026-05-01
+edible;Russula cyanoxantha;;Russula cyanoxantha;Frauen-Täubling;;;;2026-05-01
+edible;Russula decolorans;;Russula decolorans;Orangeroter Graustiel-Täubling;;RL V;;2026-05-01
+edible;Russula heterophylla;;Russula heterophylla;Grüner Speise-Täubling;;RL V;;2026-05-01
+edible;Russula integra;;Russula integra;Brauner Leder-Täubling;;;;2026-05-01
+edible;Russula mustelina;;Russula mustelina;Wiesel-Täubling;;RL V;;2026-05-01
+edible;Russula paludosa;;Russula paludosa;Apfel-Täubling;;;;2026-05-01
+edible;Russula turci;;Russula turci;Jodoform-Täubling;;;;2026-05-01
+edible;Russula vesca;;Russula vesca;Speise-Täubling;;;;2026-05-01
+edible;Russula violeipes;;Russula violeipes;Pfirsich-Täubling;;;;2026-05-01
+edible;Russula vinosa;;Russula vinosa;Weinroter Graustiel-Täubling;;RL V;;2026-05-01
+edible;Russula virescens;;Russula virescens;Grüngefelderter Täubling;;;;2026-05-01
+edible;Russula xerampelina s. l.;;Russula xerampelina;Roter Heringstäubling und alle weiteren milden Arten;;;;2026-05-01
+edible;Sparassis crispa;;Sparassis crispa;Krause Glucke;;;;2026-05-01
+edible;Strobilurus esculentus;;Strobilurus esculentus;Fichtenzapfen-Rübling;;;;2026-05-01
+edible;Suillellus luridus;;Suillellus luridus;Netzstieliger Hexenröhrling;;Selten individuelle Unverträglichkeit mit und ohne Alkohol;;2026-05-01
+edible;Suillus bovinus;;Suillus bovinus;Kuh-Röhrling;;;;2026-05-01
+edible;Suillus cavipes;;Suillus cavipes;Hohlfuß-Röhrling;;;;2026-05-01
+edible;Suillus granulatus;;Suillus granulatus;Körnchen-Röhrling;;;;2026-05-01
+edible;Suillus grevillei;;Suillus grevillei;Gold-Röhrling, Lärchen-Röhrling;;;;2026-05-01
+edible;Suillus luteus;;Suillus luteus;Butterpilz;;;;2026-05-01
+edible;Suillus placidus;;Suillus placidus;Elfenbein-Röhrling;;RL G;;2026-05-01
+edible;Suillus tridentinus;;Suillus tridentinus;Rostroter Lärchen-Röhrling;;;;2026-05-01
+edible;Suillus variegatus;;Suillus variegatus;Sand-Röhrling;;;;2026-05-01
+edible;Suillus viscidus;;Suillus viscidus;Grauer Lärchen-Röhrling;;;;2026-05-01
+edible;Tricholoma apium;;Tricholoma apium;Sellerie-Ritterling;;RL 2;;2026-05-01
+edible;Tricholoma argyraceum;;Tricholoma argyraceum;Gilbender Erd-Ritterling;;;;2026-05-01
+edible;Tricholoma cingulatum;;Tricholoma cingulatum;Beringter Erd-Ritterling;;;;2026-05-01
+edible;Tricholoma columbetta;;Tricholoma columbetta;Seidiger Ritterling;;;;2026-05-01
+edible;Tricholoma matsutake;;Tricholoma matsutake;Echter Krokodil-Ritterling;;RL G;;2026-05-01
+edible;Tricholoma orirubens;;Tricholoma orirubens;Rötender Erd-Ritterling;;;;2026-05-01
+edible;Tricholoma portentosum;;Tricholoma portentosum;Schwarzfaseriger Ritterling, Schneepilz;;RL 3;;2026-05-01
+edible;Tricholoma terreum;;Tricholoma terreum;Gemeiner Erdritterling;;;;2026-05-01
+edible;Tubera aestivum;;Tubera aestivum;Sommer-Trüffel;;§§, RL 3;;2026-05-01
+edible;Tubera brumale;;Tubera brumale;Winter-Trüffel;;§§, RL 3;;2026-05-01
+edible;Tubera macrosporum;;Tubera macrosporum;Großsporige Trüffel;;§§, RL 1;;2026-05-01
+edible;Verpa bohemica;;Verpa bohemica;Böhmische Verpel;;RL 3;;2026-05-01
+edible;Verpa conica;;Verpa conica;Fingerhutverpel, Glockenverpel;;RL G;;2026-05-01
+edible;Volvariella bombycina;;Volvariella bombycina;Wolliger Scheidling;;;;2026-05-01
+edible;Volvariella volvacea;;Volvariella volvacea;Schwarzstreifiger Scheidling;;;;2026-05-01
+edible;Volvopluteus gloiocephalus;;Volvopluteus gloiocephalus;Großer Scheidling;;;;2026-05-01
+edible;Xerocomellus chrysenteron;;Xerocomellus chrysenteron;Echter Rotfußröhrling;;;;2026-05-01
+edible;Xerocomelllus cisalpinus;;Xerocomelllus cisalpinus;Blauender Rotfußröhrling;;;;2026-05-01
+edible;Xerocomellus porosporus;;Xerocomellus porosporus;Falscher Rotfußröhrling;;;;2026-05-01
+edible;Xerocomellus pruinatus;;Xerocomellus pruinatus;Herbst-Rotfußröhrling und weitere Arten;;;;2026-05-01
+edible;Xerocomus ferrugineus;;Xerocomus ferrugineus;Brauner Filzröhrling;;;;2026-05-01
+edible;Xerocomus subtomentosus;;Xerocomus subtomentosus;Ziegenlippe und weitere Arten;;;;2026-05-01
+inconsistent;Agaricus bernardii;;Agaricus bernardii;Salzwiesen- Egerling;;jung essbar, im Alter?;;2026-05-01
+inconsistent;Agaricus vaporarius;;Agaricus vaporarius;Kompost-Egerling;;jung essbar, im Alter?;;2026-05-01
+inconsistent;Agrocybe praecox;;Agrocybe praecox;Voreilender Ackerling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Ampulloclitocybe clavipes;;Ampulloclitocybe clavipes;Keulenfüßiger Trichterling;;in Verbindung mit Alkohol giftig (siehe Acetaldehyd-Syndrom);;2026-05-01
+inconsistent;Armillaria spp.;Armillaria;;Hallimasche;;häufig individuell gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Chalciporus piperatus;;Chalciporus piperatus;Pfefferröhrling;;in größeren Mengen gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Clitocybe nebularis;;Clitocybe nebularis;Nebelkappe;;"gelegentlich gastrointestinale Beschwerden; cytotoxische Substanz Nebularin (siehe Giftpilzliste)";;2026-05-01
+inconsistent;Coprinopsis atramentaria;;Coprinopsis atramentaria;Grauer Faltentintling;;in Verbindung mit Alkohol giftig (siehe Acetaldehyd-Syndrom);;2026-05-01
+inconsistent;Cyanoboletus pulverulentus;;Cyanoboletus pulverulentus;Schwarzblauender Röhrling;;kann hohe Konzentrationen von Dimethylarsinsäure enthalten (Bräuer et. al. 2018). Kanzerogen im Tierversuch, sowie Hinweise auf mutagene Aktivität und Reproduktionstoxizität.;;2026-05-01
+inconsistent;Gymnopus dryophilus;;Gymnopus dryophilus;Waldfreund- Rübling;;gastrointestinale Beschwerden möglich;;2026-05-01
+inconsistent;Hygrophoropsis aurantiaca;;Hygrophoropsis aurantiaca;Falscher Pfifferling;;gastrointestinale Beschwerden möglich;;2026-05-01
+inconsistent;Lactarius rufus;;Lactarius rufus;Rotbrauner Milchling;;eßbar nur nach besonderer Vorbehandlung;;2026-05-01
+inconsistent;Lactarius picinus;;Lactarius picinus;Pechschwarzer Milchling;;eßbar nur nach besonderer Vorbehandlung;;2026-05-01
+inconsistent;Lactarius torminosus;;Lactarius torminosus;Birkenmilchling und weitere sehr scharfe Milchlinge;;eßbar nur nach besonderer Vorbehandlung;;2026-05-01
+inconsistent;Laetiporus sulphureus;;Laetiporus sulphureus;Schwefelporling;;gelegentlich gastrointestinale Beschwerden, gelegentlich allergische Reaktionen. Vorsicht bei Funden in Obstplantagen (Spritzmittel);;2026-05-01
+inconsistent;Lepista flaccida;;Lepista flaccida;Fuchsiger Rötelritterling;;ungeklärter Fall einer muscarinartigen Symptomatik - Schilderung in MyMi 1984: 60;;2026-05-01
+inconsistent;Leucoagaricus leucothites;;Leucoagaricus leucothites;Rosablättriger Egerlingsschirmling;;häufig gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Leucoagaricus nympharum;;Leucoagaricus nympharum;Jungfernschirmling;;gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Leucocybe connata;;Leucocybe connata;Weißer Rasling;;enthält Connatin u. Lyophyllin, Zytotoxizität nicht nachgewiesen;;2026-05-01
+inconsistent;Morchella spp.;Morchella;;Morcheln;;Als gute Speisepilze im Handel, aber § besonders bei großen Mengen gastrointestinale und/oder neurologische Symptome möglich. Todesfälle nach Rohverzehr getrockneter und frischer Morcheln. 100g pro Portion nicht überschreiten und 20 min erhitzen.;;2026-05-01
+inconsistent;Megacollybia platyphylla;;Megacollybia platyphylla;Breitblättriger Holzrübling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Sarcomyxa serotina;;Sarcomyxa serotina;Gelbstieliger Muschelseitling;;gelegentlich bitterer Geschmack;;2026-05-01
+inconsistent;Phaeolepiota aurea;;Phaeolepiota aurea;Glimmerschüppling;;gastrointestinale Beschwerden möglich, vor Rohverzehr bzw. ungenügender Garung wird gewarnt, da der Pilz cyanogene Verbindungen enthält;;2026-05-01
+inconsistent;Pholiota aurivella;;Pholiota aurivella;Goldfellschüppling, Hochtronender Schüppling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Pholiota lenta;;Pholiota lenta;Tonweißer Schüppling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Pholiota squarrosa;;Pholiota squarrosa;Sparriger Schüppling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Rhodocollybia maculata;;Rhodocollybia maculata;Gefleckter Rübling;;gelegentlich gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Russula olivacea;;Russula olivacea;Rotstieliger Ledertäubling;;gastrointestinale Beschwerden bei unzureichender Erhitzung;;2026-05-01
+inconsistent;Sarcodon imbricatus;;Sarcodon imbricatus;Gemeiner Habichtspilz;;nur junge Exemplare, gelegentlich RL 3 gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Sarcodon squamosus;;Sarcodon squamosus;Kiefern- Habichtspilz;;nur junge Exemplare;;2026-05-01
+inconsistent;Stropharia caerulea;;Stropharia caerulea;Blauer Träuschling;;"Zitat Ludwig: ""In einigen Funden sind Spuren halluzinogener Stoffe gefunden worden"".";;2026-05-01
+inconsistent;Stropharia rugosoannulata;;Stropharia rugosoannulata;Riesenträuschling;;oft gastrointestinale Beschwerden;;2026-05-01
+inconsistent;Tapinella atrotomentosa;;Tapinella atrotomentosa;Samtfuß-Krempling;;individuelle Unverträglichkeiten möglich;;2026-05-01
+inconsistent;Tylopilus felleus;;Tylopilus felleus;Gallenröhrling;;bitter, gelegentlich gastrointestinale Beschwerden;;2026-05-01
+poisonous;Agaricus freirei;;Agaricus freirei;Falscher Waldegerling;;Gastrointestinales Syndrom;;2026-05-01
+poisonous;Agaricus moelleri;;Agaricus moelleri;Perlhuhnegerling;;Gastrointestinales Syndrom;;2026-05-01
+poisonous;Agaricus pseudopratensis;;Agaricus pseudopratensis;Falscher Wiesenegerling;;Gastrointestinales Syndrom;;2026-05-01
+poisonous;Agaricus xanthodermus agg.;;Agaricus xanthodermus;Karbolegerlinge;;Gastrointestinales Syndrom;;2026-05-01
+poisonous;Amanita boudieri;;Amanita boudieri;Strandkiefernwulstling;;Nierentoxisches Amaniten-Syndrom (Proxima-Syndrom);;2026-05-01
+poisonous;Amanita citrina;;Amanita citrina;Gelber Knollenblätterpilz Enthält Bufotenin, CAVE Rohverzehr;;Gastrointestinales Syndrom;;2026-05-01
+poisonous;Amanita echinocephala;;Amanita echinocephala;Stachelschuppiger Wulstling;;Nierentoxisches Amaniten-Syndrom (Proxima-Syndrom);;2026-05-01
+poisonous;Amanita gemmata;;Amanita gemmata;Narzissengelber Wulstling Verdächtig;;Pantherina-Syndrom;;2026-05-01
+poisonous;Amanita gracilior;;Amanita gracilior;Graziler Wulstling;;Nierentoxisches Amaniten-Syndrom (Proxima-Syndrom);;2026-05-01
+poisonous;Amanita muscaria;;Amanita muscaria;Fliegenpilz;;Pantherina-Syndrom;;2026-05-01
+poisonous;Amanita pantherina;;Amanita pantherina;Pantherpilz;;Pantherina-Syndrom;;2026-05-01
+poisonous;Amanita phalloides;;Amanita phalloides;Grüner Knollenblätterpilz;;Amatoxin-Syndrom (Phalloides-Syndrom);;2026-05-01
+poisonous;Amanita porphyria;;Amanita porphyria;Porphyrbrauner Wulstling;;Enthält Bufotenin, CAVE Rohverzehr;Gastrointestinales Syndrom;2026-05-01
+poisonous;Amanita proxima;;Amanita proxima;Ockerscheidiger Eierwulstling;;Mittelmeerraum, Allen-Norleucin (noch) nicht nachgewiesen;Nierentoxisches Amaniten-Syndrom (Proxima-Syndrom);2026-05-01
+poisonous;Amanita regalis;;Amanita regalis;Königsfliegenpilz;;;Pantherina-Syndrom;2026-05-01
+poisonous;Amanita smithiana;;Amanita smithiana;;;Nordamerika, noch nicht in Europa nachgewiesen;Nierentoxisches Amaniten-Syndrom (Proxima-Syndrom);2026-05-01
+poisonous;Amanita verna;;Amanita verna;Frühling-Knollenblätterpilz;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Amanita virosa;;Amanita virosa;Kegelhütiger Knollenblätterpilz;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Ampulloclitocybe clavipes;;Ampulloclitocybe clavipes;Keulenfüßiger Trichterling;;Ohne Alkohol ungiftig;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Caloboletus calopus;;Caloboletus calopus;Schönfußröhrling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Chlorophyllum brunneum (Syn. rachodes var. hortensis);;Chlorophyllum brunneum;Gerandetknolliger Safranschirmling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Chlorophyllum molybdites;;Chlorophyllum molybdites;"Grünsporiger Riesenschirmling weltweit verbreitete Art; in Europa selten, Gastrointestinales Syndrom aber in Ausbreitung begriffen";;;;2026-05-01
+poisonous;Clitocybe dealbata;;Clitocybe dealbata;Feldtrichterling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Clitocybe fragrans;;Clitocybe fragrans;Weißer Anistrichterling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Clitocybe nebularis;;Clitocybe nebularis;Nebelkappe;;uneinheitlich beurteilt;Verdacht auf Kanzerogenität oder Mutagenität;2026-05-01
+poisonous;Clitocybe rivulosa agg.;;Clitocybe rivulosa;Rinnigbereifter Trichterling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Clitocybe suaveolens agg.;;Clitocybe suaveolens;Dufttrichterling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Clitocybe spp.;Clitocybe;;Trichterlinge;;Weitere verdächtige Arten;Muskarin-Syndrom;2026-05-01
+poisonous;Conocybe filaris;;Conocybe filaris;Runzliger Glockenschüppling;;Verdächtig: ein Fallbericht bislang nur Material kein Amanitin nachgewiesen.;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Coprinopsis atramentaria;;Coprinopsis atramentaria;Grauer Faltentintling;;Ohne Alkohol ungiftig;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Coprinellus micaceus;;Coprinellus micaceus;Glimmertintling;;Enthält nur geringe Mengen Coprin;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Coprinopsis picacea;;Coprinopsis picacea;Spechttintling;;;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Coprinellus, Coprinopsis spp.;Coprinellus;;Tintlinge;;;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Coprinellus, Coprinopsis spp.;Coprinopsis;;Tintlinge;;;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Cortinarius armillatus;;Cortinarius armillatus;Geschmückter Gürtelfuß;;In Nordamerika geringe Mengen von Orellanin nachgewiesen;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius atrovirens;;Cortinarius atrovirens;Schwarzgrüner Klumpfuß;;Verdächtig;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius callisteus;;Cortinarius callisteus;Rhabarberfüßiger Raukopf;;Verdächtig;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius citrinus;;Cortinarius citrinus;Grünlingsklumpfuß;;Enthält vermutlich unbekannte nierentoxische Substanzen;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius gentilis;;Cortinarius gentilis;Goldgelber Raukopf;;Verdächtig;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius meinhardii;;Cortinarius meinhardii;Leuchtendgelber Klumpfuß;;Enthält vermutlich unbekannte nierentoxische Substanzen;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius orellanus;;Cortinarius orellanus;Orangefuchsiger Raukopf;;;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius rubellus;;Cortinarius rubellus;Spitzgebuckelter Raukopf;;;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius splendens;;Cortinarius splendens;Schöngelber Klumpfuß;;Enthält vermutlich unbekannte nierentoxische Substanzen;Orellanus-Syndrom;2026-05-01
+poisonous;Cortinarius spp.;Cortinarius;;Schleierlinge;;Cortinarien mit grünen, gelben, orangenen und roten Pigmenten sind giftverdächtig;Orellanus-Syndrom, Gastrointestinales Syndrom;2026-05-01
+poisonous;Cudonia circinans;;Cudonia circinans;Helmkreisling;;;Gyromitrin-Syndrom;2026-05-01
+poisonous;Echinoderma asperum;;Echinoderma asperum;Stachelschuppiger Schirmling;;Enthält kein Coprin sondern unbekannte Acetaldehyd-Dehydrogenasehemmer;Acetaldehyd-Syndrom (Coprinus-Syndrom);2026-05-01
+poisonous;Entoloma sinuatum;;Entoloma sinuatum;Riesenrötling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Entoloma vernum;;Entoloma vernum;Frühlingsrötling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Galerina marginata agg.;;Galerina marginata;Gifthäubling;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Galerina steglichii;;Galerina steglichii;Psilocybinhäubling;;Warmhaus-Art;Psilocybin-Syndrom;2026-05-01
+poisonous;Galerina spp.;Galerina;;Häublinge;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Gymnopilus junonius;;Gymnopilus junonius;Beringter Flämmling;;Enthält Gymnopilin;Psilocybin-Syndrom;2026-05-01
+poisonous;Gymnopilus purpuratus;;Gymnopilus purpuratus;Purpurschuppiger Flämmling;;auf Holz- und Rindenabfällen, Totholz, in Psilocybin-Syndrom Deutschland selten;;2026-05-01
+poisonous;Gymnopus fusipes;;Gymnopus fusipes;Spindeliger Rübling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Gyromitra esculenta;;Gyromitra esculenta;Giftlorchel, Frühjahrslorchel;;bekannte und noch unbekannte genotoxische Hydrazinverbindungen;Gyromitrin-Syndrom,Verdacht auf Kanzerogenität oder Mutagenität;2026-05-01
+poisonous;Gyromitra leucoxantha;;Gyromitra leucoxantha;Dottergelbe Scheibenlorchel;;In nordamerikanischen Kollektionen Gyromitrin nachgewiesen;;2026-05-01
+poisonous;Hapalopilus nidulans;;Hapalopilus nidulans;Zimtfarbener Weichporling;;;Polyporsäure-Syndrom (Hapalopilus- Syndrom);2026-05-01
+poisonous;Hebeloma spec.;Hebeloma;;Fälblinge;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Hygrocybe conica;;Hygrocybe conica;Kegelhütiger Saftling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Hypholoma fasciculare;;Hypholoma fasciculare;Grünblättriger Schwefelkopf;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Inocybe aeruginascens;;Inocybe aeruginascens;Grünlichverfärbender Risspilz;;Enthält kein Muskarin;Psilocybin-Syndrom;2026-05-01
+poisonous;Inosperma calamistrata;;Inosperma calamistrata;Blaufüssiger Risspilz;;Enthält kein Muskarin;Psilocybin-Syndrom;2026-05-01
+poisonous;Inocybe corydalina;;Inocybe corydalina;Grünbuckliger Risspilz;;Enthält kein Muskarin;Psilocybin-Syndrom;2026-05-01
+poisonous;Inosperma erubescens;;Inosperma erubescens;Ziegelroter Risspilz;;;Muskarin-Syndrom;2026-05-01
+poisonous;Inocybe geophylla;;Inocybe geophylla;Erdblättriger Risspilz;;;Muskarin-Syndrom;2026-05-01
+poisonous;Inocybe haemacta;;Inocybe haemacta;Grünroter Risspilz;;Enthält kein Muskarin;Psilocybin-Syndrom;2026-05-01
+poisonous;Inosperma maculata;;Inosperma maculata;Gefleckter Risspilz;;;Muskarin-Syndrom;2026-05-01
+poisonous;Pseudosperma rimosa;;Pseudosperma rimosa;Kegelhütiger Risspilz;;;Muskarin-Syndrom;2026-05-01
+poisonous;Inocybe tricolor;;Inocybe tricolor;Dreifarbiger Risspilz;;Enthält kein Muskarin;Psilocybin-Syndrom;2026-05-01
+poisonous;Inocybe, Inosperma spp.;Inocybe;;Risspilze;;;Muskarin-Syndrom oder Psilocybin- Syndrom;2026-05-01
+poisonous;Inocybe, Inosperma spp.;Inosperma;;Risspilze;;;Muskarin-Syndrom oder Psilocybin- Syndrom;2026-05-01
+poisonous;Lactarius helvus;;Lactarius helvus;Bruchreizker, Maggipilz;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Lactarius turpis;;Lactarius turpis;Olivbrauner Milchling;;;Gastrointestinales Syndrom, Verdacht auf;2026-05-01
+poisonous;Lepiota boudieri;;Lepiota boudieri;Fuchsbrauner Schirmling;;Verdächtig, unbekannte Amatoxinverbindung;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota brunneoincarnata;;Lepiota brunneoincarnata;Fleischbräunlicher Schirmling;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota brunneolilacea;;Lepiota brunneolilacea;Lilabrauner Sandschirmling;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota castanea;;Lepiota castanea;Kastanienbrauner Schirmling;;Nach neueren Erkenntnissen keine Amatoxine enthalten;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota elaiophylla;;Lepiota elaiophylla;Olivblättriger Schirmling;;Vorkommen: Blumentöpfe und Gewächshäuser;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota pseudolilacea;;Lepiota pseudolilacea;Rosastieliger Schirmling;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota subincarnata;;Lepiota subincarnata;Fleischrosa Schirmling;;;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota xanthophylla;;Lepiota xanthophylla;Gelbblättriger Schirmling;;verdächtig;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Lepiota spp.;Lepiota;;Schirmlinge;;Kleine Schirmlinge mit bräunlichen und roten Pigmenten sind verdächtig, Amatoxine zu enthalten;Amatoxin-Syndrom (Phalloides-Syndrom);2026-05-01
+poisonous;Megacollybia platyphylla;;Megacollybia platyphylla;Gemeines Breitblatt, Breitblättriger Rübling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Morchella spp.;Morchella;;Morcheln;;roh sehr giftig;Neurologisches Morchella-Syndrom, Gastrointestinales Syndrom;2026-05-01
+poisonous;Mycena dura;;Mycena dura;Brauner Rettichhelmling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Mycena pura;;Mycena pura;Rettichhelmling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Mycena rosea;;Mycena rosea;Rosa Rettichhelmling;;;Muskarin-Syndrom;2026-05-01
+poisonous;Omphalotus illudens;;Omphalotus illudens;Leuchtender Ölbaumpilz;;;Omphalotus-Syndrom;2026-05-01
+poisonous;Omphalotus olearius;;Omphalotus olearius;Dunkler Ölbaumtrichterling;;;Omphalotus-Syndrom;2026-05-01
+poisonous;Panaeolus ater;;Panaeolus ater;Dunkler Düngerling;;In manchen Kollektionen Psilocybin nachweisbar;Psilocybin-Syndrom;2026-05-01
+poisonous;Panaeolus cinctulus;;Panaeolus cinctulus;Dunkelrandiger Düngerling;;Psilocybinhaltig;Psilocybin-Syndrom;2026-05-01
+poisonous;Panaeolus cyanescens;;Panaeolus cyanescens;Blauender Düngerling;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Panaeolus papilionaceus;;Panaeolus papilionaceus;Behangener Düngerling;;Unterschiedliche Angaben zur Psychoaktivität;Psilocybin-Syndrom;2026-05-01
+poisonous;Panaeolus spp.;Panaeolus;;Düngerlinge;;Verschiedene Arten verdächtig;Psilocybin-Syndrom;2026-05-01
+poisonous;Paralepistopsis acromelalga;;Paralepistopsis acromelalga;Bambustrichterling;;nicht in Europa nachgewiesen;Acromelalga-Syndrom;2026-05-01
+poisonous;Paralepistopsis amoenolens;;Paralepistopsis amoenolens;Parfümierter Trichterling;;;Acromelalga-Syndrom;2026-05-01
+poisonous;Paxillus involutus agg.;;Paxillus involutus;Kahler Krempling;;;Paxillus-Syndrom (Immunhämolyse), Gastrointestinales Syndrom;2026-05-01
+poisonous;Pholiotina aeruginosa;;Pholiotina aeruginosa;Grünes Samthäubchen;;Psilocybinhaltig, sehr seltene Art;Psilocybin-Syndrom;2026-05-01
+poisonous;Pholiotina cyanopus;;Pholiotina cyanopus;Blaufußsamthäubchen;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Pleurocybella porrigens;;Pleurocybella porrigens;Ohrförmiger Seitling;;;Pleurocybella-Syndrom;2026-05-01
+poisonous;Pluteus salicinus;;Pluteus salicinus;Grauer Dachpilz;;Psilocybinhaltig;Psilocybin-Syndrom;2026-05-01
+poisonous;Psilocybe cubensis;;Psilocybe cubensis;Kubanischer Kahlkopf;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Psilocybe cyanescens;;Psilocybe cyanescens;Blauender Kahlkopf;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Psilocybe semilanceata;;Psilocybe semilanceata;Spitzkegeliger Kahlkopf;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Psilocybe spp.;Psilocybe;;Kahlköpfe;;;Psilocybin-Syndrom;2026-05-01
+poisonous;Ramaria formosa;;Ramaria formosa;Dreifarbige Koralle;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Ramaria pallida;;Ramaria pallida;Bauchwehkoralle;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Ramaria spp.;Ramaria;;Korallen;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Rubroboletus satanas;;Rubroboletus satanas;Satansröhrling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Russula emetica agg.;;Russula emetica;Speitäublinge;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Russula mairei;;Russula mairei;Buchenspeitäubling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Russula subnigricans;;Russula subnigricans;;;Asien, noch nicht in Europa nachgewiesen;Russula subnigricans-Syndrom;2026-05-01
+poisonous;Russula spp.;Russula;;Täublinge;;Scharfe und bittere Arten;Gastrointestinales Syndrom;2026-05-01
+poisonous;Sarcosphaera coronaria;;Sarcosphaera coronaria;Kronenbecherling;;Arsen-Hyperakkumulator;Unechte Pilzvergiftung (Kontamination, Überalterung);2026-05-01
+poisonous;Scleroderma areolatum;;Scleroderma areolatum;Getupfter Kartoffelbovist;;;Scleroderma-Syndrom;2026-05-01
+poisonous;Scleroderma cepa;;Scleroderma cepa;Zwiebelhartbovist, Rötender Kartoffelbovist;;;Scleroderma-Syndrom;2026-05-01
+poisonous;Scleroderma citrinum;;Scleroderma citrinum;Dickschaliger Kartoffelbovist;;;Scleroderma-Syndrom;2026-05-01
+poisonous;Scleroderma verrucosum;;Scleroderma verrucosum;Dünnschaliger Kartoffelbovist;;;Scleroderma-Syndrom;2026-05-01
+poisonous;Scleroderma spp.;Scleroderma;;Hartboviste;;Alle Arten sind verdächtig;Scleroderma-Syndrom;2026-05-01
+poisonous;Stropharia coronilla;;Stropharia coronilla;Krönchenträuschling;;Kann Rauschzustand hervorrufen. Widersprüchliche Angaben zum Psilocybingehalt;Psilocybin-Syndrom;2026-05-01
+poisonous;Tricholoma equestre agg.;;Tricholoma equestre;Grünling;;;Equestre-Syndrom;2026-05-01
+poisonous;Tricholoma pardinum;;Tricholoma pardinum;Tigerritterling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Tricholoma sulphureum;;Tricholoma sulphureum;Schwefelritterling;;;Gastrointestinales Syndrom;2026-05-01
+poisonous;Trogia venenata;;Trogia venenata;;;China, noch nicht in Europa nachgewiesen;Yunnan sudden death syndrome;2026-05-01
+poisonous;Verpa bohemica;;Verpa bohemica;Böhmische Verpel;;;Neurologisches Morchella-Syndrom;2026-05-01
+responsibility;Amanita friabilis (P. Karst.) Bas;;Amanita friabilis;Erlen-Scheidenstreifling;!!;;;2026-09-18
+responsibility;Armillaria ectypa (Fr. : Fr.) Lamoure;;Armillaria ectypa;Moor-Hallimasch;!!;;;2026-09-18
+responsibility;Boletus depilatus Redeuilh;;Boletus depilatus;Gefleckthütiger Röhrling;!;;;2026-09-18
+responsibility;Boletus fechtneri Velen.;;Boletus fechtneri;Silber-Röhrling;!!;;;2026-09-18
+responsibility;Boletus fuscoroseus Smotl.;;Boletus fuscoroseus;Blauender Königsröhrling;!!;;;2026-09-18
+responsibility;Boletus impolitus Fr.;;Boletus impolitus;Fahler Röhrling;!;;;2026-09-18
+responsibility;Boletus legaliae Pilát;;Boletus legaliae;Le Gals Dickröhrling;!!;;;2026-09-18
+responsibility;Boletus regius Krombh.;;Boletus regius;Königsröhrling;!!;;;2026-09-18
+responsibility;Boletus rhodoxanthus (Krombh.) Kallenb.;;Boletus rhodoxanthus;Rosahütiger Purpur-Röhrling;!!;;;2026-09-18
+responsibility;Boletus satanas Lenz;;Boletus satanas;Satansröhrling;!;;;2026-09-18
+responsibility;Buglossoporus quercinus (Schrad. : Fr.) Kotl. & Pouzar;;Buglossoporus quercinus;Eichen-Zungenporling;!;;;2026-09-18
+responsibility;Cantharellus amethysteus (Quél.) Sacc.;;Cantharellus amethysteus;Amethyst-Pfifferling;!;;;2026-09-18
+responsibility;Chamonixia caespitosa Rolland;;Chamonixia caespitosa;Blaunuss;!;;;2026-09-18
+responsibility;Clavaria flavipes Pers. : Fr.;;Clavaria flavipes;Strohfarbene Keule;!!;;;2026-09-18
+responsibility;Clavaria greletii Boud.;;Clavaria greletii;Bläulichbereifte Keule;!!;;;2026-09-18
+responsibility;Clavaria krieglsteineri Kajan & Grauw.;;Clavaria krieglsteineri;Eingeschnürtsporige Keule;!!;;;2026-09-18
+responsibility;Clavaria tenuipes Berk. & Broome;;Clavaria tenuipes;Frühjahrs-Keulchen;!!;;;2026-09-18
+responsibility;Coprinopsis stangliana (Enderle et al.) Redhead et al.;;Coprinopsis stangliana;Kleiner Specht-Tintling;!!;;;2026-09-18
+responsibility;Cortinarius alcalinophilus Rob. Henry;;Cortinarius alcalinophilus;Leoparden-Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius anserinus (Velen.) Rob. Henry;;Cortinarius anserinus;Buchen-Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius bergeronii Melot;;Cortinarius bergeronii;Zedern-Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius caerulescens (Schaeff.) Fr.;;Cortinarius caerulescens;Blauer Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius callochrous (Pers. : Fr.) Gray agg.;;Cortinarius callochrous;Amethystblättriger Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius citrinus J.E. Lange ex P.D. Orton;;Cortinarius citrinus;Zitronengelber Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius elegantissimus Rob. Henry;;Cortinarius elegantissimus;Prächtiger Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius fulvocitrinus Brandrud;;Cortinarius fulvocitrinus;Braunscheibiger Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius humicola (Quél.) Maire;;Cortinarius humicola;Kegeliger Raukopf;!!;;;2026-09-18
+responsibility;Cortinarius luhmannii Münzmay et al.;;Cortinarius luhmannii;Luhmanns Klumpfuß;!!;;;2026-09-18
+responsibility;Cortinarius osmophorus P.D. Orton;;Cortinarius osmophorus;Orangenduft-Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius platypus (M.M. Moser) M.M. Moser;;Cortinarius platypus;Flachknolliger Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius saporatus Britzelm.;;Cortinarius saporatus;Breitknolliger Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius sodagnitus Rob. Henry;;Cortinarius sodagnitus;Violetter Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius splendens Rob. Henry;;Cortinarius splendens;Schöngelber Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius suaveolens Bataille & Joachim;;Cortinarius suaveolens;Duftender Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius vulpinus (Velen.) Rob. Henry;;Cortinarius vulpinus;Gilbender Klumpfuß;!;;;2026-09-18
+responsibility;Cortinarius xanthoochraceus P.D. Orton;;Cortinarius xanthoochraceus;Ockergelber Klumpfuß;!;;;2026-09-18
+responsibility;Cotylidia pannosa (Sowerby : Fr.) D.A. Reid;;Cotylidia pannosa;Kreiselpilz;!;;;2026-09-18
+responsibility;Craterellus melanoxeros (Desm.) Pérez-De-Greg.;;Craterellus melanoxeros;Schwärzender Pfifferling;!;;;2026-09-18
+responsibility;Cuphophyllus flavipes (Britzelm.) Bon;;Cuphophyllus flavipes;Gelbfüßiger Ellerling;!;;;2026-09-18
+responsibility;Cuphophyllus fornicatus (Fr.) Lodge et al.;;Cuphophyllus fornicatus;Blassrandiger Ellerling;!;;;2026-09-18
+responsibility;Cuphophyllus virgineus (Wulfen) Kovalenko var. virgineus;;Cuphophyllus virgineus;Weißer Ellerling;!!;;;2026-09-18
+responsibility;Entoloma chalybaeum (Fr. : Fr.) Noordel. var. chalybaeum;;Entoloma chalybaeum;Schwarzblauer Rötling;!;;;2026-09-18
+responsibility;Entoloma queletii (Boud.) Noordel.;;Entoloma queletii;Rosafarbener Wald-Rötling;!;;;2026-09-18
+responsibility;Entoloma saundersii (Fr.) Sacc. var. saundersii;;Entoloma saundersii;Silbergrauer Auen-Rötling;!!;;;2026-09-18
+responsibility;Entoloma scabiosum (Fr.) Quél.;;Entoloma scabiosum;Schorfiger Filz-Rötling;!;;;2026-09-18
+responsibility;Entoloma sphagneti Naveau;;Entoloma sphagneti;Torfmoos-Rötling;!!;;;2026-09-18
+responsibility;Flammulina ononidis Arnolds;;Flammulina ononidis;Hauhechel-Samtfußrübling;!!;;;2026-09-18
+responsibility;Ganoderma pfeifferi Bres.;;Ganoderma pfeifferi;Kupferroter Lackporling;!;;;2026-09-18
+responsibility;Geoglossum littorale (Rostr.) Nannf.;;Geoglossum littorale;Strandlings-Erdzunge;!!;;;2026-09-18
+responsibility;Gymnopilus flavus (Bres.) Singer;;Gymnopilus flavus;Gras-Flämmling;!!;;;2026-09-18
+responsibility;Haasiella venustissima (Fr.) Kotl. & Pouzar var. venustissima;;Haasiella venustissima;Zweisporiger Goldnabeling;!!;;;2026-09-18
+responsibility;Hericium coralloides (Scop.) Pers.;;Hericium coralloides;Ästiger Stachelbart;!;;;2026-09-18
+responsibility;Hygrocybe aurantiosplendens R. Haller Aar.;;Hygrocybe aurantiosplendens;Glänzender Orange-Saftling;!!;;;2026-09-18
+responsibility;Hygrocybe calciphila Arnolds;;Hygrocybe calciphila;Schmutziger Filz-Saftling;!;;;2026-09-18
+responsibility;Hygrocybe citrinovirens (J.E. Lange) Jul. Schäff.;;Hygrocybe citrinovirens;Kleinhütiger Saftling;!;;;2026-09-18
+responsibility;Hygrocybe constrictospora Arnolds;;Hygrocybe constrictospora;Korallenroter Saftling;!!;;;2026-09-18
+responsibility;Hygrocybe glutinipes (J.E. Lange) R. Haller Aar.;;Hygrocybe glutinipes;Schleimfuß-Saftling;!;;;2026-09-18
+responsibility;Hygrocybe helobia (Arnolds) Bon;;Hygrocybe helobia;Gelbblättriger Filz-Saftling;!!;;;2026-09-18
+responsibility;Hygrocybe intermedia (Pass.) Fayod;;Hygrocybe intermedia;Trockener Saftling;!!;;;2026-09-18
+responsibility;Hygrocybe splendidissima (P.D. Orton) M.M. Moser;;Hygrocybe splendidissima;Prächtiger Saftling;!;;;2026-09-18
+responsibility;Hygrocybe vitellina (Fr.) P. Karst.;;Hygrocybe vitellina;Dottergelber Saftling;!;;;2026-09-18
+responsibility;Hygrophorus abieticola Krieglst. ex Gröger & Bresinsky;;Hygrophorus abieticola;Terpentin-Schneckling;!;;;2026-09-18
+responsibility;Hygrophorus atramentosus (Alb. & Schwein.) H. Haas & R. Haller Aar.;;Hygrophorus atramentosus;Schwarzfaseriger Schneckling;!!;;;2026-09-18
+responsibility;Hygrophorus mesotephrus Berk.;;Hygrophorus mesotephrus;Graubrauner Schleimstiel-Schneckling;!;;;2026-09-18
+responsibility;Hygrophorus penarius Fr. var. penarius;;Hygrophorus penarius;Trockener Schneckling;!;;;2026-09-18
+responsibility;Hygrophorus poetarum R. Heim;;Hygrophorus poetarum;Isabellrötlicher Schneckling;!;;;2026-09-18
+responsibility;Hygrophorus unicolor Gröger;;Hygrophorus unicolor;Seidiggerandeter Schneckling;!;;;2026-09-18
+responsibility;Lactarius acris (Bolton : Fr.) Gray;;Lactarius acris;Rosaanlaufender Milchling;!;;;2026-09-18
+responsibility;Lactarius aspideus (Fr. : Fr.) Fr.;;Lactarius aspideus;Blasser Violett-Milchling;!;;;2026-09-18
+responsibility;Lactarius blennius (Fr.) Fr.;;Lactarius blennius;Graugrüner Milchling;!;;;2026-09-18
+responsibility;Lactarius circellatus Fr.;;Lactarius circellatus;Gebänderter Hainbuchen-Milchling;!;;;2026-09-18
+responsibility;Lactarius fluens Boud.;;Lactarius fluens;Braunfleckender Milchling;!;;;2026-09-18
+responsibility;Lactarius intermedius (Krombh.) Berk. & Broome;;Lactarius intermedius;Grubiger Weißtannen-Milchling;!;;;2026-09-18
+responsibility;Lactarius lilacinus (Lasch : Fr.) Fr.;;Lactarius lilacinus;Lila Milchling;!;;;2026-09-18
+responsibility;Lactarius pallidus (Pers. : Fr.) Fr.;;Lactarius pallidus;Fleischblasser Milchling;!;;;2026-09-18
+responsibility;Lactarius rubrocinctus Fr.;;Lactarius rubrocinctus;Rotgegürtelter Milchling;!;;;2026-09-18
+responsibility;Lactarius subdulcis (Bull. : Fr.) Gray;;Lactarius subdulcis;Süßlicher Milchling;!;;;2026-09-18
+responsibility;Lepista personata (Fr. : Fr.) Cooke;;Lepista personata;Lilastiel-Rötelritterling;!;;;2026-09-18
+responsibility;Leucopaxillus compactus (Fr.) Neuhoff;;Leucopaxillus compactus;Dreifarbiger Krempenritterling;!;;;2026-09-18
+responsibility;Lyophyllum favrei (R. Haller Aar. & R. Haller Suhr) R. Haller Aar. & R. Haller Suhr;;Lyophyllum favrei;Rötender Rasling;!;;;2026-09-18
+responsibility;Mycena radicifera J. Favre var. radicifera;;Mycena radicifera;Hauhechel-Helmling;!!;;;2026-09-18
+responsibility;Phylloporus pelletieri (Lév.) Quél.;;Phylloporus pelletieri;Europäisches Goldblatt;!;;;2026-09-18
+responsibility;Ramaria aurea (Schaeff. : Fr.) Quél.;;Ramaria aurea;Goldgelbe Koralle;!;;;2026-09-18
+responsibility;Ramaria fagetorum Maas-Geest. ex Schild;;Ramaria fagetorum;Rosagelbe Koralle;!;;;2026-09-18
+responsibility;Russula carpini Heinem. & R. Girard;;Russula carpini;Hainbuchen-Täubling;!;;;2026-09-18
+responsibility;Russula emeticicolor Jul. Schäff.;;Russula emeticicolor;Zinnoberroter Reiftäubling;!;;;2026-09-18
+responsibility;Russula lilacea Quél.;;Russula lilacea;Rotstieliger Reiftäubling;!;;;2026-09-18
+responsibility;Russula mairei Singer;;Russula mairei;Buchen-Speitäubling;!;;;2026-09-18
+responsibility;Russula puellula Ebbesen et al.;;Russula puellula;Mädchen-Täubling;!;;;2026-09-18
+responsibility;Tremellodendropsis helvetica (Schild) Nitare;;Tremellodendropsis helvetica;Zierlicher Keulengallertpilz;!!;;;2026-09-18

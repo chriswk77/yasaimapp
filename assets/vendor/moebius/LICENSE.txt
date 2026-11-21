@@ -1,0 +1,158 @@
+THE THREE FILES OF THIS FOLDER — the strong model of the photo window's „Entfernen"
+====================================================================================
+
+moebius_encoder.onnx   68,498,193 bytes
+moebius_decoder.onnx   99,187,044 bytes
+moebius_unet.onnx     455,522,843 bytes
+
+    THEY ARE NOT IN THE REPOSITORY. The largest is more than a file may
+    weigh on its way through GitHub (100 MB), so the three are laid into
+    this folder on the server BY HAND, once (.gitignore names them). The
+    server offers the model only when all three are there
+    (includes/helpers.php, inpaint_strong_offered); the browser holds them
+    to exactly the sizes above (assets/js/inpaint.js, STRONG_FILES), so a
+    file cut short on its way up is noticed by the download.
+
+    Moebius, "0.2B Lightweight Image Inpainting Framework with 10B-Level
+    Performance", Duan, Xu, Liu, Ruan, Chen, Wang — Huazhong University of
+    Science and Technology and VIVO AI Lab, ECCV 2026,
+    https://github.com/hustvl/Moebius, arXiv 2606.19195. Code AND weights
+    under the Apache License 2.0; commercial use of the weights and of the
+    pictures they make is allowed (the repository's own words).
+
+    Converted from PyTorch to ONNX (opset 18, static 512 x 512, fp32) by
+    Simon Willison, https://huggingface.co/simonw/Moebius-ONNX, Apache
+    License 2.0: vae_encoder.onnx, vae_decoder.onnx, unet.onnx — the
+    denoiser re-exported there without its Conv3d steps, which Safari's
+    WebGPU could not compile. Which of the upstream checkpoints was
+    converted is not stated there.
+
+    THESE COPIES WERE MADE HERE from those three: every float32 weight of
+    4096 values and more stored as half floats, with a Cast back to float32
+    in front of whatever reads it (pack.py below, rule "fp16"). onnxruntime
+    folds the cast once, at load, so the arithmetic is the original's; only
+    the stored numbers are rounded. 1.27 GB became 623 MB.
+
+    MEASURED on 14.11.2026, twelve large and very large holes in two of
+    Christian's pictures, each variant against the fp32 files with the same
+    random start (Chromium, WebGPU). The fill's mean colour, in tone values
+    of 255, on average / at the worst:
+        fp16 throughout (these files)             623 MB   0.05 / 0.14
+        denoiser's ff convs int8, rest fp16       547 MB   0.59 / 1.09
+        denoiser int8, VAE fp16                   412 MB   1.09 / 2.50
+        denoiser's convs int8, rest fp16          439 MB   1.12 / 2.33
+        int8 throughout                           334 MB   1.71 / 6.02
+        for scale: fp32 with ANOTHER random start          16   / 43
+    Unlike LaMa (assets/vendor/lama) there is no small sensitive group to
+    spare: smaller is a little less exact, whichever layers are taken.
+    Christian chose the 623 MB: the same picture as the full model.
+    Firefox 159 computes the same fill as Chromium, to the last tone value.
+
+    The sampling loop is no part of these files: assets/js/moebius.js, with
+    the numbers it must keep and why fewer steps were not taken.
+
+The runtime they run on is the one in assets/vendor/lama (onnxruntime-web,
+MIT License; see LICENSE.txt there).
+
+-------------------------------------------------------------------------
+pack.py — how the three files were made
+(Python 3.12, onnx, numpy; python pack.py unet.onnx moebius_unet.onnx fp16,
+ and the same for vae_encoder.onnx and vae_decoder.onnx)
+
+"""Store a model's large float weights smaller — any graph, any consumer.
+
+Every float32 initializer of at least MIN_VALUES values is replaced by a
+small chain that yields the same tensor UNDER THE SAME NAME, so nothing that
+reads it has to change:
+    fp16   the values as half floats            -> Cast(to float)
+    int8   blockwise integers, one scale per 64 -> DequantizeLinear -> Reshape
+           values along the flattened rest          (needs opset 21)
+onnxruntime folds either chain back to plain float32 once, at load (for int8
+the session must set session.disable_quant_qdq = 1), so the arithmetic is
+the original's; only the stored numbers are rounded.
+
+A rule is a list "pattern=how,pattern=how,...,how": the first pattern (a
+regular expression on "<tensor name> @<ops that read it>") that matches
+decides, the bare last entry is for everything else. how: fp16 | int8 | keep.
+
+usage: python pack.py <in.onnx> <out.onnx> <rule>
+"""
+import re
+import sys
+
+import numpy as np
+import onnx
+from onnx import TensorProto, helper, numpy_helper
+
+MIN_VALUES = 4096
+BLOCK = 64
+
+
+def main(src, dst, rule):
+    parts = rule.split(",")
+    rules = [(re.compile(p.rsplit("=", 1)[0]), p.rsplit("=", 1)[1]) for p in parts[:-1]]
+    default = parts[-1]
+    model = onnx.load(src)
+    g = model.graph
+    kept, added_inits, added_nodes = [], [], []
+    tally = {}
+    # Who reads a tensor: a pattern may ask for it, as "name @Conv,Gemm".
+    readers = {}
+    for n in g.node:
+        for i in n.input: readers.setdefault(i, set()).add(n.op_type)
+    for t in g.initializer:
+        if t.data_type != TensorProto.FLOAT or int(np.prod(t.dims)) < MIN_VALUES:
+            kept.append(t); continue
+        key = t.name + " @" + ",".join(sorted(readers.get(t.name, ())))
+        how = next((h for rx, h in rules if rx.search(key)), default)
+        w = numpy_helper.to_array(t)
+        tally.setdefault(how, [0, 0, 0]); tally[how][0] += 1; tally[how][1] += w.nbytes
+        if how == "keep":
+            kept.append(t); tally[how][2] += w.nbytes; continue
+        if how == "fp16":
+            h = numpy_helper.from_array(w.astype(np.float16), t.name + "__h")
+            added_inits.append(h)
+            added_nodes.append(helper.make_node("Cast", [h.name], [t.name], to=TensorProto.FLOAT, name=t.name + "__cast"))
+            tally[how][2] += w.size * 2
+            continue
+        assert how == "int8", how
+        rows = w.shape[0] if w.ndim > 1 else 1
+        k = w.size // rows
+        nblocks = -(-k // BLOCK)
+        padded = np.zeros((rows, nblocks * BLOCK), np.float32); padded[:, :k] = w.reshape(rows, k)
+        blocks = padded.reshape(rows, nblocks, BLOCK)
+        scale = np.abs(blocks).max(axis=2) / 127
+        scale[scale == 0] = 1.0
+        q = np.clip(np.round(blocks / scale[..., None]), -128, 127).astype(np.int8).reshape(rows, nblocks * BLOCK)[:, :k]
+        added_inits += [numpy_helper.from_array(q, t.name + "__q"), numpy_helper.from_array(scale.astype(np.float32), t.name + "__s"),
+                        numpy_helper.from_array(np.array(w.shape, np.int64), t.name + "__shape")]
+        added_nodes += [helper.make_node("DequantizeLinear", [t.name + "__q", t.name + "__s"], [t.name + "__dq"], axis=1, block_size=BLOCK, name=t.name + "__dqn"),
+                        helper.make_node("Reshape", [t.name + "__dq", t.name + "__shape"], [t.name], name=t.name + "__rs")]
+        tally[how][2] += q.size + scale.size * 4
+    del g.initializer[:]; g.initializer.extend(kept + added_inits)
+    nodes = list(g.node); del g.node[:]; g.node.extend(added_nodes + nodes)
+    if "int8" in tally:
+        for o in model.opset_import:
+            if o.domain in ("", "ai.onnx"): o.version = max(o.version, 21)
+    onnx.save(model, dst)
+    for how, (count, before, after) in tally.items():
+        print(f"  {how}: {count} tensors, {before / 1e6:.1f} MB -> {after / 1e6:.1f} MB")
+
+
+if __name__ == "__main__":
+    main(*sys.argv[1:4])
+
+
+-------------------------------------------------------------------------
+Apache License, Version 2.0 — https://www.apache.org/licenses/LICENSE-2.0
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may
+not use these files except in compliance with the License. You may obtain
+a copy of the License at the address above; its full text also stands in
+assets/vendor/lama/LICENSE.txt.
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

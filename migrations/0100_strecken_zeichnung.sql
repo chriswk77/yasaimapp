@@ -1,0 +1,33 @@
+-- The original of a walk, and a copy for drawing (12.09.2026, the day the
+-- recorder app went from a fix every ten seconds to one every three —
+-- „wir zeichnen Strecken jetzt alle 3 Sekunden auf").
+--
+-- UNTIL NOW THE SIEVE WAS THE STORE: a position that did not count as
+-- movement (a step shorter than the device's own accuracy) was not only
+-- kept out of the distance, it was never written. At ten seconds between
+-- fixes that lost little; at three, two out of three fixes fall under the
+-- threshold, and what would have been kept for later — an elevation
+-- profile, a re-sieve with better rules — would be gone the moment it
+-- arrived. So `positions` now holds EVERY position the server accepts
+-- (coordinates in the world, accuracy under fifty metres), and the sieve
+-- is a measure again, not a filter: distance, box and the drawing are
+-- derived from it, the column is not.
+--
+-- THE DRAWING IS A COPY, MADE ON UPLOAD. Seven thousand fixes a day are
+-- harmless in this column; a hundred such days are seven hundred thousand
+-- vertices for the map to push through its renderer on every pan, and
+-- most of them say nothing a line could show. `drawing` is what the
+-- sieve keeps, simplified by Douglas–Peucker to a few metres of tolerance
+-- (TRACK_DRAWING_TOLERANCE_M in tracks.php; measured on a real walk of
+-- 343 sieved positions: 189 vertices at three metres), and it is what the
+-- buckets deliver. drawing_count stands beside it for the delivery limit,
+-- for the same reason point_count does: a listing must not parse JSON.
+--
+-- NULL FOR THE STOCK, built on first delivery (tracks_bucket_get_scoped):
+-- SQL cannot simplify a line, and six rows do not need a tool. That build
+-- does NOT touch updated_at — the devices' fingerprints must not move
+-- for a derived column; the shape change is announced by VERSION 3 in
+-- trackstore.js instead.
+ALTER TABLE map_tracks
+    ADD COLUMN drawing       LONGTEXT     NULL COMMENT 'JSON wie positions, gesiebt und vereinfacht — was die Karte zeichnet' AFTER positions,
+    ADD COLUMN drawing_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Stützpunkte der Zeichnung' AFTER point_count;

@@ -1,0 +1,97 @@
+# Zugangsdaten. Die Vorlage config.sample.php gehört ins Repository, die
+# ausgefüllte Fassung niemals — dort stehen Datenbankpasswort und Pfade.
+/config.php
+
+# Fundstellen und Fotos. Das ist der eigentliche Inhalt der Anwendung und
+# gehört dem Benutzer; ein Repository ist dafür der falsche Ort. Die
+# .htaccess darin schützt das Verzeichnis auf dem Server und kommt mit.
+/data/*
+!/data/.htaccess
+
+# Ausnahme: die Taxonomie-Grundlage. Anders als die gespeicherten Orte sind das
+# keine persönlichen Daten, sondern der gemeinsame Unterbau für die geplante
+# Artendatenbank — und im Repository liegt er automatisch zweitgesichert.
+# Genau das hat gefehlt, als der Zweitrechner ausfiel.
+!/data/taxonomie/
+!/data/taxonomie/**
+
+# Ausgenommen von der Ausnahme: die Übertragungsdateien. 19 MB, die sich nie
+# ändern — im Repository kosten sie jeden Push und jedes Deployment, und der
+# Weg dorthin führt über eine Leitung, die das nicht hergibt. Sie werden
+# einmal von Hand auf den Server gelegt und bleiben dort liegen.
+# Erzeugt mit: php admin/tax_export.php --really
+/data/taxonomie/uebertrag/
+
+# Ebenso das Geoidgitter: gemeinfreie Daten der NGA, keine persönlichen. Es
+# muss mit aufs Netz, weil ohne es keine Höhe umgerechnet werden kann — und
+# ein Punkt ohne Höhenbezug ist in einer Dokumentation wertlos.
+!/data/geoid/
+!/data/geoid/**
+
+# Die vier DGfM-Listen (Speisepilze, uneinheitlich bewertet, Giftpilze,
+# Verantwortungsarten) als eine CSV — das Hauptbuch, das die Verwaltung
+# einliest und dessen Diff zeigt, was die DGfM geändert hat. Die geholten
+# Originale (PDF, HTML) daneben bleiben draußen: admin/dgfm_lists.mjs holt
+# sie jederzeit neu.
+!/data/dgfm/
+!/data/dgfm/marks.csv
+/data/dgfm/source/
+
+# Ein- und Ausfuhren. Eine Google-Takeout-Ausfuhr enthält die gespeicherten
+# Orte im Klartext — die darf unter keinen Umständen mitgehen, auch nicht in
+# ein privates Repository.
+/takeout*.zip
+/*.csv
+/*.gpx
+/*.kml
+/*.kmz
+/*.geojson
+/*.sql
+
+# Örtliche Werkzeugeinstellungen
+/.claude/settings.local.json
+
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Editoren
+.idea/
+.vscode/
+*.swp
+*~
+
+# Abhängigkeiten, falls später einmal welche dazukommen
+/vendor/
+/node_modules/
+
+# Das Paket für den Handbetrieb (admin/handbetrieb.php) — eine Kopie
+# dessen, was ohnehin schon im Repository steht. Es entsteht nur, wenn
+# GitHub Actions ausfällt, und wird bei jedem Lauf neu geschrieben.
+_upload/
+
+# Ausgenommen von der Ausnahme, wie die Übertragungsdateien darüber: die
+# ROHDATEN der Taxonomie. Das GBIF-Rückgrat allein ist 488 MB, und es ist
+# jederzeit neu zu beziehen — die Bezugswege stehen in den Importskripten
+# und in data/taxonomie/LIESMICH.md. Was git einmal gesehen hat, bleibt
+# darin; deshalb steht diese Zeile, BEVOR die erste solche Datei hier lag.
+/data/taxonomie/rohdaten/
+
+# Local development harness. The launch configuration carries an absolute
+# path of this machine — on any other checkout it would point into
+# somebody else's home directory and start nothing.
+/.claude/
+
+# Das starke Modell von „Entfernen" (assets/js/moebius.js): drei Dateien,
+# zusammen 620 MB, die größte 455 MB — mehr, als GitHub pro Datei annimmt.
+# Sie liegen von Hand auf dem Server (assets/vendor/moebius/LICENSE.txt sagt,
+# woher sie kommen und wie sie gemacht sind) und gehören nicht ins Repository.
+/assets/vendor/moebius/*.onnx
+
+# Modules are repositories of their own (21.11.2026). A module lies in
+# modules/<name>/ and is cloned there by whoever has it; the application
+# neither carries it nor names it (includes/modules.php), and an installation
+# without any is complete. modules/README.md stays — it is the application's.
+/modules/*/

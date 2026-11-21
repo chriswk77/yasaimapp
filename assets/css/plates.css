@@ -1,0 +1,1282 @@
+/* PLATES — the editor window and the row in „Belege" (06.10.2026,
+   assets/js/plates.js, includes/plate_window.php).
+
+   THE PAGE IS PAPER. Everything on it — the white ground, the grey of an
+   empty cell, the black and white of the bars and texts — depicts a printed
+   sheet and stays the same in all seven themes; the chrome around it takes
+   its colours from :root like every other window. */
+
+/* --- The window ----------------------------------------------------------- */
+/* TWO FRAMES ON THE PAGE, two colours (20.11.2026: „eine
+   normale Markierfarbe und eine Bearbeitenfarbe für, ich bin gerade in dem
+   Bildausschnitt drin zum Zoomen und zum Positionieren"). MARKED — chosen,
+   its settings at the side, to be moved where it moves — is one state for
+   every thing on the page, and its frame is quiet: a grey halfway between
+   text and ground, which stands on the white paper and on a bright
+   micrograph alike. EDITING — the cutout opened by a double click, the
+   wheel and the drag on the picture — wears the accent, the one loud
+   colour here. Both come from tokens, so no theme needs a rule. */
+.plate-window {
+    --plate-mark: color-mix(in srgb, var(--text) 50%, var(--ground));
+    --plate-edit: var(--accent);
+    width: 100%;
+    height: 100dvh;
+    max-width: 100%;
+    max-height: 100dvh;
+    padding: 0;
+    color: var(--text);
+    background: var(--ground-2);
+    border: none;
+    border-radius: 0;
+}
+.plate-window::backdrop { background: rgba(0, 0, 0, .78); }
+/* It holds the focus on opening (plates.js) only so no button does — a ring
+   round the whole window would be the same false signal, larger. */
+.plate-window:focus { outline: none; }
+/* THE display BELONGS ON [open] AND NOWHERE ELSE — CLAUDE.md, trap two. */
+.plate-window[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.plate-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+    padding: .45rem .8rem;
+    border-bottom: 1px solid var(--border);
+}
+.plate-head-title { margin: 0 .5rem 0 .3rem; font-size: 1rem; font-weight: 600; }
+.plate-pages { display: flex; gap: .3rem; }
+.plate-pages .button.is-active { border-color: var(--accent); color: var(--accent-light); }
+.plate-head-tools { display: flex; align-items: center; gap: .3rem; margin-left: .4rem; }
+.plate-head-tools select { width: auto; height: var(--field-height-small); padding-block: 0; }
+/* A button with nothing but a symbol in it is square (CLAUDE.md). */
+.plate-head-tools .plate-page-add { width: var(--field-height-small); padding: 0; justify-content: center; }
+.plate-head-right { display: flex; align-items: center; gap: .3rem; margin-left: auto; }
+.plate-zoom { display: flex; align-items: center; gap: .4rem; margin-right: .4rem; color: var(--text-quiet); cursor: pointer; }
+/* A FINE SLIDER (09.11.2026: „den Anfasser des Sliders extrem
+   groß und auch den Strich extrem groß. Können wir das etwas feiner
+   machen?"): the browser's own was a thick accent bar with a large knob.
+   Drawn by hand as the photo window's develop sliders (photowindow.css,
+   .photo-develop-row), finer still: a 2-px line, an 11-px knob, both in
+   the text's colour; no frame while it moves. */
+.plate-zoom input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 7rem;
+    min-height: 1.2rem;
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+.plate-zoom input::-webkit-slider-runnable-track { height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--text) 40%, transparent); }
+.plate-zoom input::-moz-range-track { height: 2px; border-radius: 1px; background: color-mix(in srgb, var(--text) 40%, transparent); }
+.plate-zoom input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 11px;
+    height: 11px;
+    margin-top: -4.5px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--text);
+}
+.plate-zoom input::-moz-range-thumb { width: 11px; height: 11px; border: 0; border-radius: 50%; background: var(--text); }
+.plate-zoom input:focus { outline: none; }
+.plate-zoom input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 35%, transparent); }
+.plate-zoom input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 3px color-mix(in srgb, var(--text) 35%, transparent); }
+.plate-zoom output { min-width: 3.2rem; color: var(--text); font-variant-numeric: tabular-nums; }
+/* A button with nothing but a symbol in it is square (CLAUDE.md). */
+.plate-head .button.plate-square { width: var(--field-height-small); padding: 0; justify-content: center; }
+/* „Export" and its two files beneath it, folded out to the left — the
+   button stands at the window's right edge. Drawn like the photo window's
+   tool menu: the symbol, the name, quieter beneath it what one gets. */
+.plate-export { position: relative; display: flex; }
+.plate-export-menu {
+    position: absolute;
+    top: calc(100% + .35rem);
+    right: 0;
+    z-index: 9;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 17rem;
+    padding: .35rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .45);
+}
+.plate-export-menu .button {
+    justify-content: flex-start;
+    align-items: center;
+    gap: .55rem;
+    height: auto;
+    text-align: left;
+}
+.plate-export-text { display: flex; flex-direction: column; line-height: 1.2; }
+.plate-export-hint { font-size: .75rem; font-weight: 400; color: var(--text-quiet); }
+
+.plate-main {
+    /* THE STRIP'S WIDTH IS THE USER'S (plates.js writes --plate-strip-width
+       and keeps it per device). Never narrower than it always was, never
+       more than half the window — the page keeps the larger part.
+       UNTOUCHED, IT IS WIDE ENOUGH FOR THE MENU (07.10.2026:
+       „da wir auf dem Desktop links eh immer viel Platz haben, da es ja
+       ein A4-Blatt im Hochformat ist … eine Standardgröße, dass die Menüs
+       auch schon angezeigt werden, und eine ausreichend große
+       Bildvorschau"): 26 rem leave the pictures some 16 rem beside the
+       9 of the menu. An upright page is bounded by its height on a desk;
+       the width it gives up was empty ground on both sides of it. */
+    --plate-strip: clamp(10rem, var(--plate-strip-width, 26rem), 50vw);
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    /* The settings' width is the user's too since 09.11.2026 (plates.js,
+       sideEdge), 18 rem untouched as it always was. */
+    --plate-side: clamp(14rem, var(--plate-side-width, 18rem), 40vw);
+    grid-template-columns: var(--plate-strip) minmax(0, 1fr) var(--plate-side);
+}
+
+/* --- The find's pictures, to drag from ------------------------------------ */
+/* The strip itself does not scroll — its list does, and beside it, from
+   two columns on, the menu: two scroll areas side by side, never one
+   inside the other (CLAUDE.md, trap four). */
+.plate-strip {
+    /* The group's head over the whole width, menu and list beneath it,
+       each scrolling on its own (plates.js, stripDraw). */
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+    container: plate-strip / inline-size;
+}
+.plate-strip-now {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin: 0;
+}
+.plate-strip-now > svg { width: 1.1rem; height: 1.1rem; flex: none; }
+.plate-strip-list {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    /* The scroll bar's room always kept, as at the Fundbrowser's rail
+       (app.css .finds-rail): switching groups must not change the width. */
+    scrollbar-gutter: stable;
+    padding: .6rem;
+}
+.plate-strip-title {
+    margin: .7rem 0 .35rem;
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+.plate-strip-group:first-child > .plate-strip-title { margin-top: 0; }
+.plate-strip-tile {
+    position: relative;
+    margin-bottom: .45rem;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: #000;
+    cursor: grab;
+}
+/* A picture grows with the strip's width — at the width the strip always
+   had, the 16 : 9 is the five rem it was cut to before. */
+.plate-strip-tile img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+
+/* THE MENU OF THE GROUPS (07.10.2026: „sobald sie groß genug
+   ist, dass wir zwei Spalten machen können, hätte ich gerne in der linken
+   Spalte einfach das Menü … und dann rechts nur dazu die Bilder"). Beside
+   it the chosen group alone, and whatever the strip grows by more goes to
+   the pictures. Narrower, it is the one list it always was, every group
+   under its heading.
+   THREE WIDTHS SINCE 13.11.2026 („eine Zwischenstufe mit nur
+   Symbolen, und ziehe ich noch weiter, mit Symbolen und Text"): from
+   13 rem a column of symbols alone (subjecticons.js), the name under the
+   pointer as the item's title; from 22 rem symbol and name. The same
+   thresholds as the Fundbrowser's rail (app.css, @container finds-rail).
+   THE LIST BELOW 13 REM IS GONE (the same day: „die erste
+   Ansicht, wo alles untereinander ist, kannst du komplett streichen") —
+   the symbols stand at any width. */
+.plate-strip-menu { display: none; }
+.plate-strip-menu-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .4rem .55rem;
+    border: none;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text);
+    font: inherit;
+    font-size: .85rem;
+    line-height: 1.3;
+    text-align: left;
+    cursor: pointer;
+}
+.plate-strip-menu-item:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.plate-strip-menu-item > .icon { width: 1.25rem; height: 1.25rem; }
+.plate-strip-menu-word { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* About to be chosen — the pointer rests on it, the guard is still
+   waiting (hoverpick.js): a fine frame, not yet the surface. */
+.plate-strip-menu-item.is-waiting { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
+/* „Auswertung" under its pictures' name (plates.js, group … sub): indented,
+   a step quieter, so it reads as part of that group. */
+.plate-strip-menu-item.is-sub { padding-left: 1.4rem; font-size: .8rem; color: var(--text-quiet); }
+.plate-strip-menu-item.is-sub.is-active { color: var(--text); }
+/* Chosen: the surface and the bold name. NO BAR OF THE ACCENT down its
+   left edge — the sidebar's dialect was tried here first and taken out
+   again (07.10.2026: „was mir nicht gefällt, ist die
+   Highlight-Farbe auf der linken Seite"). */
+.plate-strip-menu-item.is-active {
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    font-weight: 600;
+}
+/* THE CHOSEN ONE IS A BUTTON WITH AN ACCENT FRAME, like the rails of
+   „Bearbeiten" on the right (14.11.2026: „das machen wir auch
+   auf der linken Seite so bei den Thumbnails"; photowindow.css,
+   .photo-develop-rail-sign.is-active). Until then a short accent line on
+   its right side, facing the pictures, marked it (13.11.2026); the frame
+   all round replaced both rails' lines the same day. A shadow inside, so
+   the item keeps its size. The bar down the LEFT edge stays gone
+   (07.10.2026 above). */
+.plate-strip-menu-item.is-active { box-shadow: inset 0 0 0 1px var(--accent); }
+.plate-strip-menu {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    flex: none;
+    overflow-y: auto;
+    padding: .6rem .3rem;
+    /* A GROUND OF ITS OWN, THE STRIP'S WHOLE HEIGHT (20.11.2026:
+       „die Schnellauswahl … einen eigenen Hintergrundfarbe … in kompletter
+       Höhe") instead of the rule beside it — the 5 % of the text colour
+       the panels' groups wear. */
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+.plate-strip-group:not(.is-active),
+.plate-strip-group > .plate-strip-title { display: none; }
+/* Wide enough to judge a picture: the whole of it, not a cut. */
+.plate-strip-tile img { aspect-ratio: 4 / 3; object-fit: contain; }
+/* The symbols alone: square items, no indent for „Auswertung". */
+@container plate-strip (max-width: 21.99rem) {
+    .plate-strip-menu-item,
+    .plate-strip-menu-item.is-sub { width: 2.3rem; height: 2.3rem; padding: 0; justify-content: center; }
+    .plate-strip-menu-word { display: none; }
+}
+@container plate-strip (min-width: 22rem) {
+    .plate-strip-menu { width: 10rem; padding: .6rem .4rem; }
+}
+
+/* THE EDGE THE WIDTH IS DRAGGED AT — seven pixels astride the strip's
+   rule, lit in the accent under the pointer, as at the photo window's
+   strip. */
+.plate-strip-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--plate-strip) - 4px);
+    width: 7px;
+    z-index: 4;
+    cursor: col-resize;
+    touch-action: none;
+}
+.plate-strip-edge:hover::after,
+.plate-main.is-resizing > .plate-strip-edge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: var(--accent);
+}
+.plate-main.is-resizing { cursor: col-resize; user-select: none; }
+/* THE STRIP FOLDS (plates.js, stripFold; 09.11.2026), in the dress of the
+   find's head and rail: a small sign on the middle of the rule, folded a
+   thin bar at the left, the pointer over it lays the strip over the page.
+   Every part in its own column for good — peeking, the strip leaves the
+   grid, and the page would otherwise slide into the bar's column. */
+.plate-main > .plate-strip { grid-column: 1; grid-row: 1; }
+.plate-main > .plate-stage { grid-column: 2; grid-row: 1; }
+.plate-main > .plate-side { grid-column: 3; grid-row: 1; }
+.plate-main.is-strip-folded { --plate-strip: 1rem; }
+.plate-main.is-strip-folded > .plate-strip { visibility: hidden; border: 0; }
+.plate-main.is-strip-folded > .plate-strip-edge { display: none; }
+.plate-strip-fold {
+    position: absolute;
+    top: 50%;
+    left: var(--plate-strip);
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 1.1rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .65rem;
+    cursor: pointer;
+}
+.plate-strip-fold:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 45%, transparent); }
+/* OUTSIDE THE STRIP, on the page's grey ground (09.11.2026:
+   „Wenn wir das Handle da auf die Mitte legen, kommen wir oft ziemlich nah
+   an die Kacheln der Sidebar. Hier würde ich es sogar andersrum bevorzugen.
+   Dass das Handle außerhalb der Sidebar positioniert wird") — its left
+   edge on the rule, square and without a frame there, round outside: the
+   finds rail's tab the other way round. */
+.plate-strip-fold {
+    transform: translate(0, -50%);
+    border-left: 0;
+    border-radius: 0 var(--radius) var(--radius) 0;
+}
+.plate-strip-fold .icon { transform: rotate(180deg); }
+.plate-main.is-strip-folded > .plate-strip-fold { display: none; }
+.plate-strip-handle { display: none; }
+.plate-main.is-strip-folded > .plate-strip-handle {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 6;
+    width: 1rem;
+    padding: 0;
+    border: 0;
+    border-right: 1px solid var(--border);
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .6rem;
+    cursor: pointer;
+}
+.plate-main.is-strip-folded > .plate-strip-handle:hover { color: var(--text); }
+.plate-side-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: calc(var(--plate-side) - 4px);
+    width: 7px;
+    z-index: 4;
+    cursor: col-resize;
+    touch-action: none;
+}
+.plate-side-edge:hover::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 3px;
+    width: 1px;
+    background: var(--accent);
+}
+.plate-main.is-side-folded { --plate-side: 1rem; }
+.plate-main.is-side-folded > .plate-side { visibility: hidden; }
+.plate-main.is-side-folded > .plate-side-edge { display: none; }
+.plate-side-fold {
+    position: absolute;
+    top: 50%;
+    right: var(--plate-side);
+    transform: translate(50%, -50%);
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: 1.1rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .65rem;
+    cursor: pointer;
+}
+.plate-side-fold:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 45%, transparent); }
+/* The settings' tab the same way: on the grey, its right edge on the rule. */
+.plate-side-fold {
+    transform: translate(0, -50%);
+    border-right: 0;
+    border-radius: var(--radius) 0 0 var(--radius);
+}
+.plate-main.is-side-folded > .plate-side-fold { display: none; }
+.plate-side-handle { display: none; }
+.plate-main.is-side-folded > .plate-side-handle {
+    display: grid;
+    place-items: center;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 6;
+    width: 1rem;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--border);
+    background: var(--ground-3);
+    color: var(--text-quiet);
+    font-size: .6rem;
+    cursor: pointer;
+}
+.plate-main.is-side-folded > .plate-side-handle:hover { color: var(--text); }
+.plate-side-handle .icon { transform: rotate(180deg); }
+/* Peeking, the bar stays at the right edge and the panel opens to its left. */
+.plate-main.is-side-folded.is-side-peek > .plate-side {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 1rem;
+    width: clamp(14rem, var(--plate-side-width, 18rem), 40vw);
+    background: var(--ground);
+    z-index: 20;
+    box-shadow: -.5rem 0 1rem rgb(0 0 0 / .35);
+}
+.plate-main.is-strip-folded.is-strip-peek > .plate-strip {
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 1rem;
+    width: clamp(10rem, var(--plate-strip-width, 26rem), 50vw);
+    border-right: 1px solid var(--border);
+    background: var(--ground);
+    z-index: 20;
+    box-shadow: .5rem 0 1rem rgb(0 0 0 / .35);
+}
+/* What a strip tile drags (plates.js, dragGhost): a small tag or a small
+   picture, held off-screen while the browser takes its snapshot. */
+.plate-drag-ghost {
+    position: fixed;
+    top: -1000px;
+    left: 0;
+    padding: .25rem .55rem;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--ground-2);
+    color: var(--text);
+    font-size: .8rem;
+    white-space: nowrap;
+}
+.plate-drag-ghost:has(canvas) { padding: 0; }
+.plate-drag-ghost canvas { display: block; border-radius: var(--radius); }
+
+/* The tile whose preset the side shows (plates.js, chooseDraft) — marked
+   as a chosen thing on the page is. */
+.plate-strip-tile.is-chosen { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Already on the plate — a tick, the way the sidebar marks what is on. */
+.plate-strip-tile.is-used::after {
+    content: "✓";
+    position: absolute;
+    top: .2rem;
+    right: .25rem;
+    display: grid;
+    place-items: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: .7rem;
+    font-weight: 700;
+}
+.plate-strip-by {
+    position: absolute;
+    left: .2rem;
+    bottom: .2rem;
+    max-width: calc(100% - .4rem);
+    overflow: hidden;
+    padding: 0 .3rem;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, .6);
+    color: #fff;
+    font-size: .68rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+/* „FUNDANGABEN" AND „TEXT" WEAR THE WINDOW'S DRESS, not paper
+   (30.10.2026, plates.js tileBody says why): the resting surface every
+   control here wears, the text colour, the window's font. The measures'
+   tiles below stay paper — a plot is a drawing of what the page gets. */
+.plate-strip-details {
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    color: var(--text);
+}
+.plate-strip-details > span {
+    display: block;
+    overflow: hidden;
+    padding: .4rem .5rem;
+    font-size: .78rem;
+    line-height: 1.35;
+}
+/* Label in front, value behind it, one line each — the labels' column as
+   wide as the longest of them, a value too long ends in an ellipsis and
+   says itself in full on hover. */
+/* The labels' column at most 45 per cent since the tile shows every
+   detail (09.11.2026): „Bestimmungssicherheit" took the whole narrow
+   strip and pushed every value out. A long label ends in „…" instead. */
+.plate-strip-details > .plate-strip-facts {
+    display: grid;
+    grid-template-columns: fit-content(45%) minmax(0, 1fr);
+    gap: .15rem .6rem;
+    align-content: start;
+}
+.plate-strip-fact-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-quiet); }
+.plate-strip-fact-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plate-strip-words-text { color: var(--text-quiet); }
+/* THE WORDS WEAR THE PICTURES' FORMAT (07.10.2026: „diese
+   Textangaben, Fundangaben und Werte, das sind teilweise nur eine Zeile.
+   Die würde ich an das Bildformat anpassen, auch wenn wir dann viel
+   weiße Fläche haben … aber es ist auffälliger und wird nicht so leicht
+   übersehen"). A strip of one line between pictures read as a caption
+   of the picture above it. Now the tile is as large as a picture —
+   16 : 9 in the one list, 4 : 3 beside the menu — and the paper keeps
+   what the words leave over. */
+.plate-strip-details,
+.plate-strip-words {
+    display: flex;
+    flex-direction: column;
+    aspect-ratio: 16 / 9;
+}
+/* THE DETAILS AS TALL AS THEIR LINES since they are a list in one line per
+   entry (30.10.2026): in the picture's format the lower ones were cut
+   off, and on the window's surface the tile no longer needs the size to
+   be seen among the pictures. */
+.plate-strip-details:not(.plate-strip-text) { aspect-ratio: auto !important; }
+.plate-strip-details > span,
+.plate-strip-words > span { flex: 1; min-height: 0; overflow: hidden; }
+/* The text is one line: a shorter tile than the pictures', or it would be a white field with a word in it. */
+.plate-strip-text { aspect-ratio: auto !important; }
+.plate-strip-line { display: block; }
+/* Beside the menu the pictures are 4 : 3 — and so are the words. Here,
+   after the rule above, or the 16 : 9 would win at equal weight. */
+.plate-strip-details,
+.plate-strip-words { aspect-ratio: 4 / 3; }
+.plate-strip-details > b {
+    display: block;
+    padding: .15rem .45rem;
+    background: var(--ground-3);
+    color: var(--text);
+    font-size: .74rem;
+    font-weight: 400;
+}
+/* A keying way's tile is its heading alone, three lines at most
+   (plates.js — the chain of Gröger's keys runs long). */
+.plate-strip-keying > b {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+    padding-block: .35rem;
+}
+
+/* The measures' tiles: their name as a heading, under it their numbers or their plot on paper. */
+.plate-strip-measure { background: #fff; color: #222; }
+.plate-strip-measure > span {
+    display: block;
+    padding: .35rem .45rem;
+    font: .62rem/1.35 Arial, Helvetica, sans-serif;
+}
+.plate-strip-measure svg,
+.plate-strip-row { display: block; width: 100%; height: auto; }
+.plate-strip-measure b {
+    display: block;
+    padding: .15rem .45rem;
+    background: var(--ground-3);
+    color: var(--text);
+    font-size: .74rem;
+    font-weight: 400;
+}
+
+/* --- The page ------------------------------------------------------------- */
+/* THE STAGE SCROLLS once the page is larger than it (the zoom). Centred by
+   the page's own auto margins, not by the grid: a centred grid item that
+   outgrows its box hangs over the top and left edges where no scrollbar
+   reaches it. */
+.plate-stage {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    /* Room above the page for the tools of the cells at its head — they
+       stand outside their cell, always (plates.js, fitTools) —, and below
+       it to drop a row across the whole page (plates.js, pageSideOf). */
+    padding: 3rem 1rem 2.25rem;
+    /* A MIDDLE GREY UNDER THE PAPER, the same in every theme
+       (07.10.2026: „die Fläche … ist momentan schwarz. Da wir manche
+       Kacheln auch komplett schwarz machen können mit weißer Schrift, ist
+       das ungünstig … einen Grauton. Nicht zu hell"). The page's colours
+       are paper's and never follow the theme; the desk it lies on must
+       set off both of its extremes — a black tile at the edge and the
+       white sheet — and --ground is near black in the dark themes and
+       near white in the light ones. A written-out value, then, like the
+       paper itself. #5a5a5a first, then a notch darker on his word („das
+       Grau kann ruhig noch ein Tick dunkler, unsere Standard-Themenfarbe
+       ist ja auch recht dunkel“). */
+    background: #4a4a4a;
+}
+.plate-window.is-reading .plate-stage { padding-top: 1rem; }
+.plate-stage > .plate-page { flex: none; margin: auto; }
+/* The hand that moves a zoomed page (plates.js, stage pan): the space bar
+   held shows it everywhere, a drag shows it closed. */
+.plate-stage.is-hand, .plate-stage.is-hand * { cursor: grab !important; }
+.plate-stage.is-panning, .plate-stage.is-panning * { cursor: grabbing !important; user-select: none; }
+.plate-page {
+    position: relative;
+    display: flex;
+    background: #fff;
+}
+.plate-stage .plate-page { box-shadow: 0 6px 30px rgba(0, 0, 0, .55); }
+/* The page laid out large and scaled down as one (plates.js, drawPageShown). */
+.plate-page.is-scaled { overflow: hidden; }
+.plate-page-scaled {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    transform-origin: 0 0;
+}
+.plate-body-area { flex: 1; display: flex; min-width: 0; min-height: 0; }
+.plate-split { flex: 1; display: flex; min-width: 0; min-height: 0; }
+.plate-split.is-row { flex-direction: row; }
+.plate-split.is-col { flex-direction: column; }
+.plate-slot { display: flex; flex-basis: 0; min-width: 0; min-height: 0; }
+.plate-divider { position: relative; z-index: 3; flex: none; }
+
+.plate-cell {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    background: #eceeed;
+}
+/* AN INSET (plates.js, insetEl): a smaller window lying on its cell —
+   over the picture, under the words; its frame is the page's lines,
+   set as a shadow outside its box (layoutCell). Its own cell fills it. */
+.plate-inset { position: absolute; z-index: 1; }
+.plate-inset > .plate-cell { position: absolute; inset: 0; }
+/* No grey of its own under an inset: a distribution with a see-through
+   ground (plateparts.js, plotGroundOpacity) shows the picture beneath,
+   and everything else an inset holds covers its box anyway. */
+.plate-inset > .plate-cell.is-filled { background: transparent; }
+.plate-window:not(.is-reading) .plate-inset { cursor: move; }
+.plate-window .plate-inset.is-selected { outline: 2px solid var(--plate-mark); outline-offset: 3px; }
+/* The grips that size it — four corners and the middles of the four
+   sides (plates.js, insetResize); chrome, never printed; there while it
+   is under the pointer or chosen. EACH SITS OUTSIDE THE BOX
+   (20.11.2026: „die Anfasser … außerhalb machen"), on the selection's
+   outline and clear of the picture: centred on its edge point, they
+   covered the very detail a free frame is pulled around. --grip-out is
+   how far a grip's centre lies off the edge; its inner side then stays
+   a pixel off the picture. */
+.plate-inset-grip {
+    --grip-out: 7px;
+    position: absolute;
+    z-index: 3;
+    display: none;
+    width: 11px;
+    height: 11px;
+    margin: -6px 0 0 -6px;
+    border: 1px solid #000;
+    border-radius: 2px;
+    background: var(--accent);
+    touch-action: none;
+}
+.plate-inset-grip.is-nw { left: calc(0px - var(--grip-out)); top: calc(0px - var(--grip-out)); cursor: nwse-resize; }
+.plate-inset-grip.is-n  { left: 50%; top: calc(0px - var(--grip-out)); cursor: ns-resize; }
+.plate-inset-grip.is-ne { left: calc(100% + var(--grip-out)); top: calc(0px - var(--grip-out)); cursor: nesw-resize; }
+.plate-inset-grip.is-e  { left: calc(100% + var(--grip-out)); top: 50%; cursor: ew-resize; }
+.plate-inset-grip.is-se { left: calc(100% + var(--grip-out)); top: calc(100% + var(--grip-out)); cursor: nwse-resize; }
+.plate-inset-grip.is-s  { left: 50%; top: calc(100% + var(--grip-out)); cursor: ns-resize; }
+.plate-inset-grip.is-sw { left: calc(0px - var(--grip-out)); top: calc(100% + var(--grip-out)); cursor: nesw-resize; }
+.plate-inset-grip.is-w  { left: calc(0px - var(--grip-out)); top: 50%; cursor: ew-resize; }
+.plate-window:not(.is-reading) .plate-inset:hover > .plate-inset-grip,
+.plate-window:not(.is-reading) .plate-inset.is-selected > .plate-inset-grip { display: block; }
+
+/* What the cell cuts to its edges — picture, words, bar. The tools stand
+   beside it, uncut (plates.js, cellEl). */
+.plate-clip { position: absolute; inset: 0; overflow: hidden; }
+/* Unfilled on a finished page is plain paper. */
+.plate-window.is-reading .plate-cell:not(.is-filled),
+.plate-mini .plate-cell:not(.is-filled) { background: #fff; }
+.plate-cell.is-paper { background: #fff; }
+/* The writing of a picture's ticked layers lies over the cutout, under the insets and the bar. */
+.plate-notes { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+/* One's own writing is taken and moved on the plate (plates.js, noteDrag):
+   the shape answers the pointer, the rest of the overlay lets it through. */
+.plate-notes .plate-note-shape { pointer-events: visiblePainted; cursor: move; }
+/* The chosen arrow's grips (plates.js, noteGrips), over the writing. An end
+   the cutout cuts off is reached by opening the cutout and moving the
+   picture — the cell's edge clips the grips as it clips the picture. */
+.plate-note-grips { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; }
+.plate-note-grips .plate-note-grip { pointer-events: all; cursor: move; }
+.plate-note-grips .plate-note-grip[data-grip="weight"],
+.plate-note-grips .plate-note-grip[data-grip="size"] { cursor: pointer; }
+/* A CHOSEN PICTURE CELL wears the marking frame (see .plate-window). An
+   outline on the cell itself was there and never seen: the clip and the
+   picture inside it are positioned and paint over their parent's outline.
+   So the frame is a layer over them, as the open cutout's always was. */
+.plate-window .plate-cell.is-chosen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border: 2px solid var(--text);
+    /* TWO TONES, so it stands on any picture: the text colour with a
+       hairline of the ground inside it — light and dark in every theme.
+       The grey alone of the other marks vanished on a mid-toned photo
+       (measured on the demo's green-grey mushroom). */
+    box-shadow: inset 0 0 0 1px var(--ground);
+    pointer-events: none;
+}
+.plate-picture {
+    position: absolute;
+    max-width: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.plate-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: .5rem;
+    border: 1.5px dashed #b5bbb9;
+    color: #6f7674;
+    font-size: .78rem;
+    text-align: center;
+}
+
+/* The bar: label above a line, both in the ink the ground asks for. */
+.plate-bar {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.plate-bar-line { display: block; width: 100%; }
+/* The medium (plates.js, layoutCell) — the bar's letters, without a line. */
+.plate-med {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.plate-item {
+    position: absolute;
+    z-index: 2;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.25;
+}
+.plate-text,
+.plate-values { white-space: pre; }
+.plate-values.is-empty { color: #6f7674 !important; font-style: italic; }
+/* The names — the layer's, a part's — as a column of their own, every row set in beside it
+   (plateparts.js, valuesRows, lead) — on the plate and in the strip. */
+.plate-has-lead { display: grid; grid-template-columns: auto auto; justify-content: start; }
+.plate-has-lead > .plate-strip-line { display: block; }
+.plate-values-lead { white-space: pre; }
+/* A keying way wraps at the width layoutCell gives it (plates.js, keyingEl). */
+.plate-keying { white-space: normal; }
+.plate-keying.is-empty { color: #6f7674 !important; font-style: italic; }
+.plate-block { position: absolute; inset: 0; display: block; }
+.plate-window:not(.is-reading) .plate-block { cursor: pointer; }
+.plate-window .plate-block.is-selected { outline: 2px solid var(--plate-mark); outline-offset: -3px; }
+.plate-details.plate-item { white-space: nowrap; }
+.plate-details b { font-weight: 700; }
+/* A detail's sign in front of it (plateparts.js, DETAIL_ICONS): the words'
+   ink and size, a little air behind — the print draws the same 1 + .3 em. */
+/* The signs drawn bold — a heavier line — while the words behind them stay plain (detailsRows). */
+.plate-swatch { display: inline-block; width: .9em; height: .9em; margin-right: .3em; vertical-align: -.1em;
+    border: 1px solid rgba(0, 0, 0, .35); border-radius: 2px; }
+.plate-detail-icon .icon { width: 1em; height: 1em; margin-right: .3em; vertical-align: -.14em; stroke-width: 2.7; }
+/* The details' list in the panel is sorted by its grips (plates.js, detailTicks). */
+.plate-ticks.is-sortable .choice-row { align-items: center; }
+.plate-grip { display: inline-flex; color: var(--text-quiet); cursor: grab; touch-action: none; }
+.plate-grip:hover { color: var(--text); }
+.plate-ticks .choice-row.is-lifted { opacity: .55; }
+/* A Leerzeile reads as a spacer, not as one more detail; the button that adds one stands under the list. */
+.plate-ticks .choice-row.is-gap > span:last-child { font-style: italic; color: var(--text-quiet); }
+.plate-ticks.is-sortable > .button { justify-self: start; margin-top: .4rem; }
+.plate-details-tile {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+}
+/* Its words stand where they were put (tileTextAt) and wrap at the cell's edge. */
+.plate-details-text { position: absolute; }
+.plate-window:not(.is-reading) .plate-details-text { cursor: move; }
+.plate-details-none { color: #8a918f; font-style: italic; }
+
+/* --- Editing ----------------------------------------------------------------- */
+/* The cutout is fixed until its cell is opened for it (plates.js, framing). */
+/* The frame as a layer of its own: an outline would lie UNDER the picture,
+   which is positioned and paints over it. */
+.plate-window .plate-cell.is-framing::after {   /* after .is-chosen and as specific: a chosen cell opened for its cutout wears the edit colour */
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border: 2px solid var(--plate-edit);
+    box-shadow: inset 0 0 0 1px var(--ground);
+    pointer-events: none;
+}
+/* AN INSET'S OPEN CUTOUT changes the colour of its one frame, the
+   selection's, instead of drawing a second one inside it — two frames
+   around one picture were what the maintainer found (20.11.2026). */
+.plate-window .plate-inset.is-selected:has(.plate-cell.is-framing) { outline-color: var(--plate-edit); }
+.plate-window .plate-inset.is-selected .plate-cell.is-framing::after { display: none; }
+.plate-window .plate-cell:has(> .plate-clip > .plate-inset.is-selected .plate-cell.is-framing) > .plate-controls { outline-color: var(--plate-edit); }
+.plate-cell.is-framing .plate-picture { cursor: grab; }
+.plate-cell.is-panning .plate-picture { cursor: grabbing; }
+.plate-window:not(.is-reading) .plate-item { cursor: move; }
+.plate-window:not(.is-reading) .plate-details-tile { cursor: pointer; }
+.plate-window:not(.is-reading) .plate-split.is-row > .plate-divider { cursor: col-resize; }
+.plate-window:not(.is-reading) .plate-split.is-col > .plate-divider { cursor: row-resize; }
+/* The line is fine to look at and too thin to hit — the grip is wider. */
+.plate-window:not(.is-reading) .plate-divider::after { content: ""; position: absolute; inset: -4px; }
+.plate-window:not(.is-reading) .plate-divider:hover::after {
+    background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.plate-window .plate-item:hover { outline: 1px dashed currentColor; }
+.plate-window .plate-item.is-selected,
+.plate-window .plate-details-tile.is-selected {
+    outline: 2px solid var(--plate-mark);
+    outline-offset: 1px;
+}
+.plate-window .plate-details-tile.is-selected { outline-offset: -3px; }
+.plate-text[contenteditable="plaintext-only"],
+.plate-text[contenteditable="true"] {
+    cursor: text;
+    background: rgba(255, 255, 255, .85);
+    color: #000 !important;
+}
+
+/* The cell's tools, while the pointer is on it. */
+.plate-tools {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    z-index: 6;
+    white-space: nowrap;
+    display: none;
+    gap: 3px;
+    padding: 3px;
+    transform: translateX(-50%);
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .35);
+}
+.plate-window:not(.is-dragging) .plate-cell.is-tools > .plate-tools { display: flex; }
+/* The invisible strip from the line to a row standing outside its cell
+   (plates.js, fitTools) — part of the cell, so crossing it keeps the row. */
+.plate-tools-bridge { position: absolute; z-index: 5; display: none; }
+.plate-window:not(.is-dragging) .plate-cell.is-tools > .plate-tools-bridge { display: block; }
+/* A button with nothing but a symbol in it is square (CLAUDE.md). */
+.plate-tools .button {
+    width: var(--field-height-small);
+    height: var(--field-height-small);
+    padding: 0;
+    justify-content: center;
+}
+.plate-tools .button.is-active { border-color: var(--accent); color: var(--accent-light); }
+/* An open cutout keeps its tools in sight — the button that closes it among them. */
+.plate-window:not(.is-dragging) .plate-cell.is-framing > .plate-tools { display: flex; }
+
+/* Where a dragged picture would land: the middle replaces, an edge splits. */
+.plate-zone {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+    border: 2px solid var(--accent);
+}
+
+/* Words land where the frame stands — no light over the whole cell. */
+.plate-zone.is-landing { background: none; border: 2px dashed var(--accent); }
+
+/* --- The side: what is selected, then the plate ---------------------------- */
+/* The side does not scroll — its panel does, under tabs that stay put. */
+.plate-side {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    border-left: 1px solid var(--border);
+}
+/* The tabs speak the photo statistics' dialect: quiet words on a rule,
+   the chosen one in the text's colour, bold, underlined in the accent. */
+.plate-side-tabs {
+    flex: none;
+    display: flex;
+    gap: 1.1rem;
+    padding: .55rem 1rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.plate-side-tabs button {
+    padding: .3rem 0 .4rem;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    background: none;
+    color: var(--text-quiet);
+    font: inherit;
+    font-size: .9rem;
+    cursor: pointer;
+}
+.plate-side-tabs button:hover { color: var(--text); }
+.plate-side-tabs button.is-active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.plate-side-panel {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: .8rem 1rem;
+}
+.plate-side-empty { margin: 0; font-size: .9rem; color: var(--text-quiet); }
+.plate-side-title {
+    margin: 1.1rem 0 .45rem;
+    font-size: .74rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+.plate-side-panel > .plate-side-title:first-child,
+.plate-selection > .plate-side-title { margin-top: 0; }
+/* EVERY GROUP ON A GROUND OF ITS OWN (20.11.2026: „die
+   einzelnen Bereiche, also zum Beispiel Label, Medium und Maßstab …
+   eine Hintergrundfarbe geben, damit man die Gruppe optisch besser
+   zusammensieht"). Each question of the panel — its heading, its
+   choices, what belongs to it — lies on one soft surface, the next a gap
+   apart. The ground comes from the text colour, as every control's
+   surface does (CLAUDE.md, „A BUTTON LOOKS LIKE ONE"): it lifts on the
+   dark themes and darkens on the light ones without a rule per theme. */
+.plate-side .field.question {
+    margin: .45rem 0 0;
+    padding: .5rem .5rem .55rem;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+/* A RENDERED LEGEND SITS ON THE FIELDSET'S TOP EDGE, and the ground would
+   start halfway down its words. Floated, a legend is an ordinary block
+   inside the box (HTML's rendering rules), and the next thing clears it. */
+.plate-side fieldset.field.question > legend { float: left; width: 100%; padding: 0; }
+.plate-side fieldset.field.question > legend + * { clear: both; }
+.plate-side fieldset.field.question.plate-radio-line > legend { width: auto; }
+.plate-ticks .choice-row { padding: .1rem 0; }
+/* A long field name („Bestimmungssicherheit") breaks inside the group's
+   ground instead of pushing the panel sideways. */
+.plate-ticks .choice-row > span { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.plate-selection > .plate-ticks { margin-top: 0; }
+.plate-ticks .is-empty { color: var(--text-quiet); }
+/* The four corners of the bar and the medium (plates.js, cornerControl):
+   square buttons in a 2 × 2 block, laid out as the corners they point
+   into, indented like every answer. There only while the thing is on
+   (cornerControl) — off, its heading stands alone. */
+.plate-corners {
+    display: grid;
+    grid-template-columns: repeat(2, var(--field-height-small));
+    gap: .3rem;
+}
+.plate-corners .button {
+    width: var(--field-height-small);
+    height: var(--field-height-small);
+    padding: 0;
+    justify-content: center;
+}
+.plate-corners .button.is-active { border-color: var(--accent); color: var(--accent-light); }
+/* What goes with the switch — the medium's short or long form, the marks
+   behind a label — indented as every answer, under the heading whose
+   tick it belongs to (plates.js, headTick). */
+/* Flush inside the body, which carries the indent itself — app.css's
+   `.field.question .choice-row` would indent them a second time. */
+.field.question .plate-corner-body .choice-row { margin-left: 0; }
+/* THE OPTIONS LEFT, THE CORNERS IN A SECOND COLUMN AT THE RIGHT EDGE
+   (plates.js, cornerControl) — where the panel gives room for both; a
+   narrower one lays the corners last, under the options. The body is the
+   container, indented as every answer; the grid inside it can ask how
+   wide it is (an element cannot query its own size). 17.5 rem: the ink
+   row („Schriftfarbe" and three squares, 188 px measured) beside the
+   2 × 2 corners (67 px) and the gap, with a little air. At the panel's
+   own width (18 rem, the body 214 px) the corners therefore stand last;
+   the panel drawn wider by its edge puts them at the right. */
+.plate-corner-body { container-type: inline-size; margin: .3rem 0 0 1.6rem; }
+.plate-corner-grid { display: flex; flex-direction: column; gap: .45rem; }
+@container (min-width: 17.5rem) {
+    .plate-corner-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 1rem; align-items: start; }
+}
+/* THE SWITCH IN THE HEADING (plates.js, headTick): its tick in front,
+   then the heading's words — the heading keeps its weight, the whole of
+   it is the tick's label.
+   `.field label` (app.css) would make it a field's quiet caption; the
+   heading's own size, weight and colour win here (.field.question >
+   legend, a question as large as its answers). */
+.field.question .plate-head-tick {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.plate-head-tick > input { margin: 0; }
+/* Each piece's ink and soft ground, under its corners (plates.js, writingControls). */
+.plate-writing { margin: 0; }
+.plate-corner-options > div:first-child:not(:empty) { margin-bottom: .35rem; }
+/* „Schriftfarbe" and its three squares in ONE line (plates.js,
+   writingControls): the quiet caption, then „Auto", black, white — at the
+   corners' size. The black and the white are written out: they depict
+   the ink itself, not a surface (CLAUDE.md, colours). The chosen one
+   wears the accent's frame, as the chosen corner does. */
+.plate-ink-row { display: flex; align-items: center; gap: .3rem; }
+.plate-ink-row > span:first-child { margin-right: .3rem; color: var(--text-quiet); font-size: .85rem; }
+.plate-ink {
+    display: grid;
+    place-items: center;
+    width: var(--field-height-small);
+    height: var(--field-height-small);
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;   /* as .button (app.css) — the corners beside it */
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: .75rem;
+    cursor: pointer;
+}
+.plate-ink.is-black { background: #000; }
+.plate-ink.is-white { background: #fff; }
+.plate-ink:hover { border-color: var(--accent); }
+/* The chosen one in the accent's 1-px frame, exactly as the chosen corner
+   (20.11.2026: the doubled ring was „etwas zu breit und zu
+   mächtig … anpassen an die Linienstärke der Position"). */
+.plate-ink.is-active { border-color: var(--accent); }
+/* The same squares behind a question's heading, in its line (plates.js,
+   choiceLine: „Hintergrund" ■ □); „keiner" a square crossed out. */
+.plate-swatch-question { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.plate-choices { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; gap: .3rem; }
+/* THE GENERAL TAB'S CHOICES ARE RADIOS (plate_window.php): the legend and
+   the buttons in one line as above, the radio itself out of sight inside
+   its label, the label lit while its radio is checked. A legend is no flex
+   item of its fieldset, so the fieldset is the line here. */
+.plate-radio-line { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+.plate-radio-line > legend { float: left; margin: 0 .5rem 0 0; padding: 0; }
+.plate-ink > input[type="radio"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.plate-ink { position: relative; }
+/* A label as button: app.css' `.field label` would make it a quiet block caption. */
+.field .plate-ink { display: grid; margin: 0; color: var(--text); font-weight: 400; }
+.plate-ink:has(> input:checked) { border-color: var(--accent); }
+.plate-ink:has(> input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* A HEADING AND ITS STEPPER IN ONE LINE (Schriftgröße): the question,
+   then A− 10 pt A+ beside it. */
+.field.question.plate-inline { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; }
+.plate-inline > .plate-question { margin: 0; }
+.plate-inline > .plate-stepper { margin-left: 0; gap: .25rem; }
+/* A slider beside its heading (Größe) takes the rest of the line. */
+.plate-inline > .plate-slider { flex: 1 1 8rem; min-width: 0; margin: 0; }   /* min-width: the range input's own 129 px would push it into a line of its own */
+.plate-inline > .plate-slider + .button { margin-left: 0; }
+/* Narrower than a stepper of its own line: „Schriftgröße" (99 px) and
+   A− 10 pt A+ fit a group's 219 px only so (137 px measured before) —
+   A− and A+ are signs, so square (CLAUDE.md, a symbol's button). */
+.plate-inline > .plate-stepper output { min-width: 2.4rem; }
+.plate-inline > .plate-stepper > .button { width: var(--field-height-small); padding: 0; justify-content: center; }
+/* An answer in words (Länge, fein, schmal): the square grown to its word. */
+.plate-ink.plate-word { width: auto; min-width: var(--field-height-small); padding: 0 .4rem; font-size: .8rem; }
+.plate-swatch-question > .plate-question { margin: 0 .5rem 0 0; }
+.plate-ink.is-none {
+    background: linear-gradient(to top right, transparent calc(50% - .75px), var(--text-quiet) 50%, transparent calc(50% + .75px));
+}
+/* The opacity inside the background's group, right under its squares:
+   a quiet caption in the slider's own line. */
+.plate-swatch-group > .plate-opacity { margin: .4rem 0 0 1.6rem; }
+.plate-opacity > span:first-child { color: var(--text-quiet); font-size: .85rem; }
+.plate-question { margin: 0 0 .3rem; font-size: 1rem; font-weight: 700; color: var(--text); }
+.plate-stepper { display: flex; align-items: center; gap: .4rem; margin-left: 1.6rem; }
+.plate-stepper output { min-width: 3.5rem; text-align: center; }
+.plate-slider { display: flex; align-items: center; gap: .6rem; margin: 0 0 .4rem 1.6rem; }
+.plate-slider input { flex: 1; min-width: 0; }   /* its dress: photowindow.css, with the develop sliders */
+.plate-slider output { min-width: 3rem; text-align: right; }
+.plate-slider + .button { margin-left: 1.6rem; }
+.plate-selection > .button { margin-top: .9rem; }
+.plate-side .field.question + .field.question { margin-top: .45rem; }
+
+/* How the autosave stands — quiet, in the head before the zoom; red only
+   where it failed. No footer since 30.10.2026 (plate_window.php says why). */
+.plate-saved { margin-right: .6rem; font-size: .85rem; color: var(--text-quiet); white-space: nowrap; }
+.plate-saved:empty { display: none; }
+.plate-saved.is-failed { color: var(--error); }
+.plate-note { margin: 0 0 0 .4rem; }
+.plate-note:empty { display: none; }
+/* „Tafel löschen": set apart from Export, red only under the pointer. */
+.plate-head .plate-delete { margin-left: .6rem; }
+.plate-head .plate-delete:hover:not(:disabled) {
+    background: var(--error);
+    border-color: var(--error);
+    color: #fff;
+}
+
+/* --- Looking only: the page alone ------------------------------------------ */
+/* THE PAGE IN THE ONE COLUMN THERE IS (17.11.2026, at a foreign
+   find's plate: „Ich sehe die Tafel in einer schmalen Seitenbar ganz
+   rechts, klein. Und die linke Seite ist komplett leer"). Since
+   09.11.2026 every part has its column for good — the page the second
+   (above, „Every part in its own column") —, and with the strip and the
+   settings gone only one column was left: the page went into a second
+   one the browser added, as wide as nothing, beside the empty first. */
+.plate-window.is-reading .plate-main { grid-template-columns: minmax(0, 1fr); }
+.plate-window.is-reading .plate-main > .plate-stage { grid-column: 1; }
+/* A SELECTOR LIST ENDS IN ITS RULE. When the last line of this one went
+   with the preview button (07.10.2026), the comma ran on into .plate-row
+   below — and whoever only looked at a plate saw the strip and the
+   maker's side panel as flex boxes, settings and all. */
+.plate-window.is-reading .plate-strip,
+.plate-window.is-reading .plate-strip-edge,
+.plate-window.is-reading .plate-strip-fold,
+.plate-window.is-reading .plate-strip-handle,
+.plate-window.is-reading .plate-side-edge,
+.plate-window.is-reading .plate-side-fold,
+.plate-window.is-reading .plate-side-handle,
+.plate-window.is-reading .plate-side,
+.plate-window.is-reading .plate-head-tools { display: none; }
+
+/* --- The row in „Belege" ---------------------------------------------------- */
+.plate-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .45rem;
+    margin-top: .35rem;
+}
+.plate-row > .photo-group-title { flex-basis: 100%; }
+/* The offer stands on a line of its own, the others' plates under it. */
+.plate-row > .plate-make { flex-basis: 100%; justify-content: flex-start; }
+.plate-tile {
+    position: relative;
+    padding: 0;
+    overflow: hidden;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+}
+.plate-tile:hover { border-color: var(--accent); }
+.plate-mini { pointer-events: none; }
+/* A page kept as a picture in the cloud (plate_images.php) — it IS the page, edge to edge. */
+.plate-mini-image { display: block; width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.plate-tile-count,
+.plate-tile-by {
+    position: absolute;
+    padding: 0 .25rem;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, .6);
+    color: #fff;
+    font-size: .66rem;
+    line-height: 1.4;
+}
+.plate-tile-count { top: .15rem; right: .15rem; }
+.plate-tile-by {
+    left: .15rem;
+    bottom: .15rem;
+    max-width: calc(100% - .3rem);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* The editor is a desk's tool: on the phone the plate is looked at
+   (drawRow offers no new one there). */
+@media (max-width: 860px) {
+    .plate-head { padding: .45rem .6rem; }
+    /* The phone's own pinch zooms; the slider would only take the head's room. */
+    .plate-zoom, #plate-zoom-fit { display: none; }
+}
+
+/* A SOFT GROUND under the writing on a picture (plates.js, softGround;
+   09.11.2026): the picture beneath blurred by the browser — no colour of
+   its own — and faded out on all four sides by two masks that keep only
+   where both are solid, no box, no edge. The print's softOnCanvas draws
+   the same. */
+.plate-soft {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    /* Sideways and up-down apart (plateparts.js, SOFT_FEATHER_Y, 20.11.2026). */
+    --soft-feather: 6px;
+    --soft-feather-y: 3px;
+    -webkit-mask-image:
+        linear-gradient(to right, transparent, #000 var(--soft-feather), #000 calc(100% - var(--soft-feather)), transparent),
+        linear-gradient(to bottom, transparent, #000 var(--soft-feather-y), #000 calc(100% - var(--soft-feather-y)), transparent);
+    -webkit-mask-composite: source-in;
+    mask-image:
+        linear-gradient(to right, transparent, #000 var(--soft-feather), #000 calc(100% - var(--soft-feather)), transparent),
+        linear-gradient(to bottom, transparent, #000 var(--soft-feather-y), #000 calc(100% - var(--soft-feather-y)), transparent);
+    mask-composite: intersect;
+}
+
+/* THE CHOSEN THING'S CONTROLS, in a layer over everything in its cell
+   (plates.js, removeMark, controlsFit): its frame, its ×, an inset's
+   grips — never under a text that lies over it. The layer lets every
+   press through but its controls'. */
+.plate-controls {
+    position: absolute;
+    z-index: 20;
+    pointer-events: none;
+    outline: 2px solid var(--plate-mark);
+    outline-offset: 1px;
+}
+.plate-controls.is-inset { outline-offset: 3px; }
+.plate-controls > * { pointer-events: auto; }
+.plate-controls > .plate-inset-grip { display: block; }
+.plate-window.is-reading .plate-controls { display: none; }
+
+/* THE RED × on the chosen thing in a cell — the measure's dress from the
+   photo window (photowindow.js, drawRemoveAt): round, on the ground, red
+   ring and cross. Off the upper right corner, clear of the selection's
+   outline; an inset's further out, past its corner grip, and inside its
+   corner where the cell's edge would cut it (controlsFit). Chrome — the
+   print never sees it. */
+.plate-remove {
+    position: absolute;
+    z-index: 4;
+    top: -16px;
+    right: -16px;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1.5px solid var(--error);
+    border-radius: 50%;
+    background: var(--ground);
+    color: var(--error);
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+.plate-controls.is-inset > .plate-remove { top: -28px; right: -28px; }
+.plate-controls.is-inset > .plate-remove.is-inside { top: 10px; right: 10px; }
+.plate-remove:hover { background: color-mix(in srgb, var(--error) 18%, var(--ground)); }

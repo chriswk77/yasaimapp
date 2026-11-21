@@ -1,0 +1,26 @@
+-- A DATA REPAIR OF ONE INSTALLATION — nothing to do anywhere else.
+--
+-- The find numbers of 26.–28.09.2026 back where they belonged
+-- (28.09.2026: „Funde, die ich während einer Exkursion angelegt habe,
+-- bekommen keine eigene Fundnummer").
+--
+-- THEY WERE MINTED AND THEN ERASED. The server minted every number inside
+-- the create; the point window, protecting a title being typed, kept its
+-- untouched number field empty while the create's answer brought the
+-- number in, and the save sent „no number" (fixed in b37250c, fillDetail
+-- and numberTyped in map.js). Seventy finds lost theirs, each seconds
+-- after it was created. The counter had run on without a gap, so every
+-- lost number was the one between its kept neighbours, and this file put
+-- each back — one statement per find, held by its id, its owner, its
+-- creation time and its still empty number.
+--
+-- WHY THE FILE IS STILL HERE AND ITS STATEMENTS ARE NOT (21.11.2026, on the
+-- way to a public repository): the file name is a line of the ledger of
+-- applied migrations (includes/migrations.php) and stays; the seventy
+-- statements named one installation's finds and their numbers, and that is
+-- nobody else's to read. They could never have matched a row anywhere
+-- else.
+--
+-- THE BUG IS WHAT MATTERS TO A READER, and it is fixed in the code. Where
+-- this file had run, it has run; everywhere else it is applied as what it
+-- now is — nothing.

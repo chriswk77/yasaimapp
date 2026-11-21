@@ -1,0 +1,31 @@
+-- Redeemed invitation codes are deleted, not kept (25.08.2026:
+-- „Ja, ich denke wir brauchen das nicht mehr, die Information über welchen
+-- Code wir eingeladen haben. Also weg damit").
+--
+-- NOTHING IS LOST THAT ANYBODY READS. The person a code brought in stands
+-- in the user table with name, role, find count and the line „eingeladen
+-- von …" — and that line comes from map_users.invited_by, which points at
+-- the INVITER, not at the code. No foreign key of any other table points
+-- at map_invites.
+--
+-- AND IT CLOSES A HOLE THAT WAS REALLY THERE. redeemed_by carries
+-- ON DELETE SET NULL, and a spent code was recognised by
+-- redeemed_by IS NOT NULL. Whoever deleted the account in the
+-- administration — which it can — reset the marking to NULL, and the code
+-- was live again and redeemable a second time. Measured before this file
+-- was written, in a transaction and rolled back. A row that is gone cannot
+-- come back to life.
+--
+-- The maintainer asked whether the codes are registered somewhere internally so
+-- no duplicate can arise. They are NOT — the uniqueness comes from
+-- uq_map_invites_code on this very table, and a deleted row releases its
+-- code. It does not matter: twelve places out of an alphabet of 32 make
+-- 32^12, about 1.15 × 10^18 codes. And a code minted twice would be a new
+-- invitation for a new person, not access to an old account.
+--
+-- THE COLUMNS redeemed_by AND redeemed_at STAY. Dropping them would be the
+-- tidy move and the wrong one: the code goes live before the migration, and
+-- both the open-code list and the statistics row read redeemed_by IS NULL
+-- to survive exactly that window. Two nullable columns on a table with a
+-- handful of rows cost nothing; the ROWS were what the maintainer was after.
+DELETE FROM map_invites WHERE redeemed_by IS NOT NULL;

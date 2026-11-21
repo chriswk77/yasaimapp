@@ -1,0 +1,628 @@
+THE THREE FILES IN THIS FOLDER — the „Entfernen" tool of the photo window
+=========================================================================
+
+lama_small.onnx
+    LaMa (big-lama), "Resolution-robust Large Mask Inpainting with Fourier
+    Convolutions", Suvorov et al., Samsung AI Center, WACV 2022,
+    https://github.com/advimman/lama — Apache License 2.0, trained on the
+    Places2 data set. Converted to ONNX by Carve
+    (https://huggingface.co/Carve/LaMa-ONNX, lama_fp32.onnx, 208 MB,
+    Apache License 2.0).
+
+    This copy was MADE HERE, not downloaded: the convolution weights of
+    lama_fp32.onnx stored smaller. The large FFC convolutions (conv
+    l2l/l2g/g2l and the 384x384 1x1, 170 MB of 204) blockwise as int8,
+    each block of 64 values with its own scale — the procedure published
+    with othytenk/lama-int4-int8 on Hugging Face, written anew; the rest
+    (spectral transforms, down- and up-sampling, first and last layers)
+    as half floats. The arithmetic stays fp32: onnxruntime folds the
+    weights back once at load when the session sets
+    session.disable_quant_qdq = 1. The script that made it stands below
+    this text (mix.py). Inputs and outputs are the original's: image
+    float32 [1,3,512,512] in 0..1, mask float32 [1,1,512,512] with
+    1 = fill, output float32 [1,3,512,512] in 0..255.
+
+    WHY THIS SPLIT (14.11.2026). The first copy (10.11.2026, 37 MB) kept
+    the large layers as int4 and the rest as int8, „no difference to the
+    eye" on four holes. Christian then saw one, in a large area: other
+    colour values than the full model's. Measured on 16 large holes in two
+    of his pictures, the fill's mean colour against the fp32 model's, in
+    tone values, on average / at the worst:
+        large int4, rest int8   37 MB   2.70 / 7.82     (the first copy)
+        large int8, rest int8   59 MB   2.06 / 5.78
+        large int4, rest fp16   45 MB   1.69 / 5.48
+        large fp16, rest int8   98 MB   2.09 / 5.81
+        large int8, rest fp16   66 MB   0.20 / 0.56     (this file)
+        fp16 throughout        106 MB   0.18 / 0.59
+    So the difference came from the small group, and int4 added its own.
+    Over 16 mixed holes (spot, blade, large area) this file stays within
+    0.33 tone values of the fp32 model on average (58 dB, 44 dB in the
+    worst hole; the first copy 37 and 25 dB), and the fine detail of its
+    fill is the fp32 model's to within two per cent.
+
+    NO TENSOR OF MORE THAN FOUR DIMENSIONS (14.11.2026): each of the 36
+    Fourier units computed its transform with tensors of five — a trailing
+    axis of size 1 for matrix-times-vector, an axis of size 2 that stacks
+    real and imaginary parts. onnxruntime-web writes WebGPU shaders for
+    rank five and more in a way Firefox's WebGPU refuses to compile, and
+    the model fell back to the processor there (16 s per hole instead of
+    2.4). Three patterns were replaced by the same arithmetic at rank four
+    or less; no weight was touched. On the processor the output is
+    IDENTICAL to the file before the rewrite (largest difference 0.0); on
+    the graphics card, Chromium and Firefox 159 answer the 16 holes alike
+    and as the processor does. The idea is the one published with
+    othytenk/lama-int4-int8 (its r4 file), the script written anew; it
+    stands below mix.py.
+
+ort.webgpu.bundle.min.mjs, ort-wasm-simd-threaded.asyncify.wasm
+    ONNX Runtime Web 1.31.1, npm package onnxruntime-web, dist/.
+    Copyright (c) Microsoft Corporation. MIT License.
+
+-------------------------------------------------------------------------
+MIT License (ONNX Runtime Web)
+
+Copyright (c) Microsoft Corporation.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------
+Apache License 2.0 (LaMa, LaMa-ONNX, and the copy made from them here)
+
+                                 Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+-------------------------------------------------------------------------
+mix.py — how lama_small.onnx was made from lama_fp32.onnx
+(Python 3.12, onnx, numpy; python mix.py lama_fp32.onnx out.onnx int8 fp16,
+then flat.py on the result)
+
+"""LaMa's convolution weights stored smaller, with a choice per group of layers.
+
+Blockwise integers with one scale per block, or plain half floats (fp16),
+chosen per group of layers — written to find out WHICH layers a difference
+to the fp32 model comes from, and then used to make the file:
+  BIG   the large FFC convolutions (conv l2l/l2g/g2l and the 384x384 1x1) — 170 MB of 204
+  REST  everything else — spectral transforms, down/up-sampling, first and last layers
+Each group gets one of: int4, int8, int8b16 (blocks of 16), fp16, keep.
+
+usage: python mix.py <in.onnx> <out.onnx> <big> <rest>
+"""
+import re
+import sys
+
+import numpy as np
+import onnx
+from onnx import TensorProto, helper, numpy_helper
+
+BIG = re.compile(r"conv(l2g|g2l|l2l)\.weight|anon:384x384x1x1")
+MIN_VALUES = 4096
+
+
+def layer_key(name, w):
+    return name if "model.generator" in name else "anon:" + "x".join(str(d) for d in w.shape)
+
+
+def quantize(w, bits, block, half_scales):
+    qmax = 7 if bits == 4 else 127
+    rows = w.shape[0]; k = int(np.prod(w.shape[1:])); nblocks = -(-k // block)
+    padded = np.zeros((rows, nblocks * block), np.float32); padded[:, :k] = w.reshape(rows, k)
+    blocks = padded.reshape(rows, nblocks, block)
+    scale = np.abs(blocks).max(axis=2) / qmax
+    if half_scales: scale = scale.astype(np.float16).astype(np.float32)
+    scale[scale == 0] = 1.0
+    q = np.clip(np.round(blocks / scale[..., None]), -qmax - 1, qmax).astype(np.int8)
+    return q.reshape(rows, nblocks * block)[:, :k], scale, rows, k
+
+
+def main(src, dst, big, rest):
+    model = onnx.load(src); graph = model.graph
+    weights = {t.name: t for t in graph.initializer}
+    users = {}
+    for n in graph.node:
+        for i in n.input: users[i] = users.get(i, 0) + 1
+    added_inits, added_nodes, replaced = [], [], set()
+    for n in graph.node:
+        if n.op_type not in ("Conv", "ConvTranspose") or len(n.input) < 2: continue
+        name = n.input[1]
+        if name not in weights or name in replaced or users.get(name) != 1: continue
+        w = numpy_helper.to_array(weights[name]).astype(np.float32)
+        if w.ndim != 4 or w.size < MIN_VALUES: continue
+        how = big if BIG.search(layer_key(name, w)) else rest
+        if how == "keep": continue
+        if how == "fp16":
+            hname = name + "_h"
+            added_inits.append(numpy_helper.from_array(w.astype(np.float16), hname))
+            added_nodes.append(helper.make_node("Cast", [hname], [name + "_w"], to=TensorProto.FLOAT, name=name + "_cast_node"))
+        else:
+            bits = 4 if how == "int4" else 8
+            block = {"int4": 32, "int8": 64, "int8b16": 16}[how]
+            half = bits == 4
+            q, scale, rows, k = quantize(w, bits, block, half)
+            qname, sname, shape_name = name + "_q", name + "_s", name + "_shape"
+            if bits == 4:
+                nib = (q.reshape(-1) & 0x0F).astype(np.uint8)
+                if nib.size % 2: nib = np.append(nib, np.uint8(0))
+                q_tensor = helper.make_tensor(qname, TensorProto.INT4, [rows, k], vals=(nib[0::2] | (nib[1::2] << 4)).astype(np.uint8).tobytes(), raw=True)
+            else:
+                q_tensor = numpy_helper.from_array(q, qname)
+            added_inits += [q_tensor, numpy_helper.from_array(scale.astype(np.float16 if half else np.float32), sname),
+                            numpy_helper.from_array(np.array(w.shape, np.int64), shape_name)]
+            out = name + "_dq"
+            added_nodes.append(helper.make_node("DequantizeLinear", [qname, sname], [out], axis=1, block_size=block, name=name + "_dq_node"))
+            if half:
+                added_nodes.append(helper.make_node("Cast", [out], [out + "_f32"], to=TensorProto.FLOAT, name=name + "_cast_node")); out += "_f32"
+            added_nodes.append(helper.make_node("Reshape", [out, shape_name], [name + "_w"], name=name + "_reshape_node"))
+        n.input[1] = name + "_w"
+        replaced.add(name)
+    kept = [t for t in graph.initializer if t.name not in replaced]
+    del graph.initializer[:]; graph.initializer.extend(kept + added_inits)
+    nodes = list(graph.node); del graph.node[:]; graph.node.extend(added_nodes + nodes)
+    for o in model.opset_import:
+        if o.domain in ("", "ai.onnx"): o.version = max(o.version, 21)
+    onnx.save(model, dst)
+
+
+if __name__ == "__main__":
+    main(*sys.argv[1:5])
+
+
+-------------------------------------------------------------------------
+flat.py — how the five-dimensional steps were taken out of it
+(Python 3.12, onnx, numpy; python flat.py out.onnx lama_small.onnx)
+
+"""LaMa without tensors of more than four dimensions — own implementation.
+
+WHY. Each of LaMa's 36 Fourier units computes its transform with tensors of
+five dimensions: a trailing axis of size 1 for matrix-times-vector, and an
+axis of size 2 that stacks real and imaginary parts. onnxruntime-web writes
+WebGPU shaders for tensors of rank five and more in a way Firefox's WebGPU
+refuses to compile, and the model then falls back to the processor there.
+
+WHAT. Three patterns are replaced by the same arithmetic at rank four or less.
+No weight is touched, no value changes beyond float rounding:
+
+  A  Squeeze(Sub|Add(MatMul(M, Unsqueeze(X, -1)), ...), -1)
+       ->  Sub|Add(MatMul(X, transpose(M)), ...)
+     M (K x W) times the column vectors of X is X's row vectors times M^T.
+
+  B  Unsqueeze(R, -1), Unsqueeze(I, -1) -> Concat(-1) -> Transpose(0,1,4,2,3)
+     -> Reshape(shape4), with Shape() taken of the 5-D tensor on the way
+       ->  Reshape(R, [0,0,-1]), Reshape(I, [0,0,-1]) -> Concat(axis 2)
+           -> Reshape(shape4); the 5-D shape is put together from Shape(R).
+     Per channel: all of the real part, then all of the imaginary — the
+     same order the transposed stack has when flattened.
+
+  C  Reshape(X, [B,C,2,H,W]) -> Transpose(0,1,3,4,2) -> Gather(axis 4, 0|1)
+       ->  Reshape(X, [B,-1,2*H*W]) -> Split in two along axis 2
+           -> Reshape(each, [B,C,H,W]).
+
+Afterwards every node whose outputs nobody reads is dropped, and the script
+refuses to write a file in which shape inference still finds rank five.
+
+usage: python flat.py <in.onnx> <out.onnx>
+"""
+import sys
+
+import numpy as np
+import onnx
+from onnx import TensorProto, helper, numpy_helper, shape_inference
+
+
+def ranks(model):
+    inf = shape_inference.infer_shapes(model)
+    out = {}
+    for vi in list(inf.graph.value_info) + list(inf.graph.input) + list(inf.graph.output):
+        out[vi.name] = len(vi.type.tensor_type.shape.dim)
+    return out
+
+
+def main(src: str, dst: str) -> None:
+    model = onnx.load(src)
+    g = model.graph
+    rank = ranks(model)
+    nodes = list(g.node)
+    producer = {o: n for n in nodes for o in n.output}
+    consumers: dict[str, list] = {}
+    for n in nodes:
+        for i in n.input:
+            consumers.setdefault(i, []).append(n)
+    inits = {t.name: t for t in g.initializer}
+
+    def const(name):
+        """The value of a constant input — an initializer or a Constant node's."""
+        if name in inits:
+            return numpy_helper.to_array(inits[name])
+        n = producer.get(name)
+        if n is not None and n.op_type == "Constant":
+            for a in n.attribute:
+                if a.name == "value":
+                    return numpy_helper.to_array(a.t)
+                if a.name == "value_int":
+                    return np.array(a.i)
+                if a.name == "value_ints":
+                    return np.array(list(a.ints))
+        raise ValueError("not a constant: " + name)
+
+    def attr(n, name, default=None):
+        for a in n.attribute:
+            if a.name == name:
+                return list(a.ints) if a.type == onnx.AttributeProto.INTS else a.i
+        return default
+
+    def last_axis(n):
+        axes = const(n.input[1]).reshape(-1).tolist()
+        return axes in ([-1], [4])
+
+    new_nodes: dict[int, list] = {}      # id(old node) -> nodes that stand in its place
+    gone: set[int] = set()
+    new_inits = []
+    serial = [0]
+
+    def fresh(stem):
+        serial[0] += 1
+        return f"r4_{stem}_{serial[0]}"
+
+    def i64(values, stem):
+        name = fresh(stem)
+        new_inits.append(numpy_helper.from_array(np.array(values, np.int64), name))
+        return name
+
+    rename: dict[str, str] = {}          # a Squeeze's output -> what it squeezed
+
+    tally = {"A": 0, "B": 0, "C": 0}
+
+    # ---- A: matrix times column vectors ---------------------------------
+    transposed: dict[str, tuple] = {}
+    for n in nodes:
+        if n.op_type != "MatMul" or rank.get(n.output[0], 0) < 5:
+            continue
+        un = producer.get(n.input[1])
+        assert un is not None and un.op_type == "Unsqueeze" and last_axis(un), "MatMul of rank 5 not of pattern A"
+        assert rank[n.input[0]] == 2 and rank[un.input[0]] == 4
+        m = n.input[0]
+        made = []
+        if m not in transposed:
+            t = fresh("mt")
+            transposed[m] = (t, helper.make_node("Transpose", [m], [t], perm=[1, 0], name=t))
+            made.append(transposed[m][1])
+        made.append(helper.make_node("MatMul", [un.input[0], transposed[m][0]], [n.output[0]], name=n.name + "_r4"))
+        new_nodes[id(n)] = made
+        gone.add(id(n))
+        tally["A"] += 1
+    for n in nodes:
+        if n.op_type == "Squeeze" and rank.get(n.input[0], 0) >= 5:
+            assert last_axis(n) and producer[n.input[0]].op_type in ("Sub", "Add")
+            rename[n.output[0]] = n.input[0]
+            gone.add(id(n))
+
+    # ---- B: real and imaginary stacked into the channels -----------------
+    for n in nodes:
+        if n.op_type != "Concat" or rank.get(n.output[0], 0) < 5:
+            continue
+        assert attr(n, "axis") in (-1, 4) and len(n.input) == 2
+        parts = []
+        for i in n.input:
+            un = producer[i]
+            assert un.op_type == "Unsqueeze" and last_axis(un) and rank[un.input[0]] == 4
+            parts.append(un.input[0])
+        (tr,) = consumers[n.output[0]]
+        assert tr.op_type == "Transpose" and attr(tr, "perm") == [0, 1, 4, 2, 3]
+        # The 5-D tensor's shape, wherever it was asked for: [B, C, 2, H, W] out of Shape(R).
+        # It stands where the Concat stood — before everything that reads it.
+        shape_r = fresh("shape_r")
+        five = fresh("shape5")
+        head, tail = fresh("bc"), fresh("hw")
+        new_nodes[id(n)] = [
+            helper.make_node("Shape", [parts[0]], [shape_r], name=shape_r),
+            helper.make_node("Slice", [shape_r, i64([0], "s"), i64([2], "e"), i64([0], "ax")], [head], name=head),
+            helper.make_node("Slice", [shape_r, i64([2], "s"), i64([4], "e"), i64([0], "ax")], [tail], name=tail),
+            helper.make_node("Concat", [head, i64([2], "two"), tail], [five], axis=0, name=five),
+        ]
+        reshape = None
+        for c in consumers[tr.output[0]]:
+            if c.op_type == "Shape":
+                rename[c.output[0]] = five
+                gone.add(id(c))
+            else:
+                assert c.op_type == "Reshape" and reshape is None
+                reshape = c
+        assert reshape is not None
+        flat3 = i64([0, 0, -1], "flat")
+        r3, i3, cat = fresh("re"), fresh("im"), fresh("cat")
+        made = [
+            helper.make_node("Reshape", [parts[0], flat3], [r3], name=r3),
+            helper.make_node("Reshape", [parts[1], flat3], [i3], name=i3),
+            helper.make_node("Concat", [r3, i3], [cat], axis=2, name=cat),
+            helper.make_node("Reshape", [cat, reshape.input[1]], [reshape.output[0]], name=reshape.name + "_r4"),
+        ]
+        # In the place of the Reshape: its shape input is computed by then.
+        new_nodes[id(reshape)] = made
+        gone.update({id(n), id(tr), id(reshape)})
+        tally["B"] += 1
+
+    # ---- C: the channels split back into real and imaginary --------------
+    for n in nodes:
+        if n.op_type != "Reshape" or rank.get(n.output[0], 0) < 5:
+            continue
+        (tr,) = consumers[n.output[0]]
+        assert tr.op_type == "Transpose" and attr(tr, "perm") == [0, 1, 3, 4, 2]
+        gathers = consumers[tr.output[0]]
+        assert len(gathers) == 2 and all(x.op_type == "Gather" and attr(x, "axis") in (4, -1) for x in gathers)
+        by_part = {int(const(x.input[1])): x for x in gathers}
+        assert set(by_part) == {0, 1}
+        s5 = n.input[1]
+        # The channel count in s5 may be -1 (left to the Reshape), so it is not
+        # read from there: the picture's size H, W is, and the rest follows.
+        tail, area, twice, shape3, shape4 = fresh("hw"), fresh("area"), fresh("twice"), fresh("shape3"), fresh("shape4")
+        x3, re3, im3, shape_x3, head = fresh("x3"), fresh("re3"), fresh("im3"), fresh("shape_x3"), fresh("bc")
+        made = [
+            helper.make_node("Slice", [s5, i64([3], "s"), i64([5], "e"), i64([0], "ax")], [tail], name=tail),
+            helper.make_node("ReduceProd", [tail], [area], keepdims=1, name=area),
+            helper.make_node("Mul", [area, i64([2], "two")], [twice], name=twice),
+            helper.make_node("Concat", [i64([0], "same"), i64([-1], "rest"), twice], [shape3], axis=0, name=shape3),
+            helper.make_node("Reshape", [n.input[0], shape3], [x3], name=x3),
+            helper.make_node("Split", [x3], [re3, im3], axis=2, num_outputs=2, name=fresh("split")),
+            helper.make_node("Shape", [x3], [shape_x3], name=shape_x3),
+            helper.make_node("Slice", [shape_x3, i64([0], "s"), i64([2], "e"), i64([0], "ax")], [head], name=head),
+            helper.make_node("Concat", [head, tail], [shape4], axis=0, name=shape4),
+            helper.make_node("Reshape", [re3, shape4], [by_part[0].output[0]], name=by_part[0].name + "_r4"),
+            helper.make_node("Reshape", [im3, shape4], [by_part[1].output[0]], name=by_part[1].name + "_r4"),
+        ]
+        new_nodes[id(n)] = made
+        gone.update({id(n), id(tr), id(by_part[0]), id(by_part[1])})
+        tally["C"] += 1
+
+    # ---- the graph put together again ------------------------------------
+    def through(name):
+        while name in rename:
+            name = rename[name]
+        return name
+
+    out_nodes = []
+    for n in nodes:
+        if id(n) in new_nodes:
+            out_nodes += new_nodes[id(n)]
+        if id(n) not in gone:
+            out_nodes.append(n)
+    for n in out_nodes:
+        for k, i in enumerate(n.input):
+            n.input[k] = through(i)
+    # Only what leads to an output stays.
+    needed = {o.name for o in g.output}
+    kept = []
+    for n in reversed(out_nodes):
+        if any(o in needed for o in n.output):
+            kept.append(n)
+            needed.update(i for i in n.input if i)
+    kept.reverse()
+    del g.node[:]
+    g.node.extend(kept)
+    old_inits = [t for t in g.initializer if t.name in needed]
+    del g.initializer[:]
+    g.initializer.extend(old_inits + [t for t in new_inits if t.name in needed])
+    del g.value_info[:]
+
+    onnx.checker.check_model(model)
+    left = [name for name, r in ranks(model).items() if r >= 5]
+    assert not left, f"{len(left)} tensors of rank five remain, e.g. {left[:3]}"
+    onnx.save(model, dst)
+    print(f"patterns: {tally}, nodes {len(nodes)} -> {len(kept)}, no tensor above rank 4")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])

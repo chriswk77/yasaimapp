@@ -1,0 +1,9 @@
+# Nothing in here is ever served: the users' photos, the cloud vault, the
+# application secret. Both syntaxes, because the host's Apache version is
+# not ours to know — 2.2 reads the first, 2.4 the second.
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

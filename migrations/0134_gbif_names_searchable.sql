@@ -1,0 +1,22 @@
+-- GBIF's names findable as the DGfM's species (26.09.2026).
+--
+-- Since 0106 the suggestions show 2 133 DGfM species under GBIF's name, but
+-- the full-text search never knew that name: map_tax_dgfm.search_text holds
+-- the DGfM's own name and the German one. Typed exactly as shown, 1 056 of
+-- them were not found as the DGfM's species — „Rhodofomes cajanderi" (the
+-- DGfM's Fomitopsis cajanderi) brought GBIF's own bare row instead, without
+-- German name or Red List category and with a gbif: reference. Offline the
+-- package delivers every species under the name it shows, so the same input
+-- gave the DGfM's species there and GBIF's here.
+--
+-- An index of its own on the 2 133 names, searched by a branch of its own
+-- (species_gbif_name_branch in includes/species.php). Not GBIF's full-text
+-- index on 960 000 names: matched there and joined back, „cor" cost 80 ms
+-- per query, and the search asks twice per keystroke. Not the name copied
+-- into search_text: 0106 and admin/tax_link.php fill gbif_name, and a copy
+-- would have to follow both.
+--
+-- The code runs without the index and then simply does not search there
+-- (species_gbif_names_searchable). The first FULLTEXT index on the table
+-- makes InnoDB rebuild it once — 37 000 rows, seconds.
+ALTER TABLE map_tax_links ADD FULLTEXT INDEX ft_gbif_name (gbif_name);

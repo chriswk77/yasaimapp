@@ -1,0 +1,23 @@
+-- A DATA REPAIR OF ONE INSTALLATION — nothing to do anywhere else.
+--
+-- This file brought the test accounts that existed on 23.09.2026 onto the
+-- footing of a new account: „Meine Funde" as the root, below it Flechten,
+-- Pflanzen and Pilze — the app's basic principle given, not left to be
+-- discovered. New accounts get exactly that from account_create() since
+-- the same day, so no other installation ever needed these statements.
+--
+-- WHY THE FILE IS STILL HERE: the migrations' file names are the ledger of
+-- what an installation has applied (includes/migrations.php). A name that
+-- vanished would be a gap in the numbering nobody could explain, and on an
+-- installation that had applied it a line in the ledger without a file.
+--
+-- WHY ITS STATEMENTS ARE GONE (21.11.2026, on the way to a public
+-- repository): they addressed those accounts' lists by id and by name — one
+-- installation's data, which has no business in a repository others read.
+-- And one of them failed on an empty database (a list for an account that
+-- does not exist there), so a fresh installation stopped at this file;
+-- measured that day, it was the only one of 183 that did.
+--
+-- Where it had run, it has run: the ledger knows it by its name and never
+-- looks into it again. Everywhere else it is applied as what it now is —
+-- nothing.

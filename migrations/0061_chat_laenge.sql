@@ -1,0 +1,21 @@
+-- Längere Nachrichten im Container-Chat.
+--
+-- 2000 Zeichen waren meine erste Schätzung und zu knapp: das sind rund
+-- dreihundert Wörter, und wer aus dem Wald zurückkommt und aufschreibt, wo
+-- er überall war, ist damit fertig, bevor er beim zweiten Hang ist
+-- (20.08.2026).
+--
+-- TEXT STATT VARCHAR, und der Deckel wandert in den Code. VARCHAR steht in
+-- der Zeile selbst und kostet Platz, auch wenn nichts drinsteht; TEXT legt
+-- lange Inhalte daneben und die Zeile bleibt schlank. Der Unterschied ist
+-- bei einem Gespräch unter drei Leuten gleichgültig — was zählt, ist, dass
+-- die Grenze jetzt an EINER Stelle steht (CHAT_HOECHSTENS in
+-- includes/chat.php) und nicht zweimal, einmal hier und einmal dort.
+--
+-- Die 10 000 dort sind kein technisches Maß, sondern ein
+-- Vernünftigkeitsmaß: rund fünfzehnhundert Wörter, mehr als jede Nachricht
+-- ist, die jemand in ein Feld am unteren Fensterrand tippt. Wer wirklich
+-- mehr schreiben will, schreibt zwei Nachrichten — und das liest sich auch
+-- besser.
+ALTER TABLE map_container_nachrichten
+    MODIFY COLUMN text TEXT NOT NULL;

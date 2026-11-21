@@ -1,0 +1,16 @@
+-- The drawings are built again, this time with the height in mind
+-- (13.09.2026, „bau doch mal in die Linieninfoblase das
+-- Höhenprofil mit ein").
+--
+-- The drawing (0100) was simplified in the plane alone: a vertex stayed
+-- where the line bends. A straight road over a crest bends nowhere, so
+-- the crest fell out — and a profile drawn from that drawing would show
+-- a ramp where there was a hill. track_drawing() now also keeps a vertex
+-- whose elevation leaves the straight line between its neighbours by
+-- more than ten metres (TRACK_DRAWING_TOLERANCE_ELE_M explains the ten).
+--
+-- The stock is rebuilt the same way it was first built: a NULL drawing
+-- is made on first delivery (tracks_bucket_get_scoped), and that leaves
+-- updated_at alone — no fingerprint moves, no device fetches a bucket
+-- for a column it never sees by name. Here as there: a handful of rows.
+UPDATE map_tracks SET drawing = NULL, drawing_count = 0;

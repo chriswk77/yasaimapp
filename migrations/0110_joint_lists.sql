@@ -1,0 +1,22 @@
+-- „Gemeinsam bearbeiten" — a hung-in list every member of the share fills
+-- and tends with full rights (21./22.09.2026: „eine Liste, an
+-- der man gemeinsam arbeiten kann, die jeder füllen kann und auf die
+-- jeder volle Rechte hat — ähnlich wie bei den Exkursionen").
+--
+-- ONE FLAG ON THE SHARE, not a new kind of list: the list stays its
+-- owner's, the share stays the frame in which the members meet, and
+-- the flag says that inside this frame the members are the owner's
+-- equals — every right of migration 0043 at once, plus the one right
+-- that column could not express: setting points INTO the list. A point
+-- keeps its holder (the member who set it); the others reach it the
+-- way they reach the sharer's own points, through point_foreign_rights.
+--
+-- THE SHARE'S BIRTH FILTER DOES NOT APPLY to a joint list
+-- (22.09.2026): what somebody sets into it, he means for the group — a
+-- filter over it would only swallow finds and nobody would know why.
+--
+-- Step 1 of the joint lists (the switch, the rights, the setting of
+-- points). The list's own trash and the handover chain come with their
+-- own migrations.
+ALTER TABLE map_container_lists
+    ADD joint TINYINT(1) NOT NULL DEFAULT 0;

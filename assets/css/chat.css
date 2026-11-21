@@ -1,0 +1,369 @@
+/**
+ * THE CHAT WINDOW — on the map and, since 14.10.2026, on every page with
+ * the app's buttons (Fundbrowser, Bestimmung, Verwaltung), which is why it
+ * lives in a file of its own: those pages load app.css, not map.css.
+ * includes/chat_window.php writes the markup, assets/js/chat.js drives it.
+ *
+ * THE FLOATING SHAPE on the desktop is at the end (14.10.2026).
+ */
+
+/* --- The container chat ---------------------------------------------------
+ *
+ * ONE DIALOG, TWO SHAPES: a window in the middle on the desktop, the whole
+ * screen on the phone. Which one is a question of width, not of markup.
+ *
+ * WITH [open] IN THE SELECTOR, and that is not decoration — trap 2 in
+ * CLAUDE.md. A <dialog> is display:none while closed, and that comes from
+ * the browser stylesheet, which is the weakest rule there is. A bare
+ * .chat-window { display: flex } would beat it and lay the closed window
+ * over the whole map.
+ */
+.chat-window[open] {
+    display: flex;
+    flex-direction: column;
+
+    width: min(34rem, calc(100vw - 2rem));
+    /* HEIGHT VIA --view-height AND NOT dvh — trap 3. The keyboard slides
+       over the bottom edge without the layout viewport getting smaller,
+       and a chat is the one window where the keyboard is always up. */
+    height: min(40rem, calc(var(--view-height, 100vh) - 4rem));
+
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground);
+    color: var(--text);
+    overflow: hidden;
+}
+
+.chat-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    padding: .7rem .5rem .7rem 1rem;
+    background: var(--ground-3);
+    border-bottom: 1px solid var(--border);
+}
+.chat-head h2 { margin: 0; font-size: 1rem; }
+
+/* THE ONLY SCROLL AREA IN THIS WINDOW — trap 4. The dialog itself does not
+   scroll (overflow:hidden above), the writing line stays put, and only the
+   conversation moves. A swiping finger can therefore catch nothing else. */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: .8rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+}
+
+.chat-message {
+    max-width: 85%;
+    align-self: flex-start;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .4rem .6rem;
+}
+/* MINE ON THE RIGHT — BRIGHTNESS AND NO HUE.
+ *
+ * Twice wrong before this. First the full accent as a surface: with
+ * Moosgrün that passed, with Lime it is a light panel in the middle of the
+ * conversation. Then a tint of it, which was quieter but still green — and
+ * green does not belong to Petrol. The accent is chosen INDEPENDENTLY of
+ * the theme, so any hue taken from it stands next to the theme as a second
+ * colour family (20.08.2026).
+ *
+ * THIS SIDEBAR HAS DECIDED THE SAME QUESTION BEFORE, at .list-row.is-active
+ * and in the note above .list-row.is-shared: mint, turquoise and even the
+ * accent green were tried on the living stock and thrown out for exactly
+ * this reason. What was left there is brightness, and that is what is left
+ * here.
+ *
+ * --ground-3 is the raised surface of every theme and therefore in its own
+ * family by construction — in the dark ones lighter than the conversation,
+ * in the light ones darker. Either way it lifts, and it never brings a
+ * colour of its own. The side already says who is speaking anyway; this
+ * only helps the eye find its own rows when scrolling past. */
+/* THE CHANGE LINE of a joint list — a quiet fact between the spoken words:
+   no bubble, no side, small and in the quiet colour, full width. */
+.chat-message.is-change {
+    align-self: stretch;
+    max-width: none;
+    background: none;
+    border: 0;
+    padding: .15rem .5rem;
+    color: var(--text-quiet);
+    /* A SYSTEM LINE READS AS ONE AT A GLANCE (23.09.2026:
+       „damit man unterscheiden kann, was Systemnachrichten sind und was
+       wirklich ein Chat ist" — and then: „eine Konsolenschrift"): the
+       console face, as a log line, and a thin rule down the left edge —
+       no bubble, no side, never a sentence somebody typed. Upright, not
+       italic: slanted monospace only looks unsteady. */
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .75rem;
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+}
+.chat-message.is-change .chat-text { color: var(--text-quiet); }
+/* The actor of a change line in the accent, damped towards the quiet grey:
+   his colour marks who did it, the grey stays for what was done. */
+.chat-message.is-change .chat-change-who { color: color-mix(in srgb, var(--accent) 75%, var(--text-quiet)); font-weight: 600; }
+.chat-message.is-change .chat-when { display: inline; margin-left: .5em; }
+
+.chat-message.is-mine {
+    align-self: flex-end;
+
+    /* THE FALLBACK STANDS FIRST: plain brightness. A browser that does not
+       know the line below keeps it and loses nothing but the hue. */
+    background: var(--ground-3);
+
+    /* AND THE HUE SHIFTED A LITTLE — out of the theme's OWN colour, not
+       out of a foreign one (20.08.2026). Petrol shifted toward
+       jade is still Petrol; Lime beside Petrol was a second colour family.
+       Relative colour syntax does exactly that: keep lightness and chroma,
+       turn the hue by twenty degrees. Every theme thereby gets its own
+       neighbouring shade, and none gets a stranger. */
+    background: oklch(from var(--ground-3) l c calc(h - 20));
+}
+
+.chat-author { font-size: .78rem; color: var(--text-quiet); margin-bottom: .1rem; }
+/* The break comes from the text, not from the markup: somebody who writes
+   three lines gets three lines, and a long word does not push the window
+   apart. */
+.chat-text   { white-space: pre-wrap; overflow-wrap: anywhere; }
+.chat-when   { font-size: .7rem; color: var(--text-quiet); text-align: right; margin-top: .15rem; }
+
+.chat-write {
+    display: flex;
+    align-items: flex-end;
+    gap: .5rem;
+    padding: .6rem;
+    border-top: 1px solid var(--border);
+    background: var(--ground-2);
+}
+/* ONE LINE TO BEGIN WITH, and that needs saying: the project-wide
+   textarea carries min-height 5.5rem, which is right for a note field and
+   wrong for a writing line — three empty lines at the bottom edge take
+   room away from the conversation and promise a length nobody wants.
+   Here it starts as tall as a single-line field and grows from there.
+
+   The growing itself needs nothing: autoheight.js binds every textarea in
+   the document by itself. It only could not shrink below the minimum.
+
+   It grows, but not without end — beyond that it scrolls, and that is the
+   one place in this window where a second scroll area is right: it does
+   not sit inside the conversation but next to it. */
+.chat-write textarea {
+    flex: 1;
+    min-height: var(--field-height);
+    max-height: 8rem;
+}
+.chat-write textarea[aria-invalid="true"] { border-color: var(--error); }
+
+/* --- Who is reading along -------------------------------------------------
+ *
+ * A COLUMN BESIDE THE CONVERSATION on the desktop, A FOLD-OUT ABOVE IT on
+ * the phone (20.08.2026). One <details> for both: on the phone
+ * it behaves like one, here on the desktop its summary is hidden and the
+ * list stands open for good. Nothing in the script knows about the
+ * difference, so nothing can decide it differently in the two places.
+ */
+.chat-body {
+    display: flex;
+    flex: 1;
+    /* WITHOUT THIS THE CONVERSATION CANNOT SHRINK. A flex child's default
+       min-height is auto, so it grows with its content and pushes the
+       writing line out of the window instead of scrolling. */
+    min-height: 0;
+}
+
+.chat-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.chat-people {
+    order: 1;                       /* on the desktop: to the RIGHT of it */
+    flex: 0 0 9.5rem;
+    overflow-y: auto;
+    border-left: 1px solid var(--border);
+    background: var(--ground-2);
+    padding: .6rem .7rem;
+}
+.chat-people > summary { display: none; }   /* only the phone folds */
+
+.chat-people-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    font-size: .82rem;
+}
+.chat-people-list li { display: flex; min-width: 0; }
+
+/* A name is a handle: tapping it puts it into the writing field. The
+   button carries no frame — a row of framed buttons would read as a
+   toolbar, and this is a list of people. What says it can be tapped is
+   the pointer and the brightening on hover. */
+.chat-person {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    width: 100%;
+    padding: .1rem .2rem;
+    margin: 0;
+    background: none;
+    border: 0;
+    border-radius: calc(var(--radius) / 2);
+    font: inherit;
+    color: var(--text-quiet);
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+button.chat-person { cursor: pointer; }
+button.chat-person:hover { background: var(--ground-3); color: var(--text); }
+
+/* Me among them, in the reading colour: in a list of names one looks for
+   one's own first, and finding it as one of many costs a moment. */
+.chat-people-list li.is-me .chat-person { color: var(--text); }
+.chat-people-list .icon { flex: none; }
+
+/* The author over a message is a handle too — same purpose, so the same
+   nakedness: it must go on reading as a name, not as a control. */
+button.chat-author {
+    display: block;
+    padding: 0;
+    margin: 0 0 .1rem;
+    background: none;
+    border: 0;
+    font: inherit;
+    font-size: .78rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+    text-align: left;
+}
+button.chat-author:hover { color: var(--text); text-decoration: underline; }
+
+/* --- The phone shapes of the chat -----------------------------------------
+ *
+ * AT THE END OF THE FILE, and that is not tidiness. The base rules for the
+ * member column stand above; a media block BEFORE them would be overruled
+ * by them at equal specificity, and the fold-out would keep the desktop
+ * shape. Measured: matchMedia said "phone", and the summary stayed
+ * display:none because a later rule said so.
+ */
+@media (max-width: 860px) {
+    /* THE MEMBERS AS A FOLD-OUT, above the conversation and closed. A
+       column would take a third of a phone screen away from the very thing
+       one opened the window for; a line at the top costs nothing and
+       answers "who is in here" with one tap. */
+    .chat-body { flex-direction: column; }
+    .chat-people {
+        order: -1;                  /* on the phone: ABOVE the conversation */
+        flex: none;
+        border-left: 0;
+        border-bottom: 1px solid var(--border);
+        padding: 0;
+        overflow: visible;
+    }
+    .chat-people > summary {
+        display: flex;
+        align-items: center;
+        padding: .5rem .8rem;
+        font-size: .82rem;
+        color: var(--text-quiet);
+        cursor: pointer;
+    }
+    .chat-people-list { padding: 0 .8rem .6rem; }
+
+    /* The whole screen. Same reasoning as .form-window: floating in the
+       middle leaves room lying around that the conversation could use, and
+       an edge one can tap away is wrong for a window one writes in. */
+    .chat-window[open] {
+        width: 100vw;
+        max-width: none;
+        height: var(--view-height, 100dvh);
+        max-height: none;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+    }
+}
+
+/* --- The floating chat on the desktop ---------------------------------------
+ *
+ * IT STAYS OPEN WHILE ONE WORKS (14.10.2026: „Ein Chat muss diese
+ * ganzen Module oder Bereiche überstehen … es liegt eben immer darüber",
+ * and: „Somit könnte ich auch Support leisten für einen meiner Freunde").
+ * Above the phone breakpoint the window is NOT modal: it is opened with
+ * show(), floats where it was put, keeps its size, folds to its head with
+ * „–", and chat.js reopens it on the next page — Karte, Fundbrowser,
+ * Bestimmung and Verwaltung are separate documents, so „staying open" is
+ * remembering it (sessionStorage) and coming back at once.
+ *
+ * Not in the top layer (only modals are): position and z-index carry it
+ * over the page, and every modal window still stands above it.
+ *
+ * resize:both is the browser's own corner grip — it needs an overflow
+ * other than visible, which the window has (overflow:hidden above).
+ */
+@media (min-width: 861px) {
+    .chat-window.is-floating[open] {
+        position: fixed;
+        inset: auto;
+        left: var(--chat-x, auto);
+        top: var(--chat-y, auto);
+        right: var(--chat-right, 1.5rem);
+        bottom: var(--chat-bottom, 1.5rem);
+        width: var(--chat-w, 26rem);
+        height: var(--chat-h, 32rem);
+        min-width: 18rem;
+        min-height: 12rem;
+        max-width: calc(100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+        margin: 0;
+        z-index: 1500;
+        resize: both;
+        box-shadow: 0 .6rem 2.4rem rgb(0 0 0 / .45);
+    }
+    /* The head is the handle. */
+    .chat-window.is-floating .chat-head { cursor: move; user-select: none; }
+    .chat-window.is-floating .chat-head button { cursor: pointer; }
+
+    /* FOLDED: only the head stays, at the window's width, and no grip —
+       a head cannot be made taller. */
+    .chat-window.is-floating.is-minimized[open] {
+        height: auto;
+        min-height: 0;
+        resize: none;
+    }
+    .chat-window.is-floating.is-minimized .chat-body { display: none; }
+    .chat-window.is-floating.is-minimized .chat-head { border-bottom: 0; }
+    /* Something new arrived while folded: the head says so in the accent. */
+    .chat-window.is-floating.is-minimized.has-news .chat-head h2::after {
+        content: '';
+        display: inline-block;
+        width: .5rem;
+        height: .5rem;
+        margin-left: .5rem;
+        border-radius: 50%;
+        background: var(--ok);
+        vertical-align: middle;
+    }
+}
+/* The fold button only where the window floats. */
+.chat-head-buttons { display: flex; gap: .25rem; }
+#chat-minimize { display: none; }
+@media (min-width: 861px) {
+    .chat-window.is-floating #chat-minimize { display: inline-flex; }
+}

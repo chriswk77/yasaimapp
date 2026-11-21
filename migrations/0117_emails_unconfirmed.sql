@@ -1,0 +1,11 @@
+-- Every real account confirms its address once (23.09.2026:
+-- „du kannst alle E-Mail-Adressen, die meine Testbenutzer haben, als
+-- unbestätigt markieren — auch meine eigene; erst ein Klick verifiziert
+-- sie"). Migration 0116 had counted the existing accounts as confirmed;
+-- they were never mailed, so nothing had proven them.
+--
+-- Addresses under .local are left alone: the excursion guest account
+-- (gast@exkursion.local) and the demodata fixture have no mailbox and
+-- never will. An unconfirmed account works as before; only the guest
+-- finds under its address wait for the click (excursion_claim).
+UPDATE map_users SET email_confirmed_at = NULL WHERE email NOT LIKE '%.local';

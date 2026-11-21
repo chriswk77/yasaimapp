@@ -1,0 +1,840 @@
+# Mikroskop-Kamera für YASAIMAPP anschließen
+
+**Für den Menschen, der diese Datei bekommen hat:** Du musst sie nicht
+verstehen. Gib sie deiner KI (Claude Code oder Codex) und schreib dazu:
+
+> Lies diese Anleitung ganz und führe mich Schritt für Schritt durch.
+
+Die KI fragt dich nach Dingen, die nur du sehen kannst. Sie erklärt dir jeden
+Schritt, bevor sie etwas tut. Am Ende siehst du das Livebild deiner
+Mikroskopkamera in YASAIMAPP (https://wkpilz.de/map/) und kannst Fotos direkt
+bei einem Fund speichern.
+
+Hast du noch keine KI, die auf deinem Computer arbeiten kann, fang mit dem
+Kapitel „Schritt 1“ an. Das kannst du auch mit einer Chat-KI wie claude.ai oder
+ChatGPT durchgehen.
+
+---
+
+## Für dich, die KI: worum es geht
+
+Ein Pilzfreund des Autors von YASAIMAPP möchte seine eigene
+Mikroskopkamera in YASAIMAPP benutzen. Der Autor hat das für seine Kamera schon
+gebaut. Das Programm heißt **MicroCam**. Diese Anleitung fasst zusammen, was
+er dabei gelernt hat. Deine Aufgabe ist, für die Kamera deines Nutzers ein
+gleichwertiges Programm zu bauen, eine „Brücke“:
+
+- Sie läuft auf dem Computer, an dem die Kamera steckt (Windows oder Mac).
+- Sie spricht mit der Kamera, über das SDK des Herstellers oder als normale
+  Webcam.
+- Sie stellt die Kamera unter `http://127.0.0.1:47811` als kleinen Webserver
+  bereit, und zwar **genau so**, wie das Kapitel „Was YASAIMAPP vom
+  Kamera-Programm erwartet“ es beschreibt.
+
+YASAIMAPP läuft im Browser desselben Computers und holt sich dort Livebild,
+Fotos und Meldungen. Das Speichern in die Cloud macht die Webseite selbst. Die
+Brücke lädt nichts hoch und spricht mit keinem Server im Internet.
+
+### Wie du mit deinem Nutzer arbeitest
+
+Dein Nutzer ist **kein Techniker**. Daraus folgen feste Regeln:
+
+1. **Erkläre jeden Schritt, bevor du ihn ausführst:** was du tust, warum, und
+   was er danach sehen wird. Kurze Sätze, keine Fachwörter ohne Erklärung.
+2. **Immer nur ein Schritt.** Warte auf sein Okay. Frag nach, was er sieht,
+   wenn du es selbst nicht sehen kannst, zum Beispiel ein Fenster, eine
+   Meldung oder ein Lämpchen an der Kamera.
+3. **Frag, bevor du etwas installierst** (Python, Pakete, Treiber). Sag ihm, was
+   es ist und woher es kommt. Nimm nur offizielle Quellen: python.org, die
+   Webseite des Kameraherstellers, die offizielle Anleitung von Claude Code
+   oder Codex.
+4. **Schalte nichts ab:** keinen Virenschutz, keine Firewall, kein Gatekeeper
+   oder SmartScreen für das ganze System. Ist eine einzelne Datei blockiert,
+   gib genau diese eine frei und erkläre ihm, warum das hier in Ordnung ist.
+5. **Lösche oder verändere nichts an der Herstellersoftware.** Die Brücke
+   kopiert höchstens die Bibliothek daraus in einen eigenen Ordner.
+6. **Leg alles in einen eigenen Ordner**, zum Beispiel `Dokumente/MicroCam`
+   (Windows: `Dokumente\MicroCam`). Sag ihm, wo er liegt.
+7. Ist etwas geschafft, sag es ihm klar. Geht etwas nicht, sag ihm ehrlich, was
+   nicht geht und was du als Nächstes versuchst.
+
+---
+
+## Schritt 1: Eine KI installieren, die auf dem Computer arbeiten kann
+
+Eine Chat-KI im Browser kann keine Programme auf dem Computer bauen und
+starten. Dafür braucht es **Claude Code** (von Anthropic) oder **Codex** (von
+OpenAI). Führe deinen Nutzer durch die Installation **nach der aktuellen
+offiziellen Anleitung**:
+
+- Claude Code: https://claude.com/claude-code (für Mac und Windows; am
+  einfachsten über die Claude-Desktop-App mit dem Bereich „Code“, oder im
+  Terminal mit dem Installationsbefehl, der dort steht).
+- Codex: https://developers.openai.com/codex
+
+Erkläre ihm dabei:
+
+- **Mac:** Das „Terminal“ öffnet man mit ⌘ + Leertaste, dann „Terminal“
+  tippen und Enter drücken.
+- **Windows:** „PowerShell“ öffnet man über das Startmenü, dort „PowerShell“
+  tippen.
+- Er braucht ein Konto beim jeweiligen Anbieter, und zwar ein **bezahltes**.
+  Nach heutigem Stand läuft Claude Code nicht mit dem kostenlosen Zugang, und
+  auch sonst bekommen kostenlose Zugänge meist nur die kleineren Modelle und
+  enge Grenzen. Für dieses Projekt lohnt sich ein Monat mit einem guten
+  Modell: Claude Pro oder ChatGPT Plus kosten etwa 20 € im Monat und lassen
+  sich danach wieder kündigen. Ein starkes Modell findet die Kamera, das SDK
+  und die Fehler deutlich sicherer als ein kleines.
+- Danach öffnet er die KI in einem neuen, leeren Ordner, zum Beispiel
+  `Dokumente/MicroCam`, und gibt ihr diese Datei.
+
+---
+
+## Schritt 2: Herausfinden, was für eine Kamera es ist
+
+Davon hängt alles Weitere ab. Frag ihn nach Marke und Modell. Die stehen
+meistens auf der Kamera, auf dem Karton oder in der mitgelieferten Software.
+Schau dann selbst nach:
+
+**Mac**
+
+- `system_profiler SPUSBHostDataType` (ältere macOS-Versionen:
+  `SPUSBDataType`) zeigt Hersteller, `Vendor ID` und `Product ID`.
+- `system_profiler SPCameraDataType` listet die Kameras, die macOS als
+  **Webcam** kennt.
+- Im Ordner `/Applications` liegt die Software des Herstellers. Schau, ob ihr
+  `.app`-Paket Bibliotheken enthält (`Contents/MacOS`, `Contents/Frameworks`).
+
+**Windows**
+
+- `Get-PnpDevice -PresentOnly | Where-Object InstanceId -like 'USB*' | Format-Table Class, FriendlyName, InstanceId`
+  in PowerShell. In der `InstanceId` stehen `VID_xxxx&PID_xxxx`.
+- Steht die Kamera unter der Klasse **Camera** oder **Image**, und zeigt die
+  Windows-App „Kamera“ ein Bild, dann ist sie eine Webcam.
+- Die Herstellersoftware liegt meist unter `C:\Program Files\…` oder
+  `C:\Program Files (x86)\…`. Schau dort nach `.dll`-Dateien.
+
+### Die drei Fälle
+
+**A. Eine normale Webcam (UVC).** Das Betriebssystem kennt sie und die
+Kamera-App zeigt ein Bild. Das ist der einfachste Fall, denn **dann braucht es
+meistens gar kein Programm**: YASAIMAPP kann eine Webcam direkt im Browser
+nutzen. Lass deinen Nutzer in YASAIMAPP auf **Einstellungen → Fotos →
+Mikroskop-Kamera** gehen, dort „Als Webcam einrichten“ klicken, die Kamera am
+Mikroskop wählen (ihr Bild steht darunter) und „Diese Kamera nehmen“. Klappt
+das, geht es gleich mit Schritt 7 weiter.
+
+Eine Brücke lohnt sich bei einer Webcam nur in zwei Fällen. Erstens, wenn die
+Kamera als Foto mehr Pixel liefert als im Video: Bei einer Webcam nimmt
+YASAIMAPP ein Bild aus dem Video, in der größten Auflösung, die die Kamera
+anbietet. Zweitens, wenn dein Nutzer Belichtung und Weißabgleich in YASAIMAPP
+einstellen möchte; das reicht der Browser bei einer Webcam nicht durch. Dann
+liest die Brücke die Kamera mit den Mitteln des Betriebssystems: unter Windows
+Media Foundation oder, am bequemsten, Python mit OpenCV; am Mac AVFoundation.
+Das Foto (`/api/snapshot.jpg`) muss dabei in der **größten Auflösung**
+aufgenommen werden, die die Kamera anbietet. Das Livebild darf kleiner sein.
+
+**B. Eine Kamera mit ToupTek-Technik.** Das ist bei Mikroskopkameras sehr
+häufig. Viele Marken verkaufen sie unter eigenem Namen, darunter AmScope,
+Bresser, BMS, Omax und weitere. Sie sind **keine** Webcam und laufen nur mit
+der Software des Herstellers. Diese Software bringt eine Bibliothek mit, die
+ToupTeks SDK unter anderem Namen ist. Erkennungszeichen:
+
+- Die Bibliothek heißt zum Beispiel `toupcam.dll`, `libtoupcam.dylib`,
+  `amcam.dll`, `libbmscam.dylib` oder `irgendwascam.dll`.
+- Sie exportiert Funktionen mit gleichem Muster: `Xxx_EnumV2`, `Xxx_Open`,
+  `Xxx_StartPullModeWithCallback`, `Xxx_PullImage`, `Xxx_Snap`,
+  `Xxx_put_AutoExpoEnable` usw. Prüfen: Mac `nm -gU datei.dylib`, Windows
+  `dumpbin /exports datei.dll` oder Python mit `pefile`.
+- Für die Bedeutung der Funktionen gilt die öffentliche Dokumentation von
+  ToupTeks SDK (`toupcam.h`, und im SDK-Paket auch ein Python-Wrapper
+  `toupcam.py`). Nur das Präfix ist anders.
+
+Die Kamera des Autors ist so ein Fall: BMS U3CMOS10000KPA, USB `04b4:1567`,
+Hersteller „TP“, SDK `libbmscam.dylib` aus dem Programm „BMS Pix 3“.
+
+**C. Etwas anderes.** Industriekameras wie IDS, Basler oder The Imaging Source
+haben eigene, gut dokumentierte SDKs, ebenso viele andere Mikroskopmarken.
+Spiegelreflexkameras laufen über das SDK des Herstellers oder gphoto2. Der Weg
+ist derselbe: Bibliothek finden, ein Bild holen, dann die Brücke bauen. Findest
+du nichts, sag es deinem Nutzer ehrlich und frag, ob er beim Hersteller ein SDK
+anfragen will.
+
+---
+
+## Schritt 3: Das SDK besorgen
+
+**Nimm die Bibliothek, mit der die Herstellersoftware die Kamera tatsächlich
+betreibt.** Der Autor hat gelernt, dass die allgemeine ToupTek-Bibliothek (zum
+Beispiel aus „ToupLite“) seine Marken-Kamera **nicht** erkannt hat. Nur die
+Bibliothek aus der Software der Marke kannte das Modell. Ein neueres SDK direkt
+von der Hersteller-Webseite ist besser, wenn es die Kamera erkennt. Probier es
+aus.
+
+1. Kopiere die Bibliothek in den eigenen Ordner, etwa `MicroCam/vendor/`.
+   Unter Windows gehören oft weitere DLLs daneben. Kopiere die, die im selben
+   Ordner liegen und ähnlich heißen.
+2. **Prüfe die Architektur.** Das ist die wichtigste Falle:
+   - Mac: `file datei.dylib` oder `lipo -info datei.dylib`. Steht dort nur
+     `x86_64` (Intel), muss die **ganze Brücke** als x86_64 laufen. Auf einem
+     Mac mit Apple-Chip geht das über **Rosetta**: Python von python.org
+     („universal2“) mit `arch -x86_64 python3 …` starten, oder in C/Objective-C
+     mit `clang -arch x86_64` bauen. macOS bietet beim ersten Start an, Rosetta
+     zu installieren. Die Bibliothek des Autors gibt es nur für x86_64. Apple
+     liefert Rosetta voraussichtlich nur bis macOS 27 vollständig mit; danach
+     braucht es eine arm64-Version vom Hersteller.
+   - Windows: Eine 32-Bit-DLL braucht ein 32-Bit-Python, eine 64-Bit-DLL ein
+     64-Bit-Python. Prüfen mit Python und `pefile` (`FILE_HEADER.Machine`:
+     `0x14c` = 32 Bit, `0x8664` = 64 Bit).
+3. **Windows-Treiber:** ToupTek-Kameras brauchen unter Windows den USB-Treiber,
+   den die Herstellersoftware installiert. Lass die Herstellersoftware deshalb
+   installiert. Sie darf nur **nicht gleichzeitig laufen** (siehe Schritt 5).
+4. Die Bibliothek ist für den eigenen Gebrauch auf diesem Computer da. Sag
+   deinem Nutzer, dass er sie nicht weitergeben oder veröffentlichen soll.
+
+---
+
+## Schritt 4: Erst ein Bild, dann die Brücke
+
+### 4a. Ein Probeprogramm
+
+Bevor du den Server baust, schreib ein kleines Programm, das nur vier Dinge tut:
+
+1. die Kamera findet (`EnumV2`) und Name und Id ausgibt;
+2. sie öffnet;
+3. ein paar Bilder abholt;
+4. eines als Datei speichert.
+
+Zeig das Bild deinem Nutzer. Was der Autor dabei gelernt hat:
+
+- **Die Belichtungsautomatik einschalten** (`put_AutoExpoEnable(h, 1)`), sonst
+  ist das Bild schwarz. Danach ein bis zwei Sekunden warten.
+- **Die Herstellersoftware muss geschlossen sein.** Läuft sie, kann man die
+  Kamera trotzdem „öffnen“, aber es kommen nie Bilder an.
+- ToupTek liefert Bilder im **Pull-Modus**: `StartPullModeWithCallback`
+  meldet `0x0004` (neues Bild), dann `PullImage(h, puffer, 24, &w, &h)`.
+  **Zeilen sind auf 4 Byte aufgefüllt**: Zeilenlänge =
+  `((breite * 24 + 31) / 32) * 4`.
+- **Farbreihenfolge und Ausrichtung prüfen.** Am Mac liefert das SDK RGB. Unter
+  Windows ist es oft BGR, und die Bilder können kopfstehen. Leg etwas Rotes
+  oder Beschriftetes unters Mikroskop. Sind Rot und Blau vertauscht oder steht
+  die Schrift auf dem Kopf, korrigier es. Das SDK hat dafür Optionen
+  (`put_Option`, Byte-Reihenfolge und „upside down“), sonst dreh es selbst um.
+- In `EnumV2` sind Name und Id unter Windows **Wide-Strings** (`wchar_t`), am
+  Mac `char`.
+- Wichtige Ereignisse: `0x0005` Foto fertig, `0x0080` Fehler, `0x0081` Kamera
+  getrennt, `0x0082` Zeitüberschreitung ohne Bild.
+- Friert die Kamera nach Sekunden oder Minuten ein, liegt es meist an Strom
+  oder Leitung des USB-Anschlusses. Beim Autor fror sie am MacBook Pro M1
+  Pro direkt am Anschluss immer wieder ein. Am Hub des Monitors lief sie
+  stabil, ebenso an einem alten **reinen USB-2-Hub** (27 Minuten ohne
+  Absturz, mit 480 Mbit/s und 500 mA). Ein **USB-Hub mit eigenem Netzteil**
+  hilft ebenso.
+  - Die Übertragungsstufe herunterzusetzen (ToupTek `put_Speed(h, 0)`) hat den
+    ersten Absturz nur von Sekunden auf etwa 4 Minuten hinausgezögert.
+  - Ist die Kamera einmal eingefroren, hilft **nur Abstecken von Hand**.
+    `Replug` aus dem SDK bringt die USB-Verbindung zurück, aber keine Bilder
+    mehr; der Autor hat es deshalb wieder abgeschaltet.
+- **Streifen im Bild** kommen vom Netzflimmern: Eine Lampe am 50-Hz-Netz
+  flimmert mit 100 Hz. Belichtet die Kamera kürzer als 10 ms, erwischt jede
+  Zeile eine andere Helligkeit. Abhilfe ist der Flimmerschutz des SDK
+  (`put_HZ(h, 1)` für 50 Hz; 0 = 60 Hz, 2 = aus). Dann belichtet die
+  Automatik nie kürzer als 10 ms. Ist die Lampe dafür zu hell, wird das Bild
+  überbelichtet, und der Nutzer muss die Lampe zurückdrehen. Beim Autor
+  waren die Streifen damit weg.
+  - **Das gilt auch für die Belichtung von Hand.** Mit Flimmerschutz
+    belichtet das SDK nie kürzer als eine Periode. `get_ExpoTime` meldet
+    zwar die 100 µs zurück, die man gesetzt hat, aber das Bild bleibt so
+    hell wie bei 10 ms (gemessen am 11.11.2026: 251 von 255 bei 100, 250,
+    500 … 10 000 µs). Erst mit `hz` = 2 wirken kurze Zeiten. Ist das Bild
+    bei 10 ms zu hell, hilft also nur die Lampe.
+- **Schwarz muss schwarz bleiben, auch nach dem Weißabgleich.** Der Sensor
+  liefert nie ganz schwarz, sondern hat einen kleinen Sockel (beim Autor
+  etwa 11). Der Weißabgleich multipliziert ihn mit. Unter einer warmen
+  Halogenlampe braucht Blau etwa das Siebenfache, und dann ist Schwarz blau.
+  Gemessen am 11.11.2026 bei 0,1 ms Belichtung:
+  - neutraler Abgleich (6503 K): R 10, G 11, B 12, Helligkeit 10,8;
+  - nach dem Abgleich unter Halogen (3996 K): R 1, G 21, B 87, Helligkeit
+    22,2.
+
+  Damit lag jeder Revolverdreh über der Grenze, ab der YASAIMAPP ihn zählt
+  (siehe „Der Revolver-Melder“), und keiner löste die Frage aus. Abhilfe ist
+  die Schwarzbalance des SDK: `put_BlackBalance(h, sub)` mit je 10 für R,
+  G und B. Sie zieht den Sockel im Rohsignal ab, also **vor** dem
+  Weißabgleich. Danach ist Schwarz bei jeder Farbtemperatur R 1, G 1, B 1.
+  Nimm nicht mehr als den Sockel: 20 schneidet schon die dunkelsten Stellen
+  ab. Prüfen: einmal den Weißabgleich unter der Lampe machen, dann 0,1 ms
+  belichten (`hz` = 2) und die drei Kanäle ansehen.
+- **Mit Flimmerschutz braucht es eine eigene Belichtungsautomatik.** Die
+  Automatik des SDK nimmt dann nur ganze Perioden (10, 20, 30 ms …) und hält
+  die Verstärkung am Minimum. Liegt das Ziel zwischen zwei Stufen, springt sie
+  hin und her: beim Autor 30 ↔ 40 ms alle 1,5 s. Schalte sie in diesem Fall
+  ab und regle selbst. Darauf kommt es an:
+  - **Ganze Perioden für die Zeit, die Verstärkung macht die Feinarbeit.** Die
+    Belichtungszeit steht immer auf einem Vielfachen der Flimmerperiode, sonst
+    kommen die Streifen zurück. Die feinen Schritte macht die Verstärkung in
+    ihren 1-%-Schritten.
+  - **Die Periode nur wechseln, wenn die Verstärkung nicht mehr reicht.**
+    Dabei das Produkt aus Zeit und Verstärkung gleich lassen, damit sich das
+    Bild durch den Wechsel nicht ändert. Das Programm des Autors erlaubt
+    100–200 %, bevor es die Periode wechselt.
+  - **Ab etwa 10 Perioden (100 ms)** sieht man das Flimmern kaum noch. Dort darf
+    die Zeit frei laufen, bei kleinster Verstärkung, also mit weniger Rauschen.
+  - **Auf einen neuen Zielwert sofort reagieren.** YASAIMAPP schickt `target`,
+    während der Regler gezogen wird, etwa alle 80 ms. Ändere das Licht dann
+    gleich im Verhältnis neu/alt. Der Zielwert ist linear, die Helligkeit des
+    Bildes nicht, und eine Stufe macht weniger als einen Helligkeitspunkt aus.
+    Mit der gemessenen Helligkeit gerechnet springt das Ergebnis wild.
+  - **Im Betrieb: kleiner Totbereich mit Geduld.** Erst eingreifen, wenn das
+    Bild etwa 0,5 s lang um mehr als 3 % daneben liegt, dann nicht ganz voll
+    korrigieren. Liegt es über 30 % daneben (Revolver, Lampe), sofort und voll
+    korrigieren.
+  - **Nach einer Änderung kurz abwarten.** Die nächsten ein bis zwei Bilder
+    zeigen noch die alte Einstellung. Bis dahin mit der Helligkeit rechnen,
+    die die Änderung erreichen soll.
+  - **Am Anschlag nicht weiterrechnen.** Steht die Kamera schon bei einer
+    Periode und kleinster Verstärkung (oder oben bei 350 ms und 300 %),
+    darf der Regler seinen Sollwert nicht weiter verkleinern bzw.
+    vergrößern. Setz ihn nach jedem Schritt auf das zurück, was die Kamera
+    wirklich eingestellt hat. Sonst läuft er davon und muss den ganzen Weg
+    zurückrechnen. Gemessen am 11.11.2026: Nach 30 s mit einem zu hellen
+    10er blieb das 40er danach 20 s zu dunkel. Nach 18 s am oberen Anschlag
+    blieb das Bild danach 37 s weiß.
+  - **Ein weißes Bild sofort korrigieren.** Bei 254,7 sieht die Abweichung
+    nur nach etwa 12 % aus. Wie weit es wirklich daneben liegt, verrät ein
+    übersteuertes Bild nicht. Ab einer Helligkeit von 250 deshalb sofort
+    korrigieren, auf mindestens ein Viertel. Sonst dauert der Rückweg 8 s
+    statt 1.
+  - **Das Bild, das `light` meldet, nicht zum Regeln nehmen.** Es ist ein
+    Übergangsbild, halb im Dreh (beim Autor 58,9, danach 250). Darauf
+    geregelt, riss die Belichtung auf 214 ms hoch.
+  - **Als Ziel** dient die mittlere Helligkeit `255 · (target/255)^(1/2,2)`.
+  - **So prüfst du es:**
+    - Den Zielwert in Einerschritten ändern (120, 121, 122 …) und `brightness`
+      aus den `stats` mitschreiben. Jede Stufe muss die Helligkeit ein kleines
+      Stück in dieselbe Richtung bewegen, auf dem Rückweg genauso. Bei
+      Beim Autor: 120 → 126 ergab 178,0 → 181,0.
+    - Dann eine halbe Minute nichts tun: Belichtung und Verstärkung dürfen sich
+      dabei nicht mehr ändern.
+
+### 4b. Die Brücke
+
+**Sprache:** Für einen Nutzer ohne Entwicklerwerkzeuge ist **Python** am
+einfachsten:
+
+- `ctypes` für das SDK (oder der `toupcam.py`-Wrapper aus ToupTeks SDK, mit
+  angepasstem Präfix);
+- `http.server.ThreadingHTTPServer` für den Server;
+- `Pillow` für JPEG.
+
+Die MicroCam des Autors ist eine kleine Objective-C-App für macOS. Nimm, was du
+auf dem Computer deines Nutzers sicher bauen und starten kannst.
+
+Halte dich bei der Schnittstelle **genau** an das Kapitel „Was YASAIMAPP vom
+Kamera-Programm erwartet“ unten. Dazu kommen diese Bauregeln aus MicroCam:
+
+**Kamera nur bei Bedarf.**
+
+- Livebild, Ereignisse, Foto und Einstellungen schalten die Kamera ein.
+- `/api/status` schaltet sie **nicht** ein, denn die Seite fragt den Status
+  regelmäßig ab.
+- **45 Sekunden** nach dem letzten Abruf, und wenn kein Livebild und keine
+  Ereignis-Verbindung mehr offen ist, wird die Kamera geschlossen und
+  freigegeben.
+- Das spart Strom und Rechenzeit, besonders unter Rosetta, und gibt die Kamera
+  für andere Programme frei.
+
+**Ein Verwalter-Faden.** Er prüft etwa viermal pro Sekunde:
+
+- Wird die Kamera gebraucht, aber ist zu? Dann öffnen. Klappt es nicht, nach 2 s
+  neu versuchen.
+- Meldet das SDK einen Fehler oder ist die Kamera getrennt? Dann schließen und
+  nach 2 s neu öffnen. Abziehen und wieder Anstecken heilt sich so von selbst.
+  `Replug` aus dem SDK (Neu-Anstecken per Software) hilft dabei nicht, siehe
+  Schritt 4a. Wenn du es überhaupt einbaust, dann abschaltbar und
+  standardmäßig aus.
+- Ist die Kamera offen, aber seit `4 s + 3 × Belichtungszeit` kam kein Bild?
+  - Kam seit dem Öffnen **noch nie** ein Bild: `state: "stalled"`. Meist hält
+    die Herstellersoftware die Kamera. Nach weiteren 15 s schließen und neu
+    versuchen.
+  - Kamen erst Bilder und dann keine mehr: `state: "frozen"`. Merk dir das,
+    bis die Kamera einmal vom USB verschwunden ist. Bis dahin ist auch jedes
+    spätere „keine Bilder“ `frozen` und nicht `stalled`, denn eine
+    eingefrorene Kamera bleibt tot, bis man sie absteckt.
+- **Der Status muss immer antworten.** Öffnen und Schließen einer hängenden
+  Kamera blockiert im SDK oft Sekunden lang. Lass `/api/status` deshalb nicht
+  auf die Kamera-Sperre warten, sondern höchstens kurz (0,3 s). Sonst
+  antwortet er mit dem zuletzt gebauten Stand und `"busy": true`.
+
+**Zwei Sperren.** Eine Sperre für die Kamera-Aufrufe, eine für die
+Bildpuffer. Der SDK-Callback nimmt **nur** die Puffer-Sperre. `Close` wartet
+auf den Callback-Faden; nähme der Callback die Kamera-Sperre, gäbe es einen
+Stillstand.
+
+**Livebild.**
+
+- Eine mittlere Auflösung (beim Autor 1792 × 1372 von 3584 × 2746) reicht
+  zum Scharfstellen und hält die Rechenlast klein.
+- JPEG-Qualität etwa 0,72. Jedes Bild nur einmal kodieren und an alle offenen
+  Verbindungen schicken.
+- Höchstens `fps` Bilder pro Sekunde (Standard 15).
+- Kommt 2 s lang kein Bild, prüfen, ob der Browser die Verbindung geschlossen
+  hat (`recv` mit `MSG_PEEK`). So geht die Kamera aus, wenn das Fenster zu ist.
+
+**Foto ≠ Livebild.**
+
+- `/api/snapshot.jpg` nimmt mit `Snap(h, 0)` ein eigenes Foto in voller
+  Sensorauflösung auf (Ereignis `0x0005`, dann `PullStillImage`). Das Livebild
+  läuft dabei weiter.
+- Hat die Kamera keinen Fotomodus (`get_StillResolutionNumber` = 0), schalte
+  kurz auf die größte Auflösung, nimm das **zweite** Bild in dieser Größe und
+  schalte zurück.
+- JPEG-Qualität 0,92, mit EXIF-Datum (`DateTimeOriginal`) und **immer mit dem
+  Namen der Kamera**: Hersteller in `Make`, Modell in `Model`, so wie der
+  Nutzer die Kamera kennt (beim Autor `BMS` und `U3CMOS10000KPA`).
+  Der Autor will auf jedem Mikroskopfoto sehen, mit welcher Kamera es gemacht
+  wurde (13.11.2026). Prüfen: ein Foto abrufen und `sips -g make -g model
+  foto.jpg` (Mac) bzw. Eigenschaften → Details (Windows) ansehen.
+- Rechne damit, dass das Foto bei 10 Megapixeln etwa 2 Sekunden dauert.
+
+**Einstellungen merken.** Belichtung, Automatik, Zielhelligkeit, Weißabgleich
+und Spiegelung werden gespeichert und beim nächsten Öffnen wieder gesetzt.
+Eine Messreihe soll morgen genauso aussehen wie heute. Auch was die Kamera
+**ist**, wird gespeichert: Fotogröße, Bereiche, Grenzen der Automatik. Dann
+kann `/api/status` es nennen, auch wenn die Kamera gerade schläft.
+
+**Die Belichtungsautomatik von ToupTek:**
+
+- Bei wenig Licht verlängert sie zuerst die Belichtung bis zu einer Grenze. Beim
+  Autor liegt sie bei 350 ms (`get_MaxAutoExpoTimeAGain`).
+- Danach dreht sie die Verstärkung hoch, bis 300 %.
+- Gib diese Grenzen als `ranges.autoExposureMax` an.
+- Am Anschlag kommen nur noch knapp 3 Bilder pro Sekunde. Mehr Licht am
+  Mikroskop ist die beste Abhilfe.
+
+**Der Revolver-Melder** (`dark` / `light` / `settled`):
+
+- **Helligkeit:** der Mittelwert der Luminanz `0,299 R + 0,587 G + 0,114 B`
+  über jedes 8. Pixel jeder 8. Zeile (1/64 der Pixel genügt).
+- **Drei Zustände:**
+  - *hell*: Die Grenze ist `0,3 × letzter ruhiger Wert`, aber mindestens 16
+    und höchstens 22, und dazu mindestens `0,15 × letzter ruhiger Wert`
+    (den ruhigen Wert dabei höchstens als 200 nehmen). Fällt die Helligkeit
+    darunter, wechsle zu *dunkel* und melde `dark`. Sonst gleitet der ruhige
+    Wert mit `0,8 × alt + 0,2 × neu` mit.
+  - *dunkel*: Merk dir das Minimum. Wird die Helligkeit mindestens `max(24,
+    3 × Minimum)`, wechsle zu *einregeln* und melde `light` mit `darkMs`.
+  - *einregeln*: Fällt die Helligkeit wieder unter `max(16, 0,15 × ruhiger
+    Wert vor dem Dreh)`, zurück zu *dunkel*, und melde wieder `dark`. Sonst
+    gilt das Bild als ruhig, wenn sich in 3 Bildern hintereinander die
+    Helligkeit um höchstens `max(3, 8 %)` ändert, die Belichtung gleich
+    bleibt **und die eigene Automatik höchstens 3 % daneben liegt**, oder
+    nach spätestens 5 s. Dann wechsle zu *hell* und melde `settled`.
+- **Beim Einschalten** beginnt der Melder in *einregeln* und meldet
+  `settled` mit `initial: true`. Ist das Bild dabei schwarz, meldet er `dark`.
+- Diese Werte stammen aus dem Aufbau des Autors. Gemessen am 04.11.2026:
+  - Echtes Drehen begann bei einer Helligkeit von 13,3 bis 13,6.
+  - Ein Schatten oder ein überbelichtetes Bild, das kurz einbrach, lag bei 33
+    bis 37. Diese Fälle dürfen nicht als `dark` zählen.
+- Nachgemessen am 11.11.2026 am zweiten Rechner des Autors, mit 10er, 40er
+  und 100er (Öl):
+  - **Die Lücke zwischen zwei Objektiven ist nicht immer gleich dunkel.**
+    Vom 100er zurück aufs 40er fiel sie nur auf 25, weil das 100er mit 107 ms
+    statt 10 ms belichtet und das Streulicht mitwächst. Die feste 22 hat das
+    verpasst. Dafür gibt es die 15 % beim ruhigen Wert. Den ruhigen Wert
+    höchstens als 200 nehmen, sonst wären die 33–37 vom 04.11. bei einem
+    überbelichteten 254 durchgerutscht (15 % von 254 = 38).
+  - **Beim Einregeln ist 12 zu knapp.** Der Rückweg vom 10er aufs 40er fiel
+    auf 13,3, also genau auf den Wert echten Drehens. Mit 12 blieb das
+    unbemerkt, und die 5-s-Grenze meldete `settled` mitten im Dreh.
+  - **Ohne Schwarzbalance kein Dreh unter 22.** Nach dem Weißabgleich unter
+    Halogen lag Schwarz bei 22,2 (siehe 4a). Die Brücke erkannte jeden Dreh,
+    YASAIMAPP verwarf jeden.
+  - **Abgesenkter Objektträger** beim 100er (Öl) fiel auf 43–45. Das ist
+    richtig kein `dark`.
+- **Schreib jeden Einbruch ins Log**, auch die, die nicht als Dreh zählen:
+  den dunkelsten Wert, die Grenze, Belichtung und Verstärkung. Ein
+  verpasster Dreh hinterlässt sonst kein Ereignis, und niemand kann sagen,
+  ob der Melder ihn übersehen hat oder ob es nie dunkel genug war.
+
+  Teste mit deinem Nutzer:
+  - Revolver drehen → `dark`, dann `settled`.
+  - Präparat verschieben und scharfstellen → **kein** `dark`.
+  - Passe die Grenzen an, wenn nötig.
+
+**Sicherheit.**
+
+- Nur an `127.0.0.1` binden.
+- Den `Host`-Header prüfen: nur `127.0.0.1:47811` oder `localhost:47811`.
+  Sonst könnte eine fremde Seite per DNS-Rebinding als „gleiche Seite“ durchgehen.
+- Anfragen **ohne** `Origin` nur als `GET` zulassen. Das sind ein Bild, die
+  Adresszeile oder `curl`.
+- Hat eine solche Anfrage einen `Referer` von einer fremden Seite: 403.
+
+**Eine eigene Vorschauseite** unter `http://127.0.0.1:47811/`:
+
+- Livebild, Belichtung, Weißabgleich und ein Foto-Knopf.
+- Damit kann dein Nutzer die Kamera auch ohne YASAIMAPP prüfen.
+- Erlaube dafür den eigenen Origin `http://127.0.0.1:47811`.
+
+### 4c. Prüfen
+
+Arbeite die Prüfliste am Ende des Schnittstellen-Kapitels durch. Erst wenn
+alle `curl`-Befehle das Erwartete liefern, geht es in YASAIMAPP weiter.
+
+---
+
+## Schritt 5: Wenn die Herstellersoftware die Kamera festhält
+
+Eine USB-Kamera kann immer nur ein Programm gleichzeitig betreiben.
+
+- Läuft die Herstellersoftware (beim Autor „BMS Pix 3“), sieht die Brücke
+  die Kamera, bekommt aber **keine Bilder**. Sie meldet dann `stalled`.
+- Mac: die Software mit ⌘Q **beenden**, nicht nur das Fenster schließen.
+- Windows: auch das Symbol unten rechts neben der Uhr prüfen. Manche Programme
+  laufen dort weiter. Notfalls im Task-Manager beenden. Erkläre ihm vorher, was
+  du beendest.
+- Umgekehrt gilt dasselbe: Soll die Herstellersoftware wieder laufen, muss die
+  Brücke die Kamera freigeben. Das passiert 45 s nach dem letzten Abruf von
+  selbst. Sonst die Brücke beenden.
+- Die Herstellersoftware **nicht deinstallieren**. Unter Windows bringt sie den
+  Treiber mit.
+
+---
+
+## Schritt 6: Automatisch starten
+
+Die Brücke soll immer laufen, wenn der Computer läuft. Sie belegt die Kamera
+nur, wenn YASAIMAPP sie braucht, und kostet sonst fast nichts.
+
+**Mac**
+
+- Eine echte App, etwa ein `.app`-Paket wie MicroCam, kommt unter
+  Systemeinstellungen → Allgemein → Anmeldeobjekte → „+“.
+- Ein Python-Skript bekommt einen LaunchAgent:
+  - Datei `~/Library/LaunchAgents/de.<name>.microcam.plist` mit
+    `ProgramArguments` (bei x86-Bibliothek: `/usr/bin/arch`, `-x86_64`, Pfad
+    zu `python3`, Pfad zum Skript), `RunAtLoad` = true, `KeepAlive` = true und
+    `StandardErrorPath` für eine Logdatei;
+  - laden mit `launchctl bootstrap gui/$(id -u) <datei>`.
+- **Ein Symbol in der Menüleiste** mit Zustand, „Neu starten“ und „Beenden“
+  ist der Ausweg, wenn sich die Kamera aufhängt. Damit es funktioniert:
+  - `KeepAlive` dann nicht als `true`, sondern als
+    `<dict><key>SuccessfulExit</key><false/></dict>`. So kommt ein Absturz
+    von selbst zurück, „Beenden“ (Exit-Code 0) bleibt aber beendet, und „Neu
+    starten“ beendet mit einem anderen Code und kommt nach etwa 10 s wieder.
+  - Beim Beenden höchstens 3 s auf das Schließen der Kamera warten, dann
+    trotzdem gehen. Eine hängende Kamera blockiert `Close` im SDK.
+  - **Notch:** Ein neues Symbol landet links von allen anderen, bei einer
+    vollen Leiste auf einem MacBook also unter der Notch, und ist
+    unsichtbar. Gib dem Symbol einen `autosaveName` und setz beim ersten
+    Start einmal den Wert `NSStatusItem Preferred Position <autosaveName>`
+    in den Einstellungen der App (Punkte vom rechten Rand, etwa 260). Zieht
+    der Nutzer das Symbol später mit ⌘ woandershin, schreibt macOS den Wert
+    selbst. Dann nicht mehr überschreiben.
+- **Nicht aus `~/Documents` starten.** Der Ordner ist geschützt, und ein
+  LaunchAgent darf von dort unter Umständen seine eigene Bibliothek nicht
+  lesen. Den Quellcode dort lassen, die laufende App nach `~/Applications`.
+- Ist die App unsigniert, blockiert macOS den ersten Start. Dann
+  Systemeinstellungen → Datenschutz & Sicherheit → „Trotzdem öffnen“, oder
+  `xattr -dr com.apple.quarantine <App>`, nur für diese eine App.
+
+**Windows**
+
+- Am einfachsten über eine Verknüpfung im Autostart-Ordner: Win + R,
+  `shell:startup`, Enter.
+- In diesem Ordner eine Verknüpfung auf `pythonw.exe "C:\…\microcam.py"`
+  anlegen. `pythonw` startet ohne schwarzes Fenster.
+- Wer es robuster möchte: Aufgabenplanung → „Bei Anmeldung“ → „Neu starten bei
+  Fehler“.
+- Die Brücke hört nur auf `127.0.0.1`. Fragt die Windows-Firewall trotzdem,
+  reicht „Privates Netzwerk“. Erkläre ihm, dass damit niemand von außen
+  zugreifen kann.
+
+Nach einem Neustart des Computers prüfen:
+`http://127.0.0.1:47811/api/status` im Browser zeigt JSON.
+
+---
+
+## Schritt 7: In YASAIMAPP benutzen
+
+1. YASAIMAPP öffnen, **Einstellungen → Fotos → Mikroskop-Kamera**, dort
+   **„Kamera-Programm suchen“** klicken. Antwortet die Brücke, ist der Computer
+   eingerichtet, und dort steht, welche Kamera sie meldet. Der Knopf
+   „Mikroskopieren“ erscheint bei den Funden, sobald dazu eine **Cloud**
+   verbunden ist (Reiter Cloud); die Fotos gehen in voller Größe dorthin.
+2. Beim ersten Mal fragt der Browser, ob wkpilz.de auf **Geräte in diesem
+   Netzwerk** zugreifen darf. Sag deinem Nutzer **vorher**, dass er
+   **Erlauben** klicken soll. Bis er klickt, wartet die Seite einfach. Die Frage
+   kommt einmal pro Browser und Computer.
+3. Einen Fund öffnen → **Belege → Mikroskopieren**. Livebild, Objektivfrage und
+   Foto testen, wie im Schnittstellen-Kapitel beschrieben.
+4. Zum Messen braucht er **Maßstab-Vorlagen** für jedes Objektiv. Am
+   einfachsten im Fenster „Mikroskopieren“ mit **„Objektiv eichen“**: das
+   **Objektmikrometer** unterlegen, „Foto für die Eichung“, eine möglichst
+   lange Strecke der Skala anklicken, ihre Länge eintragen. Das Foto hat immer
+   dieselbe Größe, deshalb passt eine Vorlage auf jedes spätere Foto. Zum
+   Fotografieren braucht er keine Vorlage.
+
+---
+
+## Wenn etwas nicht geht
+
+| Was man sieht | Woran es meist liegt | Was hilft |
+|---|---|---|
+| Bild ganz schwarz | Belichtungsautomatik aus, Lampe aus, Revolver zwischen zwei Stellungen | Automatik an, Licht prüfen |
+| `stalled`, keine Bilder | Herstellersoftware läuft noch | Schritt 5 |
+| Kamera friert ein, verschwindet (`frozen`) | Strom oder Leitung am USB-Anschluss | USB-2-Hub oder Hub mit Netzteil, dann von Hand neu anstecken |
+| Waagrechte Streifen laufen durchs Bild | Netzflimmern der Lampe bei kurzer Belichtung | Flimmerschutz (`hz`), Lampe zurückdrehen |
+| Bild mit Flimmerschutz überstrahlt, Stellen brennen aus (`tooBright`) | Lampe zu hell für 10 ms | Lampe zurückdrehen |
+| Rot und Blau vertauscht, Bild steht kopf | BGR bzw. „upside down“ (Windows) | Schritt 4a |
+| Seite lädt ewig, kein Fehler | Browser wartet auf „Erlauben“ | Abfrage im Browser bestätigen |
+| Seite sagt „nicht erreichbar“ | Brücke läuft nicht oder falscher Port | Schritt 6, `curl` auf `/api/status` |
+| 403 in der Brücke | Origin nicht erlaubt | Liste im Schnittstellen-Kapitel |
+| Mac: Bibliothek lädt nicht („wrong architecture“) | x86_64-Bibliothek in arm64-Prozess | Schritt 3, Rosetta |
+| Windows: `OSError: [WinError 193]` | 32/64-Bit passt nicht | passendes Python |
+| Livebild ruckelt (2–3 Bilder pro Sekunde) | Automatik am Anschlag | mehr Licht |
+| Revolver gedreht, aber „Welches Objektiv?“ kommt nicht | Schwarz liegt über 22, meist nach einem Weißabgleich unter Halogen (blaues Schwarz) | Schwarzbalance, Schritt 4a; im Log den dunkelsten Wert ansehen |
+| Dunkle Stellen im Bild haben einen Blaustich | dieselbe Ursache | Schwarzbalance, Schritt 4a |
+
+---
+
+## Was YASAIMAPP vom Kamera-Programm erwartet (Schnittstelle, Version 1)
+
+Dieser Teil ist für die KI. Er beschreibt genau, was die Webseite YASAIMAPP
+(https://wkpilz.de/map/) vom Programm auf dem Computer erwartet. Halte dich
+Wort für Wort daran: Die Seite kann nicht nachgeben, sie spricht mit jedem
+Kamera-Programm gleich. Heißt ein Feldname anders, bleibt das Fenster schwarz,
+ohne dass jemand sieht, warum.
+
+### Das Grundprinzip
+
+- Ein kleines Programm läuft auf dem Computer, an dem die Kamera steckt
+  (Windows oder Mac). Es spricht mit der Kamera über deren eigenes SDK oder
+  als Webcam und stellt sie als kleinen Webserver bereit.
+- Adresse: **`http://127.0.0.1:47811`**. Nur an `127.0.0.1` binden, niemals an
+  `0.0.0.0`: Die Kamera soll nur von diesem Computer aus erreichbar sein, nicht
+  aus dem Netz. Unter Windows erspart das außerdem meist die Frage der Firewall.
+- Die Webseite holt sich von dort Livebild, Fotos und Meldungen. Das Programm
+  lädt selbst nichts hoch und spricht mit keinem Server im Internet. Das
+  Speichern in die Cloud macht die Seite.
+- Die Kamera wird erst eingeschaltet, wenn jemand Livebild, Ereignisse oder ein
+  Foto abruft. 45 Sekunden nach dem letzten Abruf wird sie wieder freigegeben.
+
+### Wer darf fragen (CORS)
+
+Antworte nur diesen Seiten (Header `Origin`):
+
+- `https://wkpilz.de`
+- `https://www.wkpilz.de`
+
+Die MicroCam des Autors erlaubt zusätzlich `http://localhost` und
+`http://127.0.0.1` (jeweils auch mit `:8888`) für eine lokale Testkopie von
+YASAIMAPP, und ihre eigene Vorschauseite `http://127.0.0.1:47811`. Für einen
+normalen Nutzer ist das nicht nötig.
+
+Jede andere Seite bekommt **403**. Für die erlaubten gehört an **jede** Antwort:
+
+```
+Access-Control-Allow-Origin: <der Origin der Anfrage>
+Vary: Origin
+Access-Control-Expose-Headers: X-Image-Width, X-Image-Height, X-Camera-Model
+```
+
+Auf `OPTIONS` (Vorab-Anfrage des Browsers vor einem POST mit JSON) antworte
+mit **204** und zusätzlich:
+
+```
+Access-Control-Allow-Methods: GET, POST, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+Access-Control-Allow-Private-Network: true
+Access-Control-Max-Age: 600
+```
+
+Anfragen **ohne** `Origin` sind ein Bild, die Adresszeile oder `curl`. Lass sie
+nur als `GET` durch, und nicht, wenn ihr `Referer` von einer fremden Seite
+stammt. Prüfe außerdem den `Host`-Header. Nur `127.0.0.1:47811` und
+`localhost:47811` sind gültig, alles andere bekommt 403. Das schützt vor
+DNS-Rebinding.
+
+Fehler gibst du als JSON zurück: `{"error": "Text für den Nutzer"}` mit 400
+(falsche Anfrage), 403 (nicht erlaubt), 404 (unbekannter Pfad) oder 503
+(Kamera liefert gerade nichts).
+
+Firefox, Chrome und Edge fragen beim ersten Mal „Zugriff auf Geräte in diesem
+Netzwerk erlauben?“. Sag dem Nutzer vorher, dass er dort **Erlauben** klicken
+muss. Bis er klickt, hängen die Anfragen der Seite einfach.
+
+### Die Pfade
+
+| Methode | Pfad | Antwort |
+|---|---|---|
+| GET | `/api/status` | JSON, siehe unten. Schaltet die Kamera **nicht** ein. |
+| GET | `/api/stream.mjpg?fps=15` | Livebild als MJPEG (`multipart/x-mixed-replace; boundary=…`, jedes Teil ein JPEG). `fps` ist die gewünschte Höchstrate. Die Seite lädt es mit `<img crossorigin="anonymous">`; der Browser schickt dann einen `Origin`. |
+| GET | `/api/snapshot.jpg?quality=0.92` | **Ein Foto in voller Sensorauflösung** als `image/jpeg`. Header `X-Image-Width`, `X-Image-Height`, `X-Camera-Model`. **Immer** mit EXIF-Datum und Kameranamen (`Make`, `Model`); `X-Camera-Model` nennt dasselbe Modell. |
+| GET | `/api/events` | Server-Sent Events, siehe unten. Hält die Kamera an, solange die Verbindung offen ist. |
+| POST | `/api/settings` | Body JSON mit einem Teil der Einstellungen (siehe `settings`). Antwort: dasselbe JSON wie `/api/status`. |
+| POST | `/api/whitebalance` | Einmaliger automatischer Weißabgleich. Antwort 200 (JSON beliebig). |
+| GET | `/api/frame.jpg` | *freiwillig:* ein einzelnes Vorschaubild. YASAIMAPP braucht es nicht, MicroCam hat es. |
+
+**Das Foto ist nie ein Bild aus dem Livestrom.** Die Maßstab-Vorlagen in
+YASAIMAPP rechnen in µm pro Pixel des vollen Sensors. Deshalb muss jedes Foto
+die gleiche Größe haben, nämlich die aus `still` im Status.
+
+### `/api/status`
+
+```json
+{
+  "app": "MicroCam",
+  "version": "1.0.0",
+  "state": "streaming",
+  "present": true,
+  "model": "U3CMOS10000KPA",
+  "settings": {
+    "autoExposure": true,
+    "target": 120,
+    "exposureUs": 350000,
+    "gain": 100,
+    "temp": 6500, "tint": 1000, "hflip": false, "vflip": false, "previewIndex": 1
+  },
+  "ranges": {
+    "exposureUs": [100, 2000000],
+    "gain": [100, 300],
+    "target": [16, 220],
+    "autoExposureMax": { "exposureUs": 350000, "gain": 300 }
+  },
+  "still": { "width": 3584, "height": 2746 },
+  "preview": { "width": 1792, "height": 1372 },
+  "fps": 2.9
+}
+```
+
+Pflicht für YASAIMAPP:
+
+- `state`: einer von
+  - `absent`: keine Kamera angesteckt,
+  - `idle`: angesteckt, aus,
+  - `starting`,
+  - `streaming`,
+  - `stalled`: ein anderes Programm hält die Kamera,
+  - `frozen`: Erst kamen Bilder, dann keine mehr. Nur Abstecken von Hand
+    hilft; die Seite sagt das dem Nutzer.
+  - `reconnecting`,
+  - `error`.
+- `model`: der Name der Kamera, so wie der Nutzer ihn wiedererkennt.
+- `settings.autoExposure` (bool, so wie der Nutzer es gewählt hat, auch wenn
+  das Programm mit Flimmerschutz selbst regelt), `settings.target`
+  (Zielhelligkeit),
+  `settings.exposureUs` (Belichtungszeit in Mikrosekunden), `settings.gain`
+  (Verstärkung in Prozent, 100 = einfach).
+- `ranges.exposureUs`, `ranges.gain`, `ranges.target` als `[min, max]`.
+- `ranges.autoExposureMax`: bis wohin die Automatik Zeit und Verstärkung
+  hochdreht. Weiß die Kamera es nicht, lass das Feld weg.
+- `still.width`, `still.height`: die Größe jedes Fotos aus `/api/snapshot.jpg`.
+
+Manche Werte kennt das Programm erst, wenn die Kamera einmal offen war: `still`,
+`ranges.exposureUs`, `ranges.gain`, `ranges.autoExposureMax`. Bis dahin sind
+sie `null`. Danach merkt sich das Programm sie über Neustarts hinweg. Nur bei
+einer ganz frischen Installation fehlen sie also einmal.
+
+`preview` und `fps` stehen nur im Status, solange Bilder ankommen.
+
+Freiwillig, von MicroCam unterstützt:
+
+- `busy` (bool): `true`, wenn die Antwort ein zwischengespeicherter Stand ist,
+  weil die Kamera gerade im SDK hängt.
+- `settings.hz` mit `ranges.hz` = `[0, 2]`: der Flimmerschutz, 0 = 60 Hz,
+  1 = 50 Hz, 2 = aus. Das Programm des Autors stellt 1 ein, wenn nichts gesetzt
+  ist.
+- `settings.speed` mit `ranges.speed`: die USB-Übertragungsstufe.
+- `recovery` = `{freezes, replugs, lastFreezeSecondsAgo, needsReplug}`: wie oft
+  die Kamera eingefroren ist und ob jetzt nur noch Abstecken von Hand hilft
+  (`needsReplug`). Dazu `settings.autoReplug` (Neu-Anstecken per Software,
+  standardmäßig aus, weil es einen Freeze nicht heilt).
+- `settings.blackLevel` mit `ranges.blackLevel`: der Abzug der
+  Schwarzbalance je Kanal (siehe Schritt 4a), Standard 10. Das Programm am
+  zweiten Rechner des Autors hat ihn; YASAIMAPP braucht ihn nicht.
+
+Kann die Kamera etwas nicht (zum Beispiel keine Verstärkung), gib den Wert
+trotzdem an, fest auf einem sinnvollen Wert, und ignoriere Änderungen daran.
+`app` darf ein eigener Name sein. `"MicroCam"` ist der Name vom Programm des Autors.
+
+### `/api/settings`
+
+Body zum Beispiel `{"autoExposure": false}`, `{"target": 90}`,
+`{"exposureUs": 50000}` oder `{"gain": 200}`. **Wer `exposureUs` oder `gain` von
+Hand setzt, schaltet die Automatik aus.** Das Programm merkt sich die
+Einstellungen über einen Neustart hinweg.
+
+### `/api/events` (Server-Sent Events)
+
+`Content-Type: text/event-stream`. Zuerst kommt `retry: 2000`, dann diese
+Ereignisse, jeweils als `event: <name>` und `data: <JSON>`:
+
+| Ereignis | Daten | Wann |
+|---|---|---|
+| `state` | `{state}` | bei jeder Änderung des Zustands, und einmal gleich nach dem Verbinden |
+| `stats` | `{state, brightness, exposureUs, gain, autoExposure, fps, dark}`, freiwillig `tooBright` | etwa viermal pro Sekunde. `brightness` ist die mittlere Helligkeit des Bildes, 0–255. `brightness`, `fps` und `dark` fehlen, solange noch kein Bild angekommen ist. `tooBright: true` heißt: Flimmerschutz an, Belichtung schon bei einer Flimmerperiode, Verstärkung am Minimum, das Bild heller als das Ziel der Automatik **und mehr als 2 % der Fläche ausgebrannt** (ein Farbkanal bei 250 oder mehr, gezählt über dieselben Stichproben wie `brightness`). Wieder aus unter 1 % oder sobald das Bild nicht mehr heller als das Ziel ist. Das Ziel ist dabei auf die Helligkeitsskala umgerechnet: `255 · (target/255)^(1/2,2)`, bei target 142 also etwa 195. YASAIMAPP sagt dann „Dreh die Lampe etwas zurück“. Nicht nach dem Mittelwert allein entscheiden: Die frühere Regel „über `Ziel + max(15, 8 %)`“ warnte am 13.11.2026 einen ganzen Abend lang bei einem Bild, das der Autor optimal fand (Ziel 205, Bild 224, nur 0,5 % ausgebrannt, die Sporen sauber gezeichnet). Die Lampe zurückzudrehen lohnt sich erst, wenn sie etwas zerstört. |
+| `dark` | `{brightness}` | Das Bild ist schwarz geworden: Revolver wird gedreht, Lampe aus. |
+| `light` | `{brightness, darkMs}` | Es ist wieder hell, die Belichtung regelt noch nach. |
+| `settled` | `{brightness, exposureUs, gain, darkMs, initial}` | Das Bild ist wieder ruhig. `initial: true` heißt, die Kamera wurde gerade erst eingeschaltet; es wurde nicht am Revolver gedreht. |
+
+Nach `dark` fragt YASAIMAPP „Welches Objektiv?“, ohne eines vorzuwählen: Der
+Nutzer wählt selbst. Ein `settled` mit `initial: true` braucht sie, um bei
+jedem Einschalten der Kamera nach dem Objektiv zu fragen. Nur wenn die Kamera
+gerade nach `reconnecting` von selbst wieder läuft, fragt sie nicht. Als „schwarz“ gilt beim Programm des Autors:
+
+- eine mittlere Helligkeit unter `0,3 × letzter ruhiger Wert`, dabei
+  mindestens 16 und höchstens 22;
+- oder unter `0,15 × letzter ruhiger Wert`, den ruhigen Wert dabei
+  höchstens als 200 genommen.
+
+Gemessen an seinem Mikroskop: Echtes Drehen fällt auf etwa 13. Schatten und
+ein überbelichtetes Bild, das kurz einbricht, bleiben über 30.
+
+**YASAIMAPP prüft noch einmal selbst.** Ein `dark` zählt dort nur, wenn
+`brightness` im `dark` oder in einem späteren `stats` mit `dark: true` unter
+**22** fällt (`TURN_BLACK`). Darüber fragt die Seite nicht nach dem
+Objektiv, auch wenn das Programm `dark` gemeldet hat. Deshalb braucht es die
+Schwarzbalance aus Schritt 4a: Ohne sie liegt Schwarz nach einem warmen
+Weißabgleich bei 22,2, und kein Dreh kommt durch.
+
+Es darf keine falschen `dark` geben, wenn nur jemand am Präparat schiebt.
+
+### So prüfst du, ob alles stimmt
+
+Im Terminal (Windows: „Eingabeaufforderung“, dort `curl.exe` statt `curl`):
+
+```
+curl -H "Origin: https://wkpilz.de" http://127.0.0.1:47811/api/status
+curl -i -H "Origin: https://example.com" http://127.0.0.1:47811/api/status
+curl -i -X OPTIONS -H "Origin: https://wkpilz.de" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type" http://127.0.0.1:47811/api/settings
+curl -N -H "Origin: https://wkpilz.de" http://127.0.0.1:47811/api/events
+curl -H "Origin: https://wkpilz.de" -o foto.jpg http://127.0.0.1:47811/api/snapshot.jpg
+```
+
+Erwartet:
+
+- Status-JSON mit `state`;
+- 403 für example.com;
+- 204 mit den CORS-Headern;
+- laufende `stats`-Zeilen;
+- ein JPEG in der Größe aus `still`.
+
+Dann in YASAIMAPP:
+
+1. **Einstellungen → Fotos → Mikroskop-Kamera**, „Kamera-Programm suchen“:
+   Dort steht, ob die Seite das Programm erreicht und welche Kamera es meldet.
+   Damit ist dieser Computer eingerichtet.
+2. Einen Fund öffnen → **Belege → Mikroskopieren**: Das Livebild erscheint.
+   Deckel aufs Objektiv: „Welches Objektiv?“ erscheint. **Aufnehmen**: Das
+   Foto landet am Fund.
+3. Für Fotos mit Maßstab braucht der Nutzer eigene **Maßstab-Vorlagen**, eine
+   pro Objektiv. Am einfachsten im Fenster „Mikroskopieren“ mit **„Objektiv
+   eichen“**: Objektmikrometer unterlegen, Foto machen, eine Strecke der Skala
+   anklicken, ihre Länge eintragen. Das Foto dafür kommt aus
+   `/api/snapshot.jpg`, also in derselben Größe wie jedes spätere Foto.
+
+Ändert sich diese Schnittstelle, steht die neue Fassung in der Anleitung, die
+YASAIMAPP unter Einstellungen → Fotos → Mikroskop-Kamera zum Herunterladen
+anbietet.

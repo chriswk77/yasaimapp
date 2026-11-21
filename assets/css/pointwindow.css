@@ -1,0 +1,1881 @@
+/* --- The point window --------------------------------------------------------
+
+   Its styles — the window itself, its grip and width, the header and the
+   facts line, the tabs, the panels, the species suggestions, the list tree
+   one files a find into, the coordinate row, the hint tile, the sequence
+   and file blocks — OUT OF map.css ON 11.10.2026, as the Fundbrowser prints
+   the same window (includes/point_window.php, assets/js/pointwindow.js).
+   The way photowindow.css and plates.css went: a page that prints the
+   window loads this with it. The map loads it AFTER map.css, and what was
+   moved is what only the window's own selectors name; a rule that served
+   the window and something else (the tab bar the sidebar shares, the
+   rules that fit the map to an open window) stays in map.css and is
+   repeated here for the window's half, with its comment.
+
+   Moved by selector, then checked by the computed style of every element
+   of the window in nine states at two widths against the file as it was:
+   no element drew differently. */
+
+@media (min-width: 861px) {
+    body.has-app-bar .detail { top: var(--app-bar-height); height: calc(100dvh - var(--app-bar-height)); }}
+
+/* ONE TAB BAR FOR BOTH WINDOWS (10.09.2026). Since the point window has
+   tabs, they exist twice in the same scene — on the left above the list,
+   on the right above the details. They therefore carry the same rules
+   and not two drawings of the same thing; the names stay separate, so
+   that each bar says where it stands. Everything reasoned out below —
+   the transparent border, the line as a pseudo-element, the surface of
+   the active tab — applies to both. */
+.detail-tabs {
+    display: flex;
+    flex: none;
+    position: relative;
+}
+
+/* The baseline too ends before the edge — the same indentation as the
+   active line, so both lie flush on top of each other. As a
+   pseudo-element instead of border-bottom: a border would inevitably run
+   from edge to edge. */
+.detail-tabs::after {
+    content: '';
+    position: absolute;
+    left: .7rem;
+    right: .7rem;
+    bottom: 0;
+    height: 1px;
+    background: var(--border);
+}
+
+.detail-tabs [role="tab"] {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    padding: .6rem .5rem;
+    background: none;
+    /* THE AIR TO THE EDGE SITS IN THE BORDER, and that is the trick: a
+       transparent border belongs to the element, so the hit area stays
+       the full half of the sidebar — exactly what the note below at the
+       active line demands. Only the GROUND is indented
+       (background-clip), and the line below now starts at 0, because its
+       reference is the area INSIDE the border. That way both are exactly
+       the same width (09.09.2026: „der grüne Unterstrich sollte
+       auch so breit sein, wie der Hintergrund es anzeigt … sodass wir zum
+       Rand hin etwas Platz haben"). */
+    border: 0;
+    border-left: .7rem solid transparent;
+    border-right: .7rem solid transparent;
+    background-clip: padding-box;
+    font: inherit;
+    font-size: .88rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+
+.detail-tabs [role="tab"]:hover { color: var(--text); }
+
+/* The active line is a pseudo-element, no border-bottom anymore: the
+   button fills half the sidebar, and its edge thus ran to the sidebar's
+   border — outer left, outer right, and in the middle both tabs butted
+   against each other. Indented is the LINE, not the button: a margin on
+   the button would also have trimmed the hit area, and precisely under
+   the finger that should remain the full half sidebar. */
+.detail-tabs [role="tab"]::after {
+    content: '';
+    position: absolute;
+    /* ZERO, NOT .7rem: the button's transparent border already indents
+       the reference, and another .7rem would be double that. */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
+    /* ABOVE the baseline, and this really needs the z-index: the ::after
+       of the BAR is painted after its children and would otherwise lie
+       on the active line — of the green, a 1px strip with a gray seam
+       would remain. */
+    z-index: 1;
+}
+
+.detail-tabs [role="tab"][aria-selected="true"] {
+    color: var(--text);
+    font-weight: 600;
+    /* A SURFACE IN ADDITION TO THE LINE (09.09.2026: „dass man
+       mehr sieht als nur den Unterstrich. Aber nicht die Akzentfarbe. Das
+       wäre zu viel Akzentfarben, sondern ein dezenterer Hintergrund, der
+       aber trotzdem den Tab hervorhebt").
+
+       --ground-3 is exactly that: the raised surface of this project,
+       which every button already wears under the pointer. It says „here
+       I am" without taking meaning away from the accent — that belongs
+       to the active line below and to the chosen things in the list.
+
+       Rounded at the top, not at the bottom: the surface sits on the
+       baseline, and the active line closes it off. */
+    /* background-COLOR and not the shorthand: „background" set the
+       background-clip from the base rule back to border-box, and the
+       surface ran under the transparent border — measured 170 px instead
+       of 148. A shorthand sets everything, after all, even what one does
+       not name. */
+    background-color: var(--ground-3);
+    /* PLUS THE BORDER WIDTH, otherwise the rounding is invisible: the
+       radius applies to the border box, but painting reaches only to the
+       inner edge of the transparent border — and what arrives there is
+       radius MINUS border. 10 px minus 11 px is zero, so a sharp corner
+       (09.09.2026: „die Reiter kannst Du die an den zwei oberen
+       Ecken abrunden" — they were rounded already, just by nothing). */
+    border-radius: calc(var(--radius) + .7rem) calc(var(--radius) + .7rem) 0 0;
+}
+
+.detail-tabs [role="tab"][aria-selected="true"]::after { background: var(--accent); }
+
+/* THE SUB-TABS UNDER „BELEGE" (Fotos | Sequenzen, 02.10.2026) — the same
+   drawing one level quieter, as the administration steps its levels down:
+   a smaller word, a flatter bar, and the chosen one marked by line and
+   weight with only a breath of surface. Inside the padded content the
+   bar needs no air of its own to the edge, so line and baseline run
+   flush with the fields below. */
+.detail-subtabs { margin: -.3rem 0 .9rem; }
+.detail-subtabs::after { left: 0; right: 0; }
+.detail-subtabs [role="tab"] {
+    padding: .4rem .5rem;
+    border-left-width: 0;
+    border-right-width: 0;
+    font-size: .82rem;
+}
+.detail-subtabs [role="tab"][aria-selected="true"] {
+    background-color: color-mix(in srgb, var(--text) 5%, transparent);
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+
+/* Shape left, text right. The row was two blocks one below the other; now
+   the shape lies beside it and the text in a column of its own, so that
+   the German name stays under the scientific one and does not begin
+   under the symbol. flex-start and not center: with two lines of text
+   the shape should stand beside the first, not in the middle between. */
+/* ONE BLOCK, NOT TWO COLUMNS (21.09.2026): the sign sits inside the name
+   line (map.js, fillSpeciesRow), so the lines below it start at the left
+   edge — on the phone that width was the difference between one and
+   two lines of German name. */
+.species-suggestions li:not(.species-footer) { display: block; }
+/* Muted like the German name: the subject is accessory, the name is the
+   thing. The drawing takes its colour via currentColor. */
+.species-shape {
+    display: inline-block;
+    vertical-align: -.12em;
+    margin-right: .35rem;
+    color: var(--text-quiet);
+}
+.species-text { min-width: 0; }
+
+.species-name    { display: block; font-size: .95rem; font-style: italic; }
+.species-author   { font-style: normal; color: var(--text-quiet); font-size: .82rem; }
+.species-german { display: block; font-size: .78rem; color: var(--text-quiet); }
+/* The dot between German name and current-name note, heavy
+   (21.09.2026: „so richtig fett") — the one mark that parts the two. */
+.species-dot { font-weight: 900; margin: 0 .4em; color: var(--text); }
+/* The star behind „aktueller Name zu": large, in the text colour, and a
+   question-mark cursor — its tooltip names the list and its date. */
+.species-origin { margin-left: .35em; font-size: 1.15em; color: var(--text); cursor: help; }
+.species-rl {
+    display: inline-block;
+    margin-left: .4rem;
+    padding: 0 .3rem;
+    border-radius: 4px;
+    background: var(--warn);
+    color: #201800;
+    font-size: .68rem;
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* The row at the very bottom: how much is still to come. Not a
+   suggestion, so not clickable either and visually pulled back. */
+.species-footer {
+    cursor: default;
+    text-align: center;
+    font-size: .75rem;
+    color: var(--text-quiet);
+    background: var(--ground-2);
+}
+.species-footer:hover { background: var(--ground-2); }
+
+.detail {
+    position: absolute;
+    top: 0;
+    right: 0;
+    /* Above Leaflet's controls: those lie at 1000 and otherwise covered
+       the delete button and the window's header row. */
+    z-index: 1100;
+    display: flex;
+    flex-direction: row;
+    width: calc(var(--detail-width, 340px) + var(--grip-width));
+    height: 100dvh;
+    background: var(--ground-2);
+    border-left: 1px solid var(--border);
+    box-shadow: -6px 0 24px rgba(0, 0, 0, .35);
+    transition: width .2s ease;
+}
+
+/* Collapsed, exactly the grip remains standing — it is the way back, the
+   same consideration as for the sidebar. */
+body.detail-collapsed .detail { width: var(--grip-width); }
+
+/* The grip: a bar over the full height in the window's dress, with the
+   sign of the drawer — › pushes away, ‹ brings back. The font carries
+   it, not an image, as with the − and + of the zoom. The width is the
+   same token as that of the left grip (--grip-width): both edges of the
+   same scene should be equally wide. */
+.detail-grip {
+    flex: none;
+    width: var(--grip-width);
+    padding: 0;
+    border: 0;
+    background: var(--ground-2);
+    color: var(--text-quiet);
+    font: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.detail-grip:hover { color: var(--text); background: var(--ground-3); }
+
+/* The content is the second column of the row. min-width: 0, otherwise
+   a flex child refuses to shrink below its content — the classic trap
+   that .organize-left already got caught in. */
+.detail-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ONE TAB SHEET SHOWS, THE OTHERS CARRY 'hidden'. They do not lie side
+   by side on one track like the two pages of the sidebar: there one
+   slides between two long lists, here there are three short sheets, and
+   three scroll areas side by side would raise the suspicion of the
+   scroll area inside a scroll area (CLAUDE.md, trap 4). */
+.detail-panel { display: flex; flex-direction: column; }
+
+/* NO space-between ANYMORE: that pushed the trash can to the right edge
+   no matter how far the name reached — with a short title a gap yawned
+   that looked as if the button belonged to nothing. flex-start lets it
+   stand directly behind the text, like a marking ON the name. */
+/* Vertical padding like .sidebar-header (.55rem) — both windows sit
+   next to each other in the same scene, and the maintainer wanted to see
+   their header rows at the same height, 14.08.2026. The trash-can icon
+   therefore also carries .small like the tools there (28 instead of
+   32 px). */
+.detail-header {
+    display: flex;
+    flex-wrap: wrap;   /* only the facts table wraps — see there */
+    align-items: center;
+    gap: .6rem;
+    padding: .55rem 1rem;
+    /* NO DIVIDING LINE TO THE TABS ANY MORE (10.09.2026: „die
+       Trennlinie oberhalb der Reiter der Tabs kann hier auch entfernt
+       werden"). Word for word the decision the sidebar made on
+       09.09.2026 — and now it applies here for the same reason: since
+       yesterday the active tab wears a surface of its own and thus
+       divides by itself, and since today this window has tabs. Two
+       strokes close above each other read as a mistake. The baseline
+       BELOW the tabs stays, it divides against the content. */
+}
+
+/* min-width: 0 is no ornament — flex elements otherwise compute their
+   minimum width from the content, never smaller. Without this line a
+   long title would have pushed the trash can out of the window instead
+   of breaking off before it. */
+.detail-header h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 1.02rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* Name and facts line in one block (11.09.2026), so the trash can keeps
+   standing beside the name: the header is a flex row, and a second line
+   as a third row member would have pushed the can to the far right
+   again — exactly what .detail-header's flex-start once fixed.
+   min-width: 0 for the same reason as on the h2. */
+.detail-heading {
+    flex: 1;
+    min-width: 0;
+}
+.detail-heading .detail-facts { margin: .1rem 0 0; }
+.detail-heading .detail-facts:empty { display: none; }
+/* The place moves to the next line as a whole — „DE,THU," at a line's
+   end and „Arenshausen" at the next one's start read as two facts. */
+.detail-facts .fact-place { white-space: nowrap; }
+/* The signs before a fact — the hash before the find number, the
+   mountain before the height — sit on the text's baseline like a letter,
+   not above it; the gap is a thin one, a word space would read as a
+   separator. */
+.detail-facts .icon {
+    vertical-align: -.12em;
+    margin-right: .2em;
+}
+/* THE PROTECTED AREAS BY THEIR SHORT NAMES — NSG, FFH (map.js says why);
+   a tap on one opens the facts table. */
+.detail-facts .fact-area { cursor: pointer; }
+/* An area of a kind without a short name keeps its name, cut with „…":
+   inline-block, because only a box can be cut; top-aligned, because a box
+   cut by overflow sits on its bottom edge and would lift the line. */
+.detail-facts .fact-area-name {
+    display: inline-block;
+    max-width: 16em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+/* THE FACTS TABLE behind the ⓘ: the label left in the quiet voice, the
+   value right, and under the value what it means, quieter still. A grid,
+   so every value starts on one line whatever its label's length. */
+.detail-facts-more {
+    /* A row of the header of its own: the full basis wraps it under name
+       and buttons, while the name's box (flex: 1, min-width: 0) never
+       forces a wrap of its own. */
+    flex: 1 0 100%;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: .3rem .8rem;
+    margin: -.2rem 0 .1rem;
+    font-size: .8rem;
+}
+.detail-facts-more dt { color: var(--text-quiet); }
+.detail-facts-more dd { margin: 0; overflow-wrap: anywhere; }
+.detail-facts-more .detail-facts-hint {
+    display: block;
+    color: var(--text-quiet);
+    font-size: .92em;
+}
+.detail-facts-more .detail-facts-line { display: block; }
+
+/* The origin line of a foreign point. On its own surface so it is not
+   read as a first detail of the content: it does not say something
+   ABOUT the find, but under whose name everything that follows stands. */
+.detail-origin {
+    /* AIR TO THE TABS BELOW (11.09.2026: „da fehlt ein Platz
+       zwischen diesen Balken und den Tabs, die kleben aneinander"). The
+       band and the tab bar are two things, and without a gap they read as
+       one striped block — the more so since both close with a line. The
+       air goes BELOW and not above on purpose: the line says under whose
+       name everything that follows stands, and that belongs to the
+       heading above it, not to the tabs. Nothing shows on an own point,
+       the element carries [hidden] there and thus no box at all. */
+    margin: 0 0 .5rem;
+    padding: .45rem 1rem;
+    background: var(--ground-3);
+    border-bottom: 1px solid var(--border);
+    font-size: .8rem;
+    color: var(--text-quiet);
+}
+
+.detail-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+/* GRAYED OUT, BUT READABLE. A locked field of a foreign point carries
+   the information one may not change — it may well step back, but it
+   must remain decipherable. The browser default for :disabled is,
+   depending on the system, pale to the point of unreadability; here it
+   is the quiet text tone on the already muted field surface, plus the
+   mouse cursor that says clicking achieves nothing. */
+.detail-content :is(input, textarea, select):disabled {
+    color: var(--text-quiet);
+    opacity: 1;                 /* Safari otherwise adds .4 on top */
+    cursor: not-allowed;
+    -webkit-text-fill-color: var(--text-quiet);   /* and iOS only via this */
+}
+
+/* A LOCKED FIELD AS PLAIN TEXT (20.09.2026 — see
+   detailReadingLook in map.js): no frame, no ground, no cross, no arrow,
+   no calendar — the caption above and the words below, nothing that
+   looks like a place to type. In the text colour, not the quiet one:
+   grey said „locked control", and there is no control any more, only
+   what somebody wrote. An empty one is gone altogether. */
+.detail-content .field.is-read.is-empty { display: none; }
+/* A value the point carries but its list has no field for (23.09.2026):
+   plain text like a locked field, and greyed — it is kept, not offered. */
+/* A field only the point carries, its list does not (23.09.2026): editable
+   like any other, only its caption quiet — it stands apart, not locked. */
+.detail-content .field.is-orphan > label { color: var(--text-quiet); }
+.detail-content .orphan-note { margin: -.2rem 0 1rem; }
+.detail-content .field.is-read :is(input, textarea, select):is(:disabled, [readonly]) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    padding-left: 0;
+    padding-right: 0;
+    height: auto;
+    min-height: 0;
+    color: var(--text);
+    -webkit-text-fill-color: var(--text);
+    cursor: default;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.detail-content .field.is-read .field-clear { display: none; }
+.detail-content .field.is-read input:is(:disabled, [readonly])::-webkit-calendar-picker-indicator { display: none; }
+
+/* Vertical padding like .sidebar-footer (.6rem) — both footers shall
+   be the same height, see .detail-header further up. */
+.detail-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: .6rem 1rem calc(.6rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+}
+
+.list-selection {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    max-height: 11rem;
+    overflow-y: auto;
+    padding: .35rem;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+/* ONE TILE PER KIND (22.09.2026): where the joint block is
+   drawn, the box gives its frame to two tiles inside it — the own tree
+   and the joint lists — and keeps only the column and the scrolling. */
+.list-selection.is-tiled { background: none; border: 0; padding: 0; gap: .5rem; }
+.list-selection-tile {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    padding: .35rem;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+/* IN THE POINT WINDOW ONLY SCROLL FROM TWENTY ROWS ON.
+   The 11rem above showed a measured 5.2 entries — whoever keeps seven
+   lists thus scrolled in a little box to see their own lists, while
+   next to it the whole window had room. A scroll area inside a scroll
+   area is moreover the most unpleasant operation there is under the
+   finger: while swiping you catch now the one, now the other.
+   A row measures 2.15rem (34 px at base font 16 px), plus the box's
+   padding. Beyond that the window itself keeps scrolling. */
+#d-lists { max-height: calc(20 * 2.15rem + .7rem); }
+
+/* „DIREKT TEILEN" — the tile under the list tiles (index.php says why). It
+   is a box of its own after #d-lists, so it takes the tiles' gap as its
+   distance; the friends are few, so it never needs the list's scrolling. */
+.detail-hints { margin-top: .5rem; max-height: none; overflow: visible; }
+/* THE KARTE TAB'S HEADINGS IN THE TEXT'S COLOUR, A LITTLE LARGER
+   (06.10.2026: „die Überschriften Richtung, Fläche, direkt teilen und
+   Listen bitte in weiß und ein klein wenig größer"). Here they head
+   sections one acts in, not fields one types into — the quiet caption of
+   .field label stays for those. „Weiß" through --text, so a light theme
+   gets its dark ink and not a white on white. Only the panel's own
+   fields (> .field > label), never the boxes inside the lists. */
+#d-panel-place > .field > label { color: var(--text); font-size: .95rem; }
+/* AND AIR BETWEEN THE SECTIONS (the same evening: „zwischen den eigenen
+   Bereichen noch ein bisschen mehr Abstand. Eineinhalb Zeilen oder so"):
+   2rem below each — about one and a half lines of the window's text, where
+   a field's own 1rem made the four read as one block. The last keeps its
+   1rem above the footer. */
+#d-panel-place > .field:not(:last-child) { margin-bottom: 2rem; }
+.detail-hints .list-selection-count { margin-left: auto; color: var(--text-quiet); font-size: .8rem; }
+.detail-hints-none { margin: .2rem .5rem .3rem; }
+
+/* A row of the tree: fold arrow, then the checkbox. Structure and
+   measures as in the sidebar — it is the same tree, and it should feel
+   the same everywhere. */
+.list-selection-row {
+    display: flex;
+    align-items: center;
+}
+
+/* A list with sublists is only a heading in the choice: no checkmark,
+   no symbol — points live in the last level. Quiet text and no pointer
+   cursor, so it does not look like a choice in the first place.
+
+   ITALIC AS IN THE SIDEBAR, so that „heading" wears the same sign in both
+   views. Here stood only the quiet tone — in the sidebar that is taken
+   by now (shared entries), and a notion that looks different depending
+   on the window has to be learned twice. */
+.list-selection-row.is-heading .list-selection-name {
+    color: var(--text-quiet);
+    font-style: italic;
+}
+/* The whole row folds (see drawListSelection), so it shows that too —
+   before, cursor:default stood here expressly, because only the triangle
+   did anything and the row was meant to look like nothing. */
+.list-selection-row.is-heading { cursor: pointer; }
+.list-selection-row.is-heading .list-selection-entry { cursor: inherit; }
+
+/* The arrow also stands where there is nothing to fold — then empty.
+   Otherwise lists without sublists would shift left by its width, and
+   the indent that is meant to show the level would suddenly mean two
+   things. The indent sits here so the rest of the row stays in one
+   alignment. */
+.list-selection-arrow {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    width: 1.6rem;
+    margin-left: calc(var(--depth, 0) * var(--indent));
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    line-height: 1;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.list-selection-arrow:empty { cursor: default; }
+.list-selection-arrow:hover:not(:empty) { color: var(--text); }
+
+.list-selection-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* What is checked in a folded branch stands on the branch itself.
+   Without this number you would create a point in a list you currently
+   do not see — and folding would no longer be merely a matter of
+   overview. */
+/* The sharer's name behind a joint list in the filing tree (22.09.2026). */
+.list-selection-owner { color: var(--text-quiet); font-size: .85em; }
+
+.list-selection-count {
+    flex: none;
+    padding-right: .5rem;
+    font-size: .78rem;
+    color: var(--accent-light);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Higher specificity than ".field label" from app.css — otherwise the
+   display:block there wins, and the color dot loses its measures. */
+.list-selection label.list-selection-entry {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    /* Since the fold arrows the indent sits on the row, no longer here —
+       standing on both, it would count twice. */
+    flex: 1;
+    min-width: 0;
+    padding: .32rem .4rem;
+    border-radius: 6px;
+    font-size: .9rem;
+    font-weight: 400;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: normal;
+    cursor: pointer;
+    margin: 0;
+}
+
+.list-selection label.list-selection-entry:hover { background: var(--border); }
+
+.list-selection-entry input {
+    width: auto;
+    margin: 0;
+    accent-color: var(--accent);
+    /* Finger-friendly — the selection often happens standing in the forest. */
+    inline-size: 17px;
+    block-size: 17px;
+    flex: none;
+}
+
+.coord-row { display: flex; gap: .4rem; align-items: center; }
+.coord-row input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88rem; }
+/* THE COORDINATE AS PLAIN TEXT WHILE IT ONLY SHOWS (22.09.2026:
+   „ich sehe weiterhin einen Rahmen, und ich kann sogar einen Cursor
+   setzen — sehr missverständlich"): the same sentence as the locked
+   fields of a foreign find above — no frame, no ground, no place for a
+   cursor (pointer-events) — until the pencil opens it. */
+.coord-row input[readonly] {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    padding-left: 0;
+    color: var(--text);
+    -webkit-text-fill-color: var(--text);
+    pointer-events: none;
+}
+/* The line under the find number (index.php, d-number-hint): orange when
+   another find carries the number already — a warning, saving still goes
+   —, red when it begins with YASAIMAPP's „Y-", which the server refuses. */
+#d-number-hint.is-warning { color: var(--warn); }
+#d-number-hint.is-error { color: var(--error); }
+/* The way out beside the words — „wk-00555 nehmen" — a real small
+   button, on the line's own middle. */
+#d-number-hint .button { margin-left: .4rem; vertical-align: middle; }
+
+@media (max-width: 860px) {.detail-tabs [role="tab"] { min-height: 44px; }
+    /* The same adjustment as one line further up, for the same reason:
+       the point window's footer should stay exactly as tall under the
+       finger as the sidebar's. NOT as the padding-block shorthand —
+       that swallowed the safety margin to the device's swipe bar here,
+       which .detail-footer, unlike the sidebar, carries at the lower edge
+       (env(safe-area-inset-bottom), see the rule above). */
+    .detail-footer {
+        padding-top: .55rem;
+        padding-bottom: calc(.55rem + env(safe-area-inset-bottom));
+    }
+
+    
+    /* ON THE PHONE THERE IS NO GRIP, just as on the left: the window fills
+       the screen, there is nothing to push aside next to it, and a bar
+       over the full height would take the width from the content. There
+       it is closed via „Schließen" in the footer. */
+    .detail-grip { display: none; }
+    body.detail-collapsed .detail { width: 100%; }
+
+    .detail {
+        position: fixed;
+        top: var(--view-top, 0px);
+        left: 0;
+        right: 0;
+        bottom: auto;
+        width: 100%;
+        height: var(--view-height, 100dvh);
+        border-left: 0;
+        border-top: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* The footer must never be squeezed — it carries the save. */
+    .detail-footer { flex: 0 0 auto; }
+
+    /* While moving, the window steps entirely aside — and just the same
+       while outlining. An "Umriss ziehen" started out of the point
+       window would otherwise leave you tapping on the phone in front of
+       a window that covers the whole map: the finger hits the list
+       choice, never a corner. */
+    body.moves-point .detail,
+    body.outlined .detail { display: none; }}
+
+/* A FIELD'S TICK WITHOUT THE RIGHT TO WRITE („Beleg aufbewahrt" on a
+   foreign find): the box goes, its words stay as plain text — set, it
+   reads as the statement it is; unset, the field is empty and not shown
+   (detailReadingLook). A box one cannot tick would be a promise the
+   window cannot keep. */
+.detail-content .field-tick.is-read input[type="checkbox"] { display: none; }
+.detail-content .field-tick.is-read .checkbox { cursor: default; }
+
+/* SEQUENCES AT A FIND (22.09.2026) — the rows in the Einordnung tab. Each
+   row is a small tile: head with marker, length and the tools; below it
+   who and when; then the bases in monospace, cut after a line — the whole
+   text sits in the title and in the FASTA the buttons hand out. */
+.sequence-list { display: grid; gap: .4rem; }
+
+/* A FIND'S OTHER FILES (05.10.2026, pointfiles.js) — Belege → Dateien.
+   The sentence first, in the text's size: what lies here and that only
+   one sees it decides whether one drops anything at all. Then the place
+   to drop, a dashed box — the sign for „put it here" everywhere —, the
+   line of the running upload, and the list like a small file browser:
+   folders as rows with the fold triangle, indented by --depth like every
+   tree here, files with a thumbnail or a sheet, size and day, and their
+   two small flat symbols at the row's end, as at the sequences. */
+.file-intro { margin: 0 0 .6rem; }
+.file-drop {
+    display: grid;
+    justify-items: center;
+    gap: .5rem;
+    padding: .9rem .8rem;
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    text-align: center;
+}
+.file-drop.is-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.file-drop .button-row { margin: 0; justify-content: center; flex-wrap: wrap; }
+.file-drop-text { color: var(--text-quiet); }
+/* No hand drags a file onto a phone, and its browser picks no folders. */
+@media (hover: none) { .file-drop-text { display: none; }}
+@media (max-width: 860px) { #d-files-pick-folder { display: none; }}
+.file-progress { display: grid; gap: .25rem; margin-top: .6rem; font-size: .85em; color: var(--text-quiet); }
+.file-progress progress { width: 100%; accent-color: var(--accent); }
+.file-tree { margin-top: .7rem; }
+.file-tree:empty { display: none; }
+
+
+/* --- The Belege of a find (12.10.2026) ---------------------------------------
+
+   The gallery's tiles and their dragging, the subject names' window, the
+   sequences' rows and window, the find's other files — moved here from
+   map.css with the gallery code (assets/js/photogallery.js), because the
+   Fundbrowser's window has the Belege tab too. The same way and the same
+   check as above: by selector, then the computed styles of the whole
+   window and of each of the four windows, before and after. */
+
+/* A grid that fills by itself: on the phone two to three images per row,
+   on the desktop more. Fixed column counts would, on a sidebar that is
+   between 320 and 420 px wide depending on the device, always be wrong
+   for one of the two sizes. */
+.photo-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: .4rem;
+}
+.photo-gallery:empty { display: none; }
+
+/* „von Anna" on a picture that is not mine (co-ownership, 11.09.2026).
+   Over the tile's lower edge, small, on a dark glass like the badges on a
+   photograph — a literal colour, as everything floating over a picture. */
+.photo-tile-by, .photo-tile { position: relative; display: block; }
+/* MEASURED IN THE VIEWER'S LAYER (18.11.2026: „wo überall schon
+   gemessen wurde bei den Bildern in dem Messlayer, in dem ich mich gerade
+   befinde"): a green dot in the tile's upper right corner, set by the
+   viewer while it is open (photowindow.js, measuredMarks). Green is the
+   meaning colour for done; a dark ring keeps it on a pale picture. */
+:is(.photo-tile, .photo-tile-by).is-measured::after {
+    content: '';
+    position: absolute;
+    top: .3rem;
+    right: .3rem;
+    width: .6rem;
+    height: .6rem;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .55);
+    pointer-events: none;
+}
+.photo-tile-by .photo-by {
+    position: absolute;
+    left: .25rem;
+    bottom: .25rem;
+    max-width: calc(100% - .5rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: .1rem .4rem;
+    border-radius: var(--radius);
+    background: rgba(0, 0, 0, .6);
+    color: #fff;
+    font-size: .7rem;
+    pointer-events: none;
+}
+
+/* THE HEADING OF A SUBJECT GROUP (10.09.2026: „immer mit
+   Überschrift, Hauptmotiv, dann unten drunter die Bilder, die mit
+   Hauptmotiv gecheckt sind").
+
+   Across the whole row, otherwise it would stand as the first tile in the
+   grid with the pictures beside it — the grid fills its columns
+   automatically and knows no line break by itself.
+
+   Dressed like every subheading of this project (see
+   .sidebar-subheading and .photo-stats-body h3): small, capitals, quiet.
+   It orders, it does not call out. The first title gets no space above
+   it — the two buttons already stand there. */
+.photo-group-title {
+    grid-column: 1 / -1;
+    margin: .55rem 0 0;
+    font-size: .74rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+/* NO EXCEPTION FOR THE FIRST HEADING ANY MORE (10.09.2026:
+   „innerhalb der Buttons ist kein Platz zu dem ersten Label, zum Beispiel
+   Hauptmotiv — hier sollte deutlich Abstand sein"). The exception dates
+   from the time when nothing stood above the gallery; since the two
+   buttons sit above it, „Hauptmotiv" stuck to them. Now the first one
+   carries its space too — and the gallery itself moves off the button
+   pair. */
+.photo-gallery { margin-top: .35rem; }
+
+/* THE GROUPS AS A COLUMN OF SYMBOLS (photogallery.js, groupMenuDraw;
+   13.11.2026): the symbols on the left, the chosen group's
+   pictures beside them, its heading and the other groups out of sight.
+   Without the menu — a single group — the gallery is the plain grid with
+   its heading. The signs dress like the Fundbrowser rail's: quiet until
+   chosen, chosen on the controls' surface with the bold of a chosen row;
+   square, and at a phone's 44 px, since a thumb picks here. */
+.photo-groups:has(> .photo-group-menu:not([hidden])) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: .5rem;
+    align-items: start;
+}
+.photo-groups:has(> .photo-group-menu:not([hidden])) .photo-gallery :is(.is-off, .photo-group-title) { display: none; }
+/* The group one is in, over the whole width, sticking while the pictures
+   scroll; the symbols stick just below it. A fixed height, so they know
+   where. */
+.photo-group-now {
+    grid-column: 1 / -1;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    height: 2rem;
+    box-sizing: border-box;
+    margin: .35rem 0 0;
+}
+.photo-group-now > .icon { width: 1.1rem; height: 1.1rem; flex: none; }
+.photo-group-menu:not([hidden]) {
+    position: sticky;
+    top: 2.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    margin-top: .35rem;
+}
+.photo-group-sign {
+    display: grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.photo-group-sign > .icon { width: 1.25rem; height: 1.25rem; }
+.photo-group-sign:hover { color: var(--text); background: color-mix(in srgb, var(--text) 5%, transparent); }
+.photo-group-sign.is-active { color: var(--text); background: color-mix(in srgb, var(--text) 9%, transparent); }
+/* The accent's line on the side facing the pictures, as the left rails
+   have it (plates.css, .plate-strip-menu-item.is-active). */
+.photo-group-sign { position: relative; }
+.photo-group-sign.is-active::after {
+    content: '';
+    position: absolute;
+    right: -.3rem;
+    top: .45rem;
+    bottom: .45rem;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+}
+.photo-group-sign.is-waiting { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
+@media (max-width: 860px) {
+    .photo-group-sign { width: 44px; height: 44px; }
+}
+
+.photo-thumbnail {
+    display: block;
+    width: 100%;
+    /* height BELONGS HERE, even if it looks superfluous: an <img> with
+       a height attribute gets a style declaration out of it, and that
+       applies as long as the stylesheet sets nothing against it.
+       Exactly that way the thumbnail once became a tall narrow bar. */
+    height: auto;
+    /* Cropped square. Portrait and landscape side by side would
+       otherwise make a jagged row, and to recognize the content the
+       crop suffices — viewing happens in the large window anyway. */
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* A PICTURE THAT CAN BE DRAGGED TO A NEW PLACE (30.09.2026,
+   gallerysort.js). A long press on an image offers „save" and „share",
+   selects the page's text, or starts the browser's own image drag — any
+   of the three ends the drag before it began, so the tile refuses them.
+   What the lifted tile says is shadow and the accent on its frame: it
+   stands above the grid, and it is the user's own move. */
+.photo-gallery [data-sort-key] {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+.photo-gallery .is-dragging {
+    position: relative;
+    z-index: 2;
+    transition: none;
+    border-radius: 6px;
+    outline: 2px solid var(--accent);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .5);
+}
+.photo-gallery.is-sorting,
+.photo-gallery.is-sorting .photo-thumbnail { cursor: grabbing; }
+
+/* What is not yet transferred carries a clock — and is somewhat paler.
+   Both together, because the badge alone drowns on a light image and
+   the paleness alone does not say why. */
+.photo-thumbnail-pending {
+    position: relative;
+    display: block;
+}
+.photo-thumbnail-pending .photo-thumbnail {
+    opacity: .55;
+    cursor: default;
+}
+.photo-badge {
+    position: absolute;
+    right: .15rem;
+    bottom: .15rem;
+    padding: 0 .2rem;
+    font-size: .8rem;
+    line-height: 1.3;
+    background: rgba(0, 0, 0, .55);
+    border-radius: 4px;
+}
+
+.photo-buttons {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .45rem;
+}
+.photo-buttons .hint-text { margin: 0; }
+
+.cloud-file {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    text-decoration: none;
+}
+.cloud-file img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Without a preview — a raw file the provider cannot read. Then the name
+   stands there; it says more than an empty grey field. */
+.cloud-file-name {
+    padding: .3rem;
+    font-size: .68rem;
+    line-height: 1.25;
+    color: var(--text-quiet);
+    text-align: center;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+/* The suggestions in the „Motivname" window: real buttons, wrapping, so
+   that one tap is enough. Why not a select field — a select demands
+   opening, aiming, confirming; that is three gestures for one answer,
+   and in the forest every second one is one too many. */
+.photo-subject-choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin: .2rem 0 .9rem;
+}
+/* The kind first — Makro or Mikro — as two equally wide buttons above
+   the names. The chosen one speaks the language of „chosen" across the
+   whole project: the surface and the damped accent stroke (CLAUDE.md,
+   Design) — not the full accent, which belongs to the save below. */
+.photo-subject-kind {
+    display: flex;
+    gap: .35rem;
+    margin: .2rem 0 .7rem;
+}
+.photo-subject-kind .button { flex: 1; }
+/* The picture being named (28.09.2026) — small enough that names and
+   buttons stay in sight on a phone, whole and uncut (contain). ONE FIXED
+   HEIGHT for every picture, upright or across: the names below must not
+   move between the windows of a batch, or the next tap hits a different
+   one (see is-last below). */
+.photo-subject-preview {
+    display: block;
+    width: 100%;
+    height: 12rem;
+    margin: .1rem 0 .8rem;
+    object-fit: contain;
+}
+/* FROM THE MICROSCOPE THE WHOLE SCREEN (photogallery.js, askSubject): the
+   shot as large as it goes on the left, zoomable — the wheel, two fingers,
+   a double click fits it again (imagezoom.js) —, and on the right a column
+   with the names one under another, the own name's field and the two
+   buttons at its foot. The form's own order is kept; the grid only gives
+   each part its place. Only the names scroll, and only if they must. */
+#photo-subject-window.is-microscope {
+    width: 100%;
+    height: 100dvh;
+    max-width: 100%;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+}
+#photo-subject-window.is-microscope > form {
+    height: 100%;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 18rem;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas: "title file" "picture groups" "picture names" "picture own" "picture foot";
+    gap: .7rem 1.1rem;
+}
+#photo-subject-window.is-microscope #photo-subject-title { grid-area: title; margin: 0; align-self: center; }
+#photo-subject-window.is-microscope #photo-subject-file { grid-area: file; margin: 0; align-self: center; }
+#photo-subject-window.is-microscope #photo-subject-group { grid-area: groups; margin: 0; }
+/* ASCOMYCETEN · BASIDIOMYCETEN as a tab bar (09.11.2026: „im
+   Design von Reitern") — the same quiet words with the accent line under
+   the chosen one as the tabs of „Bearbeiten" (photowindow.css): they
+   switch what the column below shows, they are no answer of their own. */
+.photo-subject-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+}
+.photo-subject-tabs [role="tab"] {
+    flex: 1;
+    padding: .55rem .3rem;
+    background: none;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    font: inherit;
+    font-size: .9rem;
+    color: var(--text-quiet);
+    cursor: pointer;
+}
+.photo-subject-tabs [role="tab"]:hover { color: var(--text); }
+.photo-subject-tabs [role="tab"].is-active { color: var(--text); font-weight: 600; border-bottom-color: var(--accent); }
+#photo-subject-window.is-microscope .photo-subject-frame {
+    grid-area: picture;
+    min-height: 0;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    background: var(--ground-3);
+    border-radius: var(--radius);
+}
+#photo-subject-window.is-microscope .photo-subject-frame.is-zoomed { cursor: grab; }
+#photo-subject-window.is-microscope .photo-subject-frame.is-zoomed:active { cursor: grabbing; }
+#photo-subject-window.is-microscope .photo-subject-preview {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    -webkit-user-drag: none;
+}
+#photo-subject-window.is-microscope .photo-subject-choices {
+    grid-area: names;
+    min-height: 0;
+    margin: 0;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+}
+#photo-subject-window.is-microscope .photo-subject-choices .button { justify-content: flex-start; flex: none; }
+/* THE GROUPS ON A RAIL (photogallery.js, askSubject; 15.11.2026):
+   the chosen group's names on the left, a column of signs at the window's
+   right edge — the make of „Bearbeiten"'s rail (photowindow.css,
+   .photo-develop-rail). Only the names scroll; the rail stands. */
+#photo-subject-window.is-microscope .photo-subject-choices:has(> .photo-subject-railpage) { overflow: hidden; }
+.photo-subject-railpage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: .35rem .8rem;
+    height: 100%;
+    min-height: 0;
+}
+/* The group's head across both columns; names and signs start under it. */
+.photo-subject-railpage > .photo-subject-head { grid-column: 1 / -1; }
+.photo-subject-railbody {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    min-height: 0;
+    overflow-y: auto;
+}
+#photo-subject-window.is-microscope .photo-subject-railpage > .photo-subject-head { margin: 0; }
+.photo-subject-rail {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    padding-left: .3rem;
+    border-left: 1px solid var(--border);
+}
+.photo-subject-sign {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius);
+    background: none;
+    color: var(--text-quiet);
+    font-size: 1.15rem;
+    cursor: pointer;
+}
+.photo-subject-sign:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+/* The chosen group: a button with an accent frame, as on every rail. */
+.photo-subject-sign.is-active {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* About to be chosen, the guard still waiting (hoverpick.js). */
+.photo-subject-sign.is-waiting { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent); }
+/* The heads between the groups of names (photogallery.js) — the project's
+   list head, a little air above each but the first. */
+#photo-subject-window.is-microscope .photo-subject-head { flex: none; margin: .7rem 0 .05rem; }
+#photo-subject-window.is-microscope .photo-subject-head:first-child { margin-top: 0; }
+#photo-subject-window.is-microscope .photo-subject-choices .button:focus-visible,
+#photo-subject-window.is-microscope .dialog-footer .button:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+    outline-offset: -2px;
+}
+#photo-subject-window.is-microscope > form > .field { grid-area: own; margin: 0; }
+/* Its grid gives the foot its place already — the pinned foot's sticking,
+   ground and padding (app.css, .pinned-footer) are not for this layout. */
+#photo-subject-window.is-microscope .dialog-footer { grid-area: foot; margin: 0; position: static; padding: 0; background: none; box-shadow: none; }
+
+/* The batch tick between kind and names: a decision, so it reads in the
+   text's own size and colour, not as a footnote. */
+#photo-subject-all-row {
+    margin: 0 0 .7rem;
+    font-size: .92rem;
+    color: var(--text);
+}
+/* The last photo of a batch: nothing left to hand on, but the row keeps
+   its height so the names stay where the finger learned them. */
+#photo-subject-all-row.is-last { visibility: hidden; }
+.photo-subject-kind .button.is-active,
+.photo-subject-choices .button.is-active,
+.microscope-objective-list .button.is-active {
+    background: var(--ground-3);
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* MIKROSKOPIEREN (microscope.js). THE WHOLE SCREEN, NOT A WINDOW OVER THE
+   PAGE (26.10.2026: „besser Vollbild. Nicht als Modal, sondern
+   als Vollbild") — built like the photo window: no frame, no margin, the
+   page gone behind it. The picture is what it is opened for, and every
+   centimetre a frame takes is a centimetre of slide less. The picture to
+   the left, as tall as the screen leaves beside heading and footer;
+   objective and light in a column beside it, which scrolls by itself if a
+   short screen cannot hold it — the window itself never scrolls (trap
+   four: no scroll area inside a scroll area). Under each other below the
+   phone width, where the button never shows but a narrow desktop window
+   does; there the window scrolls as a whole and the picture keeps the
+   sensor's proportion. */
+.microscope-window {
+    width: 100%;
+    height: 100dvh;
+    max-width: 100%;
+    max-height: 100dvh;
+    border: none;
+    border-radius: 0;
+    overflow: hidden;
+}
+.microscope-window > form { height: 100%; box-sizing: border-box; }
+.microscope-body {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 17rem;
+    gap: 1.1rem;
+}
+.microscope-side { min-height: 0; overflow-y: auto; }
+/* A ring drawn INSIDE the control: the column scrolls, and a scroll area
+   cuts off whatever reaches past its edge — the browser's own ring, drawn
+   outside, lost its left side at the white balance
+   (26.10.2026), and in the browser's blue and white it fit no theme. */
+.microscope-window :is(.button, input):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+    outline-offset: -2px;
+}
+/* The stage takes the height the column gives it; the picture stands
+   letterboxed in it, whole (object-fit below). */
+.microscope-stage {
+    position: relative;
+    min-height: 0;
+    width: 100%;
+    background: var(--ground-3);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+/* Magnified, the live picture is dragged — the hand says so. */
+.microscope-stage.is-zoomed { cursor: grab; touch-action: none; }
+.microscope-stage.is-zoomed:active { cursor: grabbing; }
+/* QUICK MEASURING (microscope.js): the rail in the picture's upper left
+   corner, the statistic beside it at the same height, the drawing over
+   the picture. With a tool in hand the pointer aims. */
+.microscope-stage.is-measuring,
+.microscope-stage.is-measuring.is-zoomed,
+.microscope-stage.is-measuring.is-zoomed:active { cursor: crosshair; }
+.microscope-measures {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+.microscope-measure-rail {
+    position: absolute;
+    top: .6rem;
+    left: .6rem;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    padding: .3rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.microscope-measure-rail .button {
+    width: var(--field-height);
+    height: var(--field-height);
+    padding: 0;
+    justify-content: center;
+}
+.microscope-measure-rail .is-active {
+    border-color: var(--accent);
+    color: var(--accent-light);
+}
+.microscope-measure-rail-line {
+    height: 1px;
+    margin: .15rem;
+    background: var(--border);
+}
+/* Emptying is the danger of the rail — red under the pointer, as the
+   photo window's clearing is. */
+.microscope-measure-rail .is-clear:hover:not(:disabled) {
+    background: var(--error);
+    border-color: var(--error);
+    color: #fff;
+}
+.microscope-measure-stats {
+    position: absolute;
+    top: .6rem;
+    left: calc(var(--field-height) + 1.9rem);
+    z-index: 3;
+    max-width: min(26rem, calc(100% - var(--field-height) - 2.6rem));
+    padding: .5rem .7rem;
+    font-size: .9rem;
+    line-height: 1.45;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    pointer-events: none;
+}
+.microscope-measure-stats b { font-weight: 600; }
+.microscope-measure-stats .is-quiet { color: var(--text-quiet); }
+.microscope-measure-stats > div + b { display: block; margin-top: .35rem; }
+@media (max-width: 860px) {
+    /* The arrow is the only way out here — .window-x goes at this width
+       elsewhere, where a footer carries „Schließen". */
+    .microscope-window .button.window-x { display: inline-flex; }
+    .microscope-window { overflow-y: auto; }
+    .microscope-window > form { height: auto; }
+    .microscope-body { grid-template-columns: minmax(0, 1fr); }
+    .microscope-side { overflow: visible; }
+    .microscope-stage { aspect-ratio: 3584 / 2746; }
+}
+.microscope-live {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+/* WHILE A STACK GROWS the stage shows the stack so far, and the live frame
+   — the plane the focus stands on now — keeps its place small in the
+   lower right corner: one sees the spore turn sharp in the stack, and
+   where in it one is. */
+/* The small corner picture keeps no zoom — the live picture's transform
+   (imagezoom.js, microscope.js liveZoom) belongs to it big; only a
+   webcam's mirroring goes along (its classes). */
+.microscope-live.is-inset { transform: none !important; }
+.microscope-live.is-inset.is-flip-h { transform: scaleX(-1) !important; }
+.microscope-live.is-inset.is-flip-v { transform: scaleY(-1) !important; }
+.microscope-live.is-inset.is-flip-h.is-flip-v { transform: scale(-1, -1) !important; }
+.microscope-live.is-inset {
+    position: absolute;
+    right: .8rem;
+    bottom: .8rem;
+    z-index: 2;
+    width: 26%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-3);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .45);
+}
+/* What stands over the picture: the connection's hint, and the question
+   after the revolver turned. The hint wears a veil of the window's ground,
+   so the picture still shimmers through and one sees the light come back.
+   THE QUESTION WEARS NONE (06.11.2026: „ich will das
+   Mikroskopbild dahinter sehen, weiter in voller Helligkeit") — which
+   objective it is, is read off the picture itself; its buttons carry their
+   own ground, and the question line a halo of it instead of a surface. */
+.microscope-message,
+.microscope-ask {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .7rem;
+    padding: 1.5rem;
+    text-align: center;
+    background: color-mix(in srgb, var(--ground-2) 82%, transparent);
+}
+.microscope-ask { background: none; }
+.microscope-message p { margin: 0; max-width: 34em; }
+/* „Live" inside the small picture in the corner — the big one is the
+   stack (Finn took it for a lagging live picture). */
+.microscope-live-label {
+    position: absolute;
+    right: 1.3rem;
+    bottom: 1.3rem;
+    z-index: 3;
+    padding: .1rem .45rem;
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 88%, transparent);
+    border-radius: var(--radius);
+    pointer-events: none;
+}
+/* The objective's scale bar — its corner is set from the script, inside
+   the letterboxed picture (microscope.js, the scale bar). Under the
+   question and the message, which hide it anyway; never in the way of a
+   click on the picture. */
+.microscope-scalebar {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+}
+/* The stack's counter while the shutter is held — in the corner, on the
+   window's ground, large enough to read from the eyepiece's distance. Over
+   the picture, but never over its middle, where the focus is judged. */
+.microscope-stack-badge {
+    position: absolute;
+    top: .8rem;
+    left: .8rem;
+    z-index: 2;
+    padding: .45rem .8rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    pointer-events: none;
+}
+.microscope-message > p:first-child { font-weight: 700; color: var(--text); }
+/* A question as large as its answers (CLAUDE.md, Design) — larger here,
+   because it is read from the eyepiece's distance. Red while a still waits
+   on it. */
+.microscope-ask-question {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text);
+    text-shadow: 0 0 3px var(--ground-2), 0 0 6px var(--ground-2), 0 0 10px var(--ground-2);
+}
+.microscope-ask.is-missing .microscope-ask-question:first-child { color: var(--error); }
+/* The medium under the objectives: a second question, a little apart. */
+.microscope-ask-second { margin-top: .6rem; }
+.microscope-ask-choices {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .4rem;
+}
+.microscope-side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+.microscope-objective-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+.microscope-objectives .button-row { margin-top: .6rem; }
+/* The calibration: the line is drawn on a canvas over the still, the same
+   size as the stage, and a click on it sets the line's ends. */
+.microscope-cal-frame {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    background: var(--ground-3);
+    cursor: crosshair;
+}
+.microscope-calibrate-line {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+.microscope-calibrate,
+.microscope-cal-fields { display: flex; flex-direction: column; gap: .8rem; }
+/* What to click, at the top of the picture and in its middle, dressed like
+   the stack's counter: on the window's ground, large enough to read. Never
+   in the way of a click — the scale's ends may lie right under it. */
+.microscope-cal-banner {
+    position: absolute;
+    top: .8rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    max-width: calc(100% - 1.6rem);
+    padding: .45rem .8rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+    color: var(--text);
+    background: color-mix(in srgb, var(--ground-2) 88%, transparent);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    pointer-events: none;
+}
+.microscope-calibrate p { margin: 0; }
+.microscope-cal-length-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; }
+.microscope-cal-length-row input[type="text"] { width: 7rem; }
+.microscope-light { display: flex; flex-direction: column; gap: .45rem; }
+/* Name and value on one line, the slider beneath them across the whole
+   column (09.11.2026: „den Schieberegler auf die komplette Länge
+   der Sidebar") — beside the name it kept barely half the width, and the
+   fine steps of time and gain need the length. The value stands right
+   after the name, over the slider. Past .field label (app.css), which
+   would stack all three. */
+.field .microscope-slider {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "name value" "slider slider";
+    align-items: baseline;
+    gap: .15rem .5rem;
+    font-size: .9rem;
+}
+.field .microscope-slider > span { grid-area: name; }
+.field .microscope-slider input { grid-area: slider; width: 100%; min-width: 0; margin: 0; }
+.field .microscope-slider output {
+    grid-area: value;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-quiet);
+}
+.microscope-light .button-row { margin-top: .2rem; }
+/* The head: the arrow back, the name of the window, the find it is for —
+   one row, as tall as the arrow. */
+.microscope-head { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
+/* The device at the head's right end, its buttons the objectives' kind. */
+.microscope-head-end { display: flex; align-items: center; gap: .8rem; margin-left: auto; }
+/* Microscope · Bilder · Schlüssel — the window's three views, beside its title. */
+.microscope-views { display: flex; gap: .35rem; margin-left: .6rem; }
+/* The key fills what the body filled; the page inside brings its own ground. */
+.microscope-keyview { flex: 1; min-height: 0; display: flex; }
+.microscope-keyview iframe {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground);
+}
+/* The way back from the pictures — floating over the page the window
+   stepped aside for, in the middle at the bottom: toasts float at the
+   right. It is the one thing to do there, so its button is the loud one. */
+.microscope-return {
+    position: fixed;
+    left: 50%;
+    bottom: 1.2rem;
+    z-index: 1000;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .5rem .55rem .5rem 1rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
+}
+/* The media: ticks that flow in a line and wrap, each a small button with
+   its box in front — chosen reads from the tick, not from a colour. */
+.microscope-media-list { display: flex; flex-wrap: wrap; gap: .35rem; }
+.microscope-media-list + .microscope-media-list { margin-top: .35rem; }
+.microscope-medium { gap: .35rem; }
+.microscope-medium .list-row-box { width: .95em; height: .95em; }
+/* Ticked: the box filled in the accent, as at the sidebar's lists. */
+.microscope-medium.is-on .list-row-box { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.microscope-medium .list-row-box .icon { width: .7rem; height: .7rem; stroke-width: 3.2; }
+/* WHAT A MEDIUM IS FOR — a panel over the picture, its right edge just
+   short of the sidebar so it never covers the ticks it explains; its top
+   at the hovered tick's height (microscope.js, showMediumInfo). Not a
+   place to click: the pointer stays on the tick. */
+.microscope-medium-info {
+    position: absolute;
+    right: calc(17rem + 1.1rem + .6rem);
+    z-index: 6;
+    width: min(25rem, calc(100% - 17rem - 3rem));
+    padding: .85rem 1rem .95rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, .45);
+    pointer-events: none;
+}
+.microscope-medium-info h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.microscope-medium-info h3 span { color: var(--text-quiet); font-weight: 600; }
+.microscope-medium-info h4 {
+    margin: .7rem 0 .2rem;
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--text-quiet);
+}
+.microscope-medium-info p { margin: 0 0 .3rem; font-size: .92rem; line-height: 1.4; }
+/* Caution is a warning — the meaning colour, not the accent. */
+.microscope-medium-info .microscope-medium-caution { color: var(--warn); }
+.microscope-medium-info .microscope-medium-caution h4 { color: var(--warn); }
+/* „Objektiv" with its scale symbol, „Medium" with its „Weitere", at the
+   label's right end. A LEGEND
+   DOES NOT TAKE A WIDTH: the browser lays it into the fieldset's border
+   and shrinks it to its words, width: 100% or not — floated, it is an
+   ordinary block and spans the column; what follows clears it. */
+/* Two classes deep: `.field > legend` sets display: block (app.css). */
+.field > legend.microscope-side-head { float: left; display: flex; align-items: center; justify-content: space-between;
+                              gap: .5rem; width: 100%; padding: 0; }
+.field > legend.microscope-side-head + * { clear: both; }
+.microscope-head-devices { display: flex; align-items: center; gap: .5rem; }
+/* The settings window holds two blocks — the mirroring, then devices and
+   objectives —, each under a head in the text's size. */
+.microscope-manage-head { margin: 1.1rem 0 .2rem; font-size: 1rem; }
+.microscope-manage-list { display: flex; flex-direction: column; gap: 1.4rem; }
+.microscope-manage-error { margin: 0; color: var(--error); }
+/* The columns stand at the same place in every device's table. */
+.microscope-manage-list table.list { table-layout: fixed; }
+.microscope-manage-list .button-cell { width: 6.5rem; white-space: nowrap; text-align: right; }
+.microscope-manage-list .button-cell .button + .button { margin-left: .35rem; }
+/* A button with nothing but a symbol in it is square. */
+.microscope-window .button.square { aspect-ratio: 1; padding: 0; justify-content: center; }
+.microscope-cal-device-list { display: flex; flex-direction: column; gap: .3rem; }
+.microscope-head h2,
+.microscope-head p { margin: 0; }
+/* The shutter on top of the column, as wide as it; its progress beneath. */
+.microscope-shoot { display: flex; flex-direction: column; gap: .4rem; }
+.microscope-shoot .button { width: 100%; justify-content: center; }
+.microscope-progress { margin: 0; }
+.microscope-progress:empty { display: none; }
+.sequence-row {
+    display: grid;
+    gap: .15rem;
+    padding: .4rem .55rem;
+    background: var(--ground-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.sequence-head { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.sequence-name { font-weight: 600; }
+.sequence-meta, .sequence-who { color: var(--text-quiet); font-size: .85em; }
+.sequence-buttons { margin-left: auto; display: flex; gap: .2rem; }
+.sequence-bases { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .8em; color: var(--text-quiet); word-break: break-all; }
+.sequence-note { font-size: .9em; white-space: pre-wrap; }
+.sequence-window textarea#sequence-text { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85em; }
+.sequence-file-button { display: inline-flex; align-items: center; cursor: pointer; }
+.sequence-window .field.two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.sequence-window .field.two-columns input { width: 100%; }
+@media (max-width: 860px) {
+    .sequence-window .field.two-columns { grid-template-columns: 1fr; }}
+.file-row {
+    display: flex;
+    align-items: center;
+    gap: .35rem;
+    min-height: 2.5rem;
+    padding: .15rem .2rem .15rem calc(var(--depth, 0) * 1.1rem + .25rem);
+    border-radius: 6px;
+}
+.file-row:nth-child(even) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.file-name {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+}
+button.file-name { cursor: pointer; }
+.file-text { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.file-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { color: var(--text-quiet); font-size: .8em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-thumb { flex: none; width: 2rem; height: 2rem; object-fit: cover; border-radius: 4px; }
+.file-icon { flex: none; width: 2rem; display: inline-flex; justify-content: center; font-size: 1.2rem; color: var(--text-quiet); }
+.file-row.is-folder .file-name > .icon { flex: none; font-size: 1.2rem; color: var(--text-quiet); }
+.file-row .fold { flex: none; display: inline-flex; font-size: .7rem; color: var(--text-quiet); transition: transform .12s ease; }
+.file-row .fold.is-open { transform: rotate(90deg); }
+.file-actions { flex: none; display: flex; gap: .1rem; }
+.file-actions .file-delete:hover { color: var(--error); }
+.file-preview-text {
+    margin: 0;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: .85em;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.file-preview-image { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+/* --- The key behind „Art" and the ways under it (14.10.2026) ---------------
+   pointwindow.js, drawKeyings; includes/point_keyings.php. As small as they
+   can be („möglichst platzsparend"): one quiet line a confirmed
+   way, book and species behind the tick of --ok — the steps and the
+   detours are the key's (05.11.2026). */
+.detail-keyings {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    margin-top: .35rem;
+    font-size: .8rem;
+    line-height: 1.35;
+    color: var(--text-quiet);
+}
+.detail-keying { display: flex; flex-direction: column; gap: .1rem; }
+.detail-keying-who { font-weight: 600; color: var(--text); }
+.detail-keying-way { color: inherit; text-decoration: none; overflow-wrap: anywhere; }
+a.detail-keying-way:hover { color: var(--text); text-decoration: underline; }
+.detail-keying-way.is-confirmed::before { content: '✓ '; color: var(--ok); }
+.detail-keying-book { font-weight: 600; color: var(--text); }
+.detail-keying-way i { color: var(--text); }
+.detail-keying-none { font-style: italic; }
+/* A way somebody else typed (migration 0198): his lines as he broke them. */
+.detail-keying-text { white-space: pre-line; overflow-wrap: anywhere; }
+/* MY TYPED WAY IS ONE LINE UNTIL MORE IS TYPED (20.11.2026: „einzeilig
+   darstellen und nur bei entsprechendem Platzbedarf vergrößern"). Every
+   textarea of the page starts at five and a half rem (app.css) — right for
+   a note, wrong for a field that mostly holds „Gröger I → 12 → 15". It
+   starts as tall as the field above it; autoheight.js grows it from there,
+   a line per book. */
+#d-key-way { min-height: var(--field-height); }
+
+/* --- The type's sequences from GenBank, UNITE's SHs (15.10.2026) -----------
+   pointwindow.js, drawTypeSequences. One striped row a record: the kind of
+   type and the gene, the accession to NCBI, the quiet facts, and FASTA at
+   the row's right end (the rule of a row's buttons). */
+.type-sequence-list { display: flex; flex-direction: column; }
+.type-sequence {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: .7rem;
+    row-gap: .2rem;
+    padding: .35rem .5rem;
+    font-size: .85rem;
+}
+.type-sequence:nth-child(odd) { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.type-sequence:nth-child(even) { background: color-mix(in srgb, var(--text) 9%, transparent); }
+.type-sequence-kind { font-weight: 600; }
+.type-sequence-facts { color: var(--text-quiet); min-width: 0; overflow-wrap: anywhere; }
+.type-sequence .button { margin-left: auto; }
+/* UNITE's species hypotheses stand under GenBank's types as a second
+   block in the same field — its head keeps air from the rows above. */
+.type-sequences > * + label { margin-top: .9rem; }
+
+/* --- Aufsammlungen (0174, collectionui.js) ---------------------------------
+   The line above the title: „Aufsammlung A-2026-07 · in Kultur" on a
+   sample, „Aus Kultur" with the way back on a species grown from one. Quiet,
+   a fact about the find, not a field. */
+.detail-collection-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem .6rem;
+    margin: 0 0 .6rem;
+    color: var(--text-quiet);
+    font-size: .88rem;
+}
+/* The culture's two days side by side, each as wide as the other. */
+.detail-culture > .field { flex: 1; min-width: 0; }
+/* The species of an Aufsammlung: name with number and determination day
+   below it, „Fund öffnen" at the row's end. */
+.detail-collection-species .person-name { padding: 0 .6rem; }
+.detail-collection-species .person-row { padding: .4rem .6rem .4rem 0; }
+/* A BLANK LINE BEFORE „NOTIZ" (18.10.2026: „unter dem Button Art
+   hinzufügen fängt gleich das Notizfeld an. Da gehört noch eine Leerzeile
+   rein") — the species block ends with its button, and the next field's
+   label stood right under it as if it belonged to the list. */
+#d-collection-species-field { margin-bottom: 1.8rem; }
+
+/* ODOUR, TASTE, SPORE PRINT — the pickers under their fields
+   (findtraits.js, 09.11.2026). Opened in place, never a window over the
+   window; gone where one may not write. The chips are controls with a
+   resting surface and a fine frame (CLAUDE.md); a chosen one wears the
+   accent's hairline and a bold word. */
+/* The field and its picker's button in one row, the button as tall as the field. */
+.trait-row { display: flex; gap: .4rem; align-items: stretch; }
+.trait-row > :not(.trait-open):not(.spore-swatch) { flex: 1; min-width: 0; }
+/* The spore print's colour after its words, before the picker's button —
+   wide enough to hold against the field below while choosing
+   (findtraits.js, sporeFieldBind). */
+.spore-swatch { flex: none; width: 6rem; border-radius: var(--radius); border: 1px solid var(--border); }
+/* As tall as the field beside it, whatever height that window gives its
+   fields (37 in the map's window, 31 in the Fundbrowser's): the row takes
+   the field's height and the button stretches to it. */
+.trait-row > .trait-open { flex: none; height: auto; min-height: 0; padding-top: 0; padding-bottom: 0; }
+/* Square, its sign alone (findtraits.js, 12.11.2026): as wide as the field
+   beside it is tall — the token, since a stretched height lends no width
+   (aspect-ratio was tried and stayed at the sign's width). The Fundbrowser's
+   text panel sets its fields small (app.css, #d-panel-text), so there too. */
+.trait-row > .trait-open { width: var(--field-height); padding-left: 0; padding-right: 0; justify-content: center; }
+#finds-fund #d-panel-text .trait-row > .trait-open { width: var(--field-height-small); }
+.trait-open .icon { font-size: 1.25rem; }
+/* On the phone the button is 44 px (the thumb's size) — the hand grows into it, the button stays. */
+@media (max-width: 860px) { .trait-open .icon { font-size: 1.65rem; } }
+.detail-content .field.is-read :is(.trait-open, .trait-panel) { display: none; }
+/* THE OPENED PICKER IS A SURFACE OF ITS OWN (09.11.2026: „muss
+   anders gefärbt sein, er muss markiert sein als ausgeklappt. Er darf nicht
+   die gleiche Hintergrundfarbe haben wie der Rest"): a veil of the text
+   colour — lighter on dark, darker on light, in every theme — with a fine
+   frame, and its button marked open with the accent's hairline. On the
+   page's ground the chips and tabs inside read as part of the form. */
+.trait-panel {
+    display: grid; gap: .45rem; width: 100%; margin-top: .5rem; padding: .7rem .8rem;
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+    border: 1px solid var(--border); border-radius: var(--radius);
+}
+.trait-open[aria-expanded="true"] { border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.trait-group { margin: .3rem 0 0; font-weight: 700; color: var(--text); }
+.trait-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.trait-chip {
+    display: inline-flex; align-items: center; gap: .4rem;
+    height: var(--field-height-small); padding: var(--button-padding-small);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    color: var(--text); font: inherit; font-size: .9rem; cursor: pointer;
+}
+.trait-chip:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.trait-chip.is-active { border-color: color-mix(in srgb, var(--accent) 55%, transparent); font-weight: 700; }
+.spore-dot { width: .95em; height: .95em; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .3); }
+.spore-field { position: relative; width: 100%; }
+.spore-field canvas { display: block; width: 100%; height: 15rem; border-radius: var(--radius); cursor: crosshair; touch-action: none; }
+/* The field with its lean written down its left side, light and dark beneath. */
+.spore-area { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: .4rem; row-gap: .2rem; }
+/* Each word turned on its own: a turned column would turn the order of its
+   words with it, and its flex axis ran sideways — both stood at the bottom. */
+.spore-side { display: flex; flex-direction: column; justify-content: space-between; color: var(--text-quiet); font-size: .8rem; }
+.spore-side span { writing-mode: vertical-rl; transform: rotate(180deg); }
+.spore-marker {
+    position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+    border: 2px solid #fff; box-shadow: 0 0 0 2px #000; pointer-events: none;
+}
+.spore-axis { display: flex; justify-content: space-between; color: var(--text-quiet); font-size: .8rem; }
+/* The tile that travels with the finger (findtraits.js, sporePanel): the
+   colour under the point, large, above it — the finger covers what is
+   beneath. A written-out frame like the marker's: it shows a colour of the
+   world, not a surface of ours, and must read on every one of them. */
+.spore-loupe {
+    position: absolute; z-index: 2; width: 3.6rem; height: 3.6rem; pointer-events: none;
+    transform: translate(-50%, calc(-100% - 1.2rem));
+    border-radius: var(--radius); border: 2px solid #fff; box-shadow: 0 0 0 2px #000, 0 .4rem 1rem rgb(0 0 0 / .45);
+}
+.spore-loupe.is-finger { width: 4.4rem; height: 4.4rem; transform: translate(-50%, calc(-100% - 2.6rem)); }
+/* THE WORDS GO ONLY WHERE THE ROW WOULD BREAK (the same day,
+   after first taking them away everywhere: „würde diese Leiste umbrechen,
+   mit Text dann lieber ohne Text. Wenn sie nicht umbricht … den Text dran
+   lassen"). findtraits.js measures the row with its words and sets
+   .is-compact where a chip drops to a second line: then the dots alone,
+   all five in one row filling it, each a thumb's height; the word stays
+   the tooltip. */
+.trait-panel .trait-chips.is-compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(2.4rem, 1fr)); gap: .3rem; }
+.trait-panel .trait-chips.is-compact .trait-chip { justify-content: center; height: 2.75rem; padding: 0; }
+.trait-panel .trait-chips.is-compact .trait-chip-words { display: none; }
+.trait-panel .trait-chips.is-compact .spore-dot { width: 1.3rem; height: 1.3rem; }
+/* NO ROMAGNESI WHERE THE PANEL IS NARROW (12.11.2026, first for
+   the phone — its grades are read off a spore print against a printed
+   chart, and in the field one has neither —, then for the map's point
+   window at the desk, a sidebar as narrow: „die Romagnesi-Tabelle auch
+   weg"). Asked of the panel's width (the container trait above), as the
+   odours' two columns are; the Fundbrowser's wide panel keeps the grades.
+   Inside the panel, to outrank the scale's own grid further down. */
+@container trait (max-width: 34rem) {
+    .trait-panel :is(.spore-scale, .spore-roman, .spore-near) { display: none; }
+}
+/* On the phone the colour beside the words is a square at the field's
+   height (12.11.2026) — 6rem took a third of the row. */
+@media (max-width: 860px) { .spore-swatch { width: var(--field-height); } }
+/* Romagnesi's fourteen grades for the russules (findtraits.js, ROMAGNESI):
+   a row of chips, the groups I–IV beneath as wide as their grades; the
+   four the printed chart leaves out wear a dashed edge. */
+.spore-scale { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; }
+.spore-grade {
+    display: grid; gap: 3px; justify-items: center; padding: 0; border: 0; background: none;
+    color: var(--text-quiet); font: inherit; font-size: .75rem; cursor: pointer;
+}
+.spore-grade-chip { width: 100%; height: 2.2rem; border-radius: 4px; border: 1px solid rgba(255, 255, 255, .25); }
+.spore-grade.is-between .spore-grade-chip { border-style: dashed; }
+.spore-grade.is-active { color: var(--text); font-weight: 700; }
+.spore-grade.is-active .spore-grade-chip { outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 1px; }
+.spore-roman { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; color: var(--text-quiet); font-size: .75rem; text-align: center; }
+.spore-roman span { border-top: 1px solid var(--border); padding-top: 2px; }
+/* The odour groups as tabs over their own rule (findtraits.js, termsPanel):
+   the chosen one underlined in the accent; a group holding a picked term
+   carries a dot. Wrapping, never scrolling, as the app's tab rows do. */
+.trait-tabs { display: flex; flex-wrap: wrap; column-gap: .2rem; border-bottom: 1px solid var(--border); }
+.trait-tab {
+    display: inline-flex; align-items: center; gap: .35rem; margin-bottom: -1px;
+    padding: .35rem .5rem; border: 0; border-bottom: 2px solid transparent; background: none;
+    color: var(--text-quiet); font: inherit; font-size: .85rem; cursor: pointer;
+}
+.trait-tab:hover { color: var(--text); }
+.trait-tab.is-active { color: var(--text); font-weight: 700; border-bottom-color: var(--accent); }
+.trait-tab.has-pick::after { content: ''; width: .45em; height: .45em; border-radius: 50%; background: var(--accent); }
+/* The terms as ticks in a flowing grid (findtraits.js, termsPanel). */
+.trait-ticks { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .15rem .8rem; }
+.trait-ticks .choice-row { margin: 0; }
+/* NARROW, THE GROUPS STAND BESIDE THE TERMS (12.11.2026, on the
+   phone: „unübersichtlich, dass mir die Tab-Leiste umbricht. Vielleicht
+   sollten wir es hier eher zweispaltig machen. Vorne die einzelnen
+   Tab-Punkte und hinten dann eine Liste zum Anhaken"). Asked of the panel's
+   own width, not the window's: the map's window on the desk is as narrow.
+   The groups a column with the rule on their right, the chosen one marked
+   there in the accent as the tab row marks it underneath; the terms one
+   list. */
+.trait-panel { container: trait / inline-size; }
+.trait-terms { display: grid; gap: .45rem; }
+@container trait (max-width: 34rem) {
+    .trait-terms:has(> .trait-tabs) { grid-template-columns: minmax(6rem, 42%) minmax(0, 1fr); gap: 0 .9rem; align-items: start; }
+    .trait-terms > .trait-tabs { flex-direction: column; flex-wrap: nowrap; border-bottom: 0; border-right: 1px solid var(--border); }
+    .trait-terms .trait-tab {
+        justify-content: space-between; text-align: left; margin: 0 -1px 0 0;
+        padding: .45rem .6rem .45rem 0; border-bottom: 0; border-right: 2px solid transparent;
+    }
+    .trait-terms .trait-tab.is-active { border-right-color: var(--accent); }
+    .trait-terms .trait-ticks { grid-template-columns: minmax(0, 1fr); }
+}
