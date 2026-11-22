@@ -289,6 +289,14 @@ try {
     unset(FakePcloud::$files[973]);
     FakePcloud::$files[903][0] = $own;
 
+    // A find in the trash moves like any other (22.11.2026) — its pictures do not hold an old folder open.
+    $pdo->prepare('UPDATE map_points SET deleted_at = NOW(), find_number = "wk-T3" WHERE id = ?')->execute([$point]);
+    $r = cloud_names_point($pdo, $point, microtime(true) + 30, $open);
+    $binned = (int) $name($a)['folderid'];
+    check($r['renamed'] === 4 && (FakePcloud::$folders[$binned][0] ?? '') === '2026-08-29 Krün wk-T3' && !isset(FakePcloud::$folders[$moved]),
+        'in the trash and renumbered, the pictures still follow — and the folder they left is gone');
+    $pdo->prepare('UPDATE map_points SET deleted_at = NULL WHERE id = ?')->execute([$point]);
+
     // The queue: marked, claimed, done, gone.
     cloud_names_touch($pdo, $point);
     $due = static fn(): int => (int) $pdo->query('SELECT COUNT(*) FROM map_cloud_names_due WHERE point_id = ' . $point)->fetchColumn();

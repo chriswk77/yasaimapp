@@ -415,9 +415,17 @@ function cloud_names_point(PDO $pdo, int $pointId, float $deadline, ?callable $o
     $stmt = $pdo->prepare('SELECT * FROM map_points WHERE id = ? LIMIT 1');
     $stmt->execute([$pointId]);
     $point = $stmt->fetch();
-    // A find in the trash keeps its pictures as they are: restored, the
-    // daily sweep names them again.
-    if ($point === false || $point['deleted_at'] !== null) {
+    /* A FIND IN THE TRASH MOVES LIKE ANY OTHER (22.11.2026:
+       „Papierkorb-Bilder ziehen mit um"). Until then its pictures stayed
+       where they lay — restored, the daily sweep would have named them
+       again. But when the folders were rebuilt („Arten/" and „Listen/",
+       18.11.2026) that rule left the old top folders standing for the
+       sake of thirteen finds nobody was looking at: sixty pictures under
+       „Fungi (Pilze)/" and „Unbestimmt/", and the question why the move
+       had not finished. The trash is a state of the find, not a second
+       place in the cloud; whoever restores it finds its pictures where
+       every find's are. */
+    if ($point === false) {
         return $out;
     }
 
