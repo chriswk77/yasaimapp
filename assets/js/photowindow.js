@@ -2620,6 +2620,13 @@ export function mountPhotoWindow(host) {
             photoFrame.classList.toggle('is-wb-picking', wbPicking);
             developPanelDraw();
         }, wbPicking);
+        // „Rückgängig" only where this edit of this picture has a white balance to take back (wbUndoHere).
+        if (wbUndoHere()) {
+            button(t('Rückgängig'), t('Temperatur und Tönung wieder so wie vor dem Weißabgleich'), () => {
+                wbPickEnd();
+                wbUndoNow();
+            }, false);
+        }
         group.append(head, row);
         return group;
     }
@@ -2640,16 +2647,43 @@ export function mountPhotoWindow(host) {
             return null;
         }
     }
+    /* „RÜCKGÄNGIG" (22.11.2026: „kannst du dir da die vorherigen
+       Einstellungen merken, sodass ich einen Button bekomme, rückgängig").
+       The white balance REPLACES Temperatur and Tönung, so what they held
+       before is kept here — for this picture and this edit of it, on this
+       visit — and the button puts it back. PRESSED SEVERAL TIMES IN A ROW
+       (the brightest parts, then a frame, then another frame) it still
+       goes back to before the FIRST: while the sliders stand where the last
+       white balance put them, a new one keeps the older memory. Moved by
+       hand in between, the hand's setting is what is remembered. */
+    let wbUndo = null;
+    const wbUndoHere = () => !!wbUndo && wbUndo.of === developOf && wbUndo.version === versionOpen;
+    function wbUndoNow() {
+        if (!wbUndoHere() || !developMay()) return;
+        const { temp, tint, wb } = wbUndo.before;
+        wbUndo = null;
+        if (temp) develop.temp = temp; else delete develop.temp;
+        if (tint) develop.tint = tint; else delete develop.tint;
+        if (wb) develop.wb = wb; else delete develop.wb;
+        developSoon();
+        developQueue();
+        developPanelDraw();
+    }
     function wbApply(wb) {
         if (!wb) {
             host.status(t('Daraus ließ sich kein Weißabgleich bestimmen.'), true);
             return;
+        }
+        const now = { temp: Number(develop.temp) || 0, tint: Number(develop.tint) || 0 };
+        if (!(wbUndoHere() && now.temp === wbUndo.after.temp && now.tint === wbUndo.after.tint)) {
+            wbUndo = { of: developOf, version: versionOpen, before: { ...now, wb: develop.wb ? { ...develop.wb } : null } };
         }
         // Measured on the original, so it REPLACES what Temperatur and Tönung held.
         delete develop.wb;
         const { temp, tint, clipped } = wbToSliders(wb);
         if (temp) develop.temp = temp; else delete develop.temp;
         if (tint) develop.tint = tint; else delete develop.tint;
+        wbUndo.after = { temp: temp || 0, tint: tint || 0 };
         if (clipped) host.status(t('Der Farbstich ist stärker, als die Regler reichen. Sie stehen am Ende.'), true);
         /* The sliders it set are shown: „Farbe" opens if it was shut — the
            result is what one wants to see, and to take back. */
@@ -2657,6 +2691,8 @@ export function mountPhotoWindow(host) {
         if (Array.isArray(kept) && kept.includes('color')) settings.set('developFolded', kept.filter((k) => k !== 'color'));
         developSoon();
         developQueue();
+        // A change on the Original makes it edit 1 (versionFork): the memory belongs to the edit it went into.
+        wbUndo.version = versionOpen;
         developPanelDraw();
     }
 

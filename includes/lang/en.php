@@ -9936,6 +9936,9 @@ return [
         => 'Midtones',
     'Abgleich'
         => 'Balance',
+    // „Rückgängig" beside the white balance of „Mikrofotos", 22.11.2026.
+    'Temperatur und Tönung wieder so wie vor dem Weißabgleich'
+        => 'Temperature and tint back to what they were before the white balance',
     'Farbstich'
         => 'Colour cast',
     // The pipette of „Farbstich", 22.11.2026 (dunkel and hell stand already).
