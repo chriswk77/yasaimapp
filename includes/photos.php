@@ -1675,12 +1675,28 @@ function photo_titles_renamed(?array $list): ?array
    Kontext" the cap's flesh, „Hyphen Stiel", „Myzel". No „Hyphen
    Hutdeckschicht" as a picture: „HDS (Hutdeckschicht)" already means its
    hyphae. The three kinds went from the list (PHOTO_TITLES_RETIRED);
-   pictures that carry them keep their name — nobody knows their place. */
+   pictures that carry them keep their name — nobody knows their place.
+
+   THE CLAMPS BY THEIR PLACE TOO (22.11.2026: „merke dir auch, wo die
+   Schnallen gewählt wurden … Ob ich das bei Hut, Hymenium oder Stiel
+   angeklickt habe, ist wichtig"). Two days earlier the one word
+   „Schnallen" had been set into the groups Hymenium, Hut and Stiel — and
+   the picture forgot at once in which of them it was clicked: one name,
+   three places. Whether the clamps sit at the base of the basidia, in the
+   cap's skin or on the stem's hyphae is a character of its own, and the
+   hyphae's reason holds word for word (what is not chosen at the shot has
+   to be written onto the picture later). So the place goes INTO THE NAME,
+   as with „Hyphen Stiel": no second field beside the name, because the
+   name is what the file in the cloud, the rails and the plate show — a
+   place kept anywhere else would be seen nowhere. Plain „Schnallen" stays
+   for the mount without a place (Allgemein, Hyphen, the polypores) and
+   for every picture that already carries it. */
 const PHOTO_TITLES_MICRO = [
     'Übersichtsschnitt',
     'Sporen', 'Konidien', 'Basidien', 'Cheilozystiden', 'Pleurozystiden',
     'Kaulozystiden', 'Pileozystiden', 'HDS (Hutdeckschicht)', 'Velum',
     'Hymenium', 'Asci', 'Paraphysen', 'Randhaare', 'Excipulum', 'Schnallen',
+    'Schnallen Hymenium', 'Schnallen Hut', 'Schnallen Stiel',
     'Hyphen hymenial', 'Hyphen Kontext', 'Hyphen Stiel', 'Myzel', 'Capillitium',
     // In both lists, as the macro one says (PHOTO_TITLES_MACRO).
     'Sklerotium',
@@ -1714,14 +1730,17 @@ const PHOTO_TITLES_MICRO = [
    „Hyphen" all of them, and each again where it sits: hymenial under
    Hymenium, Kontext under Hut, Stiel under Stiel. The polypores keep
    theirs and the clamps; mono-, di- or trimitic is the marks' business
-   now. The clamps under Hymenium too — one looks for them at the base of
-   the basidia.
+   now.
    THE CLAMPS STAND WHEREVER ONE LOOKS FOR THEM (20.11.2026:
    „Schnallen muss auf jeden Fall zu Allgemein, zu Hymenium, zu Hut und zu
    Stiel"): one checks them in whatever mount lies under the lens — the
    gill, the cap's skin, the stem — and whoever stands in that group
    should not have to walk to „Hyphen" for the word. Last in each group,
-   behind the part's own words. */
+   behind the part's own words. UNDER A PART THE WORD CARRIES THE PART
+   (22.11.2026, PHOTO_TITLES_MICRO says why): „Schnallen Hymenium",
+   „Schnallen Hut", „Schnallen Stiel" — each in its group only, so the
+   click itself says the place. The groups that are no place keep the
+   plain word. */
 const PHOTO_TITLES_MICRO_GROUPS = [
     'asco' => [
         'general'   => ['Übersichtsschnitt', 'Konidien', 'Sklerotium'],
@@ -1733,9 +1752,9 @@ const PHOTO_TITLES_MICRO_GROUPS = [
     'basidio' => [
         'general'   => ['Übersichtsschnitt', 'Konidien', 'Sklerotium', 'Schnallen'],
         'hymenium'  => ['Hymenium', 'Sporen', 'Basidien', 'Cheilozystiden', 'Pleurozystiden',
-                        'Schnallen', 'Hyphen hymenial'],
-        'cap'       => ['HDS (Hutdeckschicht)', 'Pileozystiden', 'Velum', 'Hyphen Kontext', 'Schnallen'],
-        'stem'      => ['Kaulozystiden', 'Velum', 'Hyphen Stiel', 'Schnallen'],
+                        'Schnallen Hymenium', 'Hyphen hymenial'],
+        'cap'       => ['HDS (Hutdeckschicht)', 'Pileozystiden', 'Velum', 'Hyphen Kontext', 'Schnallen Hut'],
+        'stem'      => ['Kaulozystiden', 'Velum', 'Hyphen Stiel', 'Schnallen Stiel'],
         'hyphae'    => ['Hyphen hymenial', 'Hyphen Kontext', 'Hyphen Stiel', 'Myzel', 'Schnallen'],
         'polypores' => ['Hyphen hymenial', 'Hyphen Kontext', 'Schnallen'],
         'gasteroid' => ['Capillitium'],

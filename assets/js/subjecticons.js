@@ -48,6 +48,11 @@ const SUBJECT_ICONS = {
     'randhaare':                'subject-marginal-hairs',
     'excipulum':                'subject-excipulum',
     'schnallen':                'subject-clamps',
+    // By their place (photos.php, PHOTO_TITLES_MICRO) — one drawing: a
+    // monogram would read „SH" for Hymenium and for Hut alike.
+    'schnallen hymenium':       'subject-clamps',
+    'schnallen hut':            'subject-clamps',
+    'schnallen stiel':          'subject-clamps',
     'generative hyphen':        'subject-generative-hyphae',
     'skeletthyphen':            'subject-skeletal-hyphae',
     'bindehyphen':              'subject-binding-hyphae',
