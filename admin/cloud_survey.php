@@ -149,7 +149,9 @@ if ($what === 'tree') {
  * that half and not a shared function, because this file goes again and
  * the worker should not be reshaped for a visitor.
  * ------------------------------------------------------------------------- */
-if ($what === 'rows') {
+/** What the database believes lies in one account's clouds, find by find — the reading half of cloud_names_point(). */
+function survey_rows(PDO $pdo, int $userId): array
+{
     $out = ['at' => date('c'), 'user' => $userId, 'points' => [], 'due' => [], 'account' => null];
 
     $q = $pdo->prepare('SELECT provider, region, folder, home_folder, home_folder_id, created_at, checked_at
@@ -258,9 +260,79 @@ if ($what === 'rows') {
                                      FROM map_cloud_names_due d LEFT JOIN map_points p ON p.id = d.point_id')->fetchAll();
     }
 
+    return $out;
+}
+
+if ($what === 'rows') {
+    $out = survey_rows($pdo, $userId);
     header('Content-Type: application/json; charset=utf-8');
     ob_start('ob_gzhandler');
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+    exit;
+}
+
+/* ---------------------------------------------------------------------------
+ * state — how far the naming has come in EVERY account, as numbers only
+ * (22.11.2026: „in Google Drive hat es genauso wenig funktioniert").
+ *
+ * No cloud is opened and no name, title or place leaves the server: per
+ * account and provider the count of finds and pictures, how many pictures
+ * the rows say lie in another folder or under another name than the
+ * naming worker wants, how many of those belong to finds in the trash,
+ * and what waits in the queue with how many failed attempts. That tells
+ * whether the worker fails somewhere or merely left the trash alone — the
+ * question the cleanup for the other accounts starts from.
+ * ------------------------------------------------------------------------- */
+if ($what === 'state') {
+    $accounts = [];
+    foreach ($pdo->query('SELECT DISTINCT user_id FROM map_cloud_accounts ORDER BY user_id')->fetchAll(PDO::FETCH_COLUMN) as $u) {
+        $u = (int) $u;
+        foreach (survey_rows($pdo, $u)['points'] as $p) {
+            foreach ($p['items'] ?? [] as $it) {
+                if ($it['fileid'] === '') {
+                    continue;
+                }
+                $key = $u . ':' . ($it['provider'] ?: 'pcloud');
+                $accounts[$key] ??= ['user' => $u, 'provider' => $it['provider'] ?: 'pcloud', 'finds' => [], 'pictures' => 0,
+                    'copies' => 0, 'other_folder' => 0, 'other_name' => 0, 'unknown_name_or_folder' => 0,
+                    'other_folder_in_trash' => 0, 'other_name_in_trash' => 0, 'finds_in_trash' => []];
+                $a = &$accounts[$key];
+                $a['finds'][$p['id']] = true;
+                $a['pictures']++;
+                $a['copies'] += $it['kind'] === 'copy' ? 1 : 0;
+                $trash = $p['deleted_at'] !== null;
+                if ($trash) {
+                    $a['finds_in_trash'][$p['id']] = true;
+                }
+                if ($it['name'] === null || $it['folder'] === '') {
+                    $a['unknown_name_or_folder']++;
+                    unset($a);
+                    continue;
+                }
+                $item = ['path' => (string) $it['path']];
+                if (cloud_names_moves($item, $p['named'], (string) $p['loose'])) {
+                    $a['other_folder']++;
+                    $a['other_folder_in_trash'] += $trash ? 1 : 0;
+                }
+                if (!cloud_name_fits((string) $it['name'], (string) $it['stem'], (string) pathinfo((string) $it['name'], PATHINFO_EXTENSION))) {
+                    $a['other_name']++;
+                    $a['other_name_in_trash'] += $trash ? 1 : 0;
+                }
+                unset($a);
+            }
+        }
+    }
+    foreach ($accounts as &$a) {
+        $a['finds'] = count($a['finds']);
+        $a['finds_in_trash'] = count($a['finds_in_trash']);
+    }
+    unset($a);
+    $due = table_exists($pdo, 'map_cloud_names_due')
+        ? $pdo->query('SELECT p.user_id, d.attempts, COUNT(*) AS n FROM map_cloud_names_due d
+                         LEFT JOIN map_points p ON p.id = d.point_id GROUP BY p.user_id, d.attempts')->fetchAll()
+        : [];
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['at' => date('c'), 'accounts' => array_values($accounts), 'due' => $due], JSON_PRETTY_PRINT);
     exit;
 }
 
@@ -462,4 +534,4 @@ if ($what === 'accounts') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | log | probe | spelling | accounts');
+survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts');
