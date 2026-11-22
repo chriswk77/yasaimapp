@@ -147,6 +147,76 @@ export function mixTrack(kind, colour) {
     if (kind === 's') return `linear-gradient(90deg, hsl(${h} 0% 52%), hsl(${h} 85% 52%))`;
     return `linear-gradient(90deg, hsl(${h} 70% 18%), hsl(${h} 70% 50%) 50%, hsl(${h} 70% 82%))`;
 }
+/* --- „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026) ------------
+   Step two against the same yellow cast: measured on his pictures, the
+   greys lean yellow-orange in the middle and dark tones and the brightest
+   parts of the white caps slightly blue — a cast that changes with the
+   brightness, which Temperatur and Tönung (every tone alike) cannot
+   follow. Lightroom calls it colour grading; here it is three ranges —
+   Lichter, Mitteltöne, Tiefen — each with
+   - Farbton 0 … 360: the direction the range is pushed in (the colour
+     wheel's degrees, the opposite of a cast takes it out),
+   - Stärke 0 … 100: how far — at 100 the channel furthest along that
+     direction gains a stop on linear light, the others in proportion,
+     and the pixel's luminance is put back, so it tints and never
+     brightens,
+   - Luminanz -100 … 100: the range brighter or darker, up to a stop;
+   and Abgleich -100 … 100 below them, which moves the border between the
+   ranges: plus gives the highlights more of the picture, minus the
+   shadows.
+   THE RANGES ARE WEIGHTS THAT ADD UP TO ONE, read off the pixel's
+   brightness after everything before (display luma): Tiefen from black
+   down to nothing at the pivot, Lichter from nothing at the pivot up to
+   white, Mitteltöne what is left — greatest at the pivot. So the three
+   at the same setting are one setting for the whole picture. Gains on
+   linear light, as the white balance's: black stays black.
+   A BURNED-OUT WHITE STAYS WHITE: where a channel reaches the last four
+   per cent, the push fades out — a clipped spot of a Helicon stack holds
+   no colour, and pushed blue it came out light blue (measured: 255 white
+   to 240/255/255 at Lichter 220°/40). The Luminanz still reaches it.
+   After the mixer, before the masks. develop.grade = { highlights: { h,
+   s, l }, midtones: {…}, shadows: {…}, balance }, zeros left out; the
+   server's twin is photo_develop_clean (includes/photos.php). */
+export const GRADE_RANGES = [
+    { key: 'highlights', name: () => t('Lichter') },
+    { key: 'midtones', name: () => t('Mitteltöne') },
+    { key: 'shadows', name: () => t('Tiefen') },
+];
+export const HUE_TRACK = 'linear-gradient(90deg, hsl(0 75% 52%), hsl(60 75% 52%), hsl(120 75% 52%), hsl(180 75% 52%), hsl(240 75% 52%), hsl(300 75% 52%), hsl(360 75% 52%))';
+/** Whether a range or the whole of the grading holds anything. */
+export function gradeSet(d) {
+    const g = d?.grade;
+    return !!g && GRADE_RANGES.some((r) => ['h', 's', 'l'].some((k) => Number(g[r.key]?.[k]) || 0));
+}
+// The direction of a hue: its fully saturated colour less its luminance, the largest channel at ±1.
+function hueDirection(h) {
+    const k = (n) => {
+        const x = (n + h / 60) % 6;
+        return 1 - Math.max(0, Math.min(x, 4 - x, 1));
+    };
+    const c = [k(5), k(3), k(1)];
+    const y = .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+    const dir = c.map((v) => v - y);
+    const top = Math.max(...dir.map(Math.abs)) || 1;
+    return dir.map((v) => v / top);
+}
+/**
+ * The grading as the shader takes it: per range (shadows, midtones,
+ * highlights — the shader's order) the push in stops per channel and the
+ * luminance in stops; the balance -1 … 1. Null where nothing is set.
+ */
+export function gradeUniform(d) {
+    if (!gradeSet(d)) return null;
+    const ranges = new Float32Array(12);
+    ['shadows', 'midtones', 'highlights'].forEach((key, i) => {
+        const r = d.grade[key] ?? {};
+        const s = Math.max(0, Math.min(100, Number(r.s) || 0)) / 100;
+        const dir = hueDirection(((Number(r.h) || 0) % 360 + 360) % 360);
+        ranges.set([dir[0] * s, dir[1] * s, dir[2] * s, Math.max(-100, Math.min(100, Number(r.l) || 0)) / 100], i * 4);
+    });
+    return { ranges, balance: Math.max(-100, Math.min(100, Number(d.grade.balance) || 0)) / 100 };
+}
+
 /** Whether anything of the mixer is set. */
 export function mixSet(d) {
     const m = d?.mix;
@@ -625,7 +695,7 @@ export function fillImage(f) {
 export function developEmpty(d) {
     if (!d) return true;
     for (const g of DEVELOP_GROUPS) for (const s of g.sliders) if (Number(d[s.key]) || 0) return false;
-    if (geoSet(d) || d.wb || d.cast || mixSet(d) || (d.spots ?? []).length) return false;
+    if (geoSet(d) || d.wb || d.cast || mixSet(d) || gradeSet(d) || (d.spots ?? []).length) return false;
     return !(d.radials ?? []).length && !(d.linears ?? []).length && !(d.brushes ?? []).length;
 }
 
@@ -1941,6 +2011,24 @@ export function developClean(d) {
         }
         out.mix = mix;
     }
+    // „Farbkorrektur nach Helligkeit": per range what is set, the balance only beside a range.
+    if (gradeSet(d)) {
+        const grade = {};
+        for (const r of GRADE_RANGES) {
+            const g = d.grade[r.key] ?? {};
+            const one = {};
+            const h = Math.round(((Number(g.h) || 0) % 360 + 360) % 360);
+            const sv = Math.round(Math.max(0, Math.min(100, Number(g.s) || 0)));
+            const l = Math.round(Math.max(-100, Math.min(100, Number(g.l) || 0)));
+            if (h) one.h = h;
+            if (sv) one.s = sv;
+            if (l) one.l = l;
+            if (Object.keys(one).length) grade[r.key] = one;
+        }
+        const b = Math.round(Math.max(-100, Math.min(100, Number(d.grade.balance) || 0)));
+        if (b) grade.balance = b;
+        out.grade = grade;
+    }
     if (geoSet(d)) {
         const g = d.geo;
         const geo = { turn: ((Number(g.turn) || 0) % 360 + 360) % 360, angle: Math.round((Number(g.angle) || 0) * 10) / 10 };
@@ -2005,6 +2093,9 @@ uniform mat3 uCast[5]; // „Farbstich entfernen": a correction per brightness r
 uniform float uCastOn;
 uniform vec3 uMix[${MIX_COLOURS.length}]; // „Farbmischer": per colour hue, saturation, luminance, -1 … 1 (mixUniform)
 uniform float uMixOn;
+uniform vec4 uGrade[3]; // „Farbkorrektur nach Helligkeit": shadows, midtones, highlights — push in stops per channel, luminance in stops (gradeUniform)
+uniform float uGradeBal;
+uniform float uGradeOn;
 uniform int uN;
 uniform vec4 uRPos[${RADIALS_MAX}];    // ellipse: centre x, y and radii x, y; gradient: x1, y1, x2, y2 — in pixels
 uniform vec4 uRShape[${RADIALS_MAX}];  // angle (radians), feather 0 … 1, invert 0/1, kind (0 ellipse, 1 gradient, 2 brush)
@@ -2129,6 +2220,24 @@ ${MIX_COLOURS.map((col, i) => {
     return pow(lin, vec3(1. / 2.2));
 }
 
+/* „Farbkorrektur nach Helligkeit" (GRADE_RANGES says what it does). */
+vec3 grade(vec3 c) {
+    if (uGradeOn < .5) return c;
+    float y = clamp(luma(c), 0., 1.);
+    float pivot = .5 - .3 * uGradeBal;
+    float ws = 1. - smoothstep(0., pivot, y);
+    float wh = smoothstep(pivot, 1., y);
+    vec4 g = uGrade[0] * ws + uGrade[1] * (1. - ws - wh) + uGrade[2] * wh;
+    // Burned-out white holds no colour to correct: the push fades out over the last four per cent (GRADE_RANGES).
+    g.rgb *= 1. - smoothstep(.96, 1., max(max(c.r, c.g), c.b));
+    vec3 lin = pow(max(c, 0.), vec3(2.2));
+    float before = luma(lin);
+    lin *= exp2(g.rgb);
+    lin *= before / max(luma(lin), 1e-6);
+    lin *= exp2(g.a);
+    return pow(lin, vec3(1. / 2.2));
+}
+
 void main() {
     // Where this pixel of the view lies in the source: turned back about the crop's centre.
     vec2 q = vec2(vUv.x, 1. - vUv.y) * uOut - uOut * .5;
@@ -2169,6 +2278,7 @@ void main() {
     c = h > 0. ? (c - .12 * h) / (1. - .12 * h) : mix(c, vec3(.82), -h * .35);
     c = colour(c, uColour.z, uColour.w + max(h, 0.) * .2);
     c = mixer(c);
+    c = grade(c);
 
     // The ellipses, each its own small development behind its mask — in source pixels (p, above).
     float shown = 0.;
@@ -2524,6 +2634,12 @@ export function developRenderer(canvas, { edge = EDGE_MAX } = {}) {
                 const mixed = mixUniform(d);
                 gl.uniform1f(u('uMixOn'), mixed ? 1 : 0);
                 if (mixed) gl.uniform3fv(u('uMix'), mixed);
+                const graded = gradeUniform(d);
+                gl.uniform1f(u('uGradeOn'), graded ? 1 : 0);
+                if (graded) {
+                    gl.uniform4fv(u('uGrade'), graded.ranges);
+                    gl.uniform1f(u('uGradeBal'), graded.balance);
+                }
                 gl.uniform1i(u('uN'), masks.length);
                 const pos = new Float32Array(RADIALS_MAX * 4), shape = new Float32Array(RADIALS_MAX * 4);
                 const lightR = new Float32Array(RADIALS_MAX * 4), more = new Float32Array(RADIALS_MAX * 4), sharpR = new Float32Array(RADIALS_MAX);

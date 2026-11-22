@@ -2912,6 +2912,11 @@
    a setting with a dot after its word. */
 .photo-mix-kinds { margin: .3rem 0 .7rem; }
 .photo-mix-kinds .blend-kind.is-set::after { content: " •"; }
+/* „Farbkorrektur" (mixGroup's neighbour, gradeGroup): each range under
+   a small head of its own, the ranges apart by air. */
+.photo-grade-range + .photo-grade-range { margin-top: .8rem; }
+.photo-grade-range + .photo-develop-row { margin-top: .8rem; }
+.photo-grade-name { display: block; margin: .3rem 0 .1rem; font-weight: 600; }
 .blend-pick .field.question { margin: 0; border: 0; padding: 0; }
 /* The answers to „Welche Bilder zeigen dasselbe?" — what is ticked at the left. */
 .blend-chosen { display: flex; flex-direction: column; gap: .15rem; margin-left: 1.6rem; }

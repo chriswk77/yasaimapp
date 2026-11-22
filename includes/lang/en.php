@@ -9929,6 +9929,13 @@ return [
         => 'Blue',
     'Magenta'
         => 'Magenta',
+    // „Farbkorrektur nach Helligkeit", 22.11.2026 (Lichter, Tiefen, Stärke stand already).
+    'Farbkorrektur'
+        => 'Colour grading',
+    'Mitteltöne'
+        => 'Midtones',
+    'Abgleich'
+        => 'Balance',
     'Farbstich'
         => 'Colour cast',
     'Neu messen'

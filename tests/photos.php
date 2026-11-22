@@ -666,6 +666,12 @@ check($mix === ['s' => ['orange' => -25.5, 'yellow' => -60.0], 'l' => ['yellow' 
     'the colour mixer keeps its eight colours in their order and ranges, drops zeros, unknown colours and kinds');
 check(photo_develop_clean(['mix' => ['h' => ['red' => 0]]]) === null && photo_develop_clean(['mix' => 'gelb']) === null,
     'a colour mixer with nothing set counts as nothing');
+$grade = photo_develop_clean(['grade' => ['shadows' => ['h' => 405, 's' => 30, 'l' => 0], 'midtones' => ['s' => 0],
+    'highlights' => ['h' => -150, 's' => 250, 'l' => '-20'], 'balance' => 40, 'global' => ['s' => 5]]])['grade'] ?? null;
+check($grade === ['highlights' => ['h' => 210, 's' => 100.0, 'l' => -20.0], 'shadows' => ['h' => 45, 's' => 30.0], 'balance' => 40.0],
+    'the grading keeps its three ranges, turns the hue into 0 … 359, caps the strength, drops zeros and unknown ranges');
+check(photo_develop_clean(['grade' => ['balance' => 30]]) === null,
+    'a balance without a range counts as nothing');
 check((photo_develop_clean(['wb' => ['r' => 1.2, 'g' => 1, 'b' => .8]])['wb'] ?? null) == ['r' => 1.2, 'g' => 1.0, 'b' => 0.8]
     && photo_develop_clean(['wb' => ['r' => 1, 'g' => 1, 'b' => 1]]) === null
     && (photo_develop_clean(['wb' => ['r' => 9, 'g' => 'x', 'b' => .1]])['wb'] ?? null) == ['r' => 4.0, 'g' => 1.0, 'b' => 0.25],

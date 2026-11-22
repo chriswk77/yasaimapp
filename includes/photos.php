@@ -506,6 +506,27 @@ function photo_develop_clean(mixed $d): ?array
         }
         if ($mix !== []) $out['mix'] = $mix;
     }
+    /* „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026; develop.js
+       GRADE_RANGES): per range h 0 to 359 (whole degrees, 360 is 0), s 0
+       to 100, l -100 to 100, what is 0 left out; balance -100 to 100, kept
+       only beside a range — alone it moves a border between nothing. */
+    if (is_array($d['grade'] ?? null)) {
+        $grade = [];
+        foreach (['highlights', 'midtones', 'shadows'] as $range) {
+            $g = is_array($d['grade'][$range] ?? null) ? $d['grade'][$range] : [];
+            $one = [];
+            $h = is_numeric($g['h'] ?? null) ? ((int) round((float) $g['h']) % 360 + 360) % 360 : 0;
+            if ($h !== 0) $one['h'] = $h;
+            $sv = $num($g['s'] ?? null, 0, 100);
+            if ($sv !== null && $sv != 0) $one['s'] = $sv;
+            $l = $num($g['l'] ?? null, -100, 100);
+            if ($l !== null && $l != 0) $one['l'] = $l;
+            if ($one !== []) $grade[$range] = $one;
+        }
+        $balance = $num($d['grade']['balance'] ?? null, -100, 100);
+        if ($grade !== [] && $balance !== null && $balance != 0) $grade['balance'] = $balance;
+        if ($grade !== []) $out['grade'] = $grade;
+    }
     /* THE SPOTS („Ausbessern", 10.11.2026; develop.js spotsApply): places
        mended from elsewhere in the picture, as descriptions — a path (one
        point or a stroke) and a radius, the source the same shape moved by
@@ -2438,9 +2459,10 @@ function measure_develop_help(): array
             '5. dehaze',
             '6. colour: vibrance, saturation',
             '7. colour mixer ("mix")',
-            '8. masks: every entry of "radials", then of "linears", then of "brushes", each blending its own local adjustment in by its mask — '
+            '8. colour grading by brightness ("grade")',
+            '9. masks: every entry of "radials", then of "linears", then of "brushes", each blending its own local adjustment in by its mask — '
                 . 'its temp and tint first, as gains per channel exactly as in step 2, on what the steps before have made; then its light, dehaze, colour and sharpen',
-            '9. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
+            '10. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
         ],
         'sliders' => 'Every global slider runs from -100 to +100, 0 = unchanged; "sharpen" runs from 0 to 100.',
         'keys' => [
@@ -2464,6 +2486,14 @@ function measure_develop_help(): array
             'vibrance'   => 'Saturation that mainly reaches weakly saturated colours.',
             'saturation' => 'Saturation of all colours; -100 = greyscale.',
             'sharpen'    => 'Unsharp mask with a small radius, 0 to 100.',
+            'grade'      => 'Colour grading by brightness, step 8, on the display-encoded picture (gamma 2.2). Three ranges, '
+                . 'shadows, midtones, highlights, weighted by the pixel\'s luma y (Rec. 709): with the pivot p = 0.5 − 0.3 × balance/100, '
+                . 'shadows 1 − smoothstep(0, p, y), highlights smoothstep(p, 1, y), midtones the rest. Per range h (degrees, the HSV '
+                . 'hue the range is pushed towards), s (0 to 100), l (-100 to +100), absent = 0. The direction is the fully saturated '
+                . 'colour of h less its luma, scaled so its largest channel is ±1; on linear light every channel is multiplied by '
+                . '2^(direction × s/100), the pixel\'s luma restored, then all three by 2^(l/100). The push (not l) is multiplied by '
+                . '1 − smoothstep(0.96, 1, the pixel\'s largest channel), so a burned-out white stays white. The ranges\' numbers are blended by '
+                . 'their weights before they are applied.',
             'mix'        => 'Colour mixer, step 7, on the display-encoded picture (gamma 2.2). Eight colours at hues (HSV, degrees) '
                 . 'red 0, orange 30, yellow 60, green 120, aqua 180, blue 240, purple 270, magenta 300; h, s and l each hold, per colour, '
                 . 'a value from -100 to +100 (absent = 0). A pixel\'s hue lies between two neighbouring colours and its adjustment is '

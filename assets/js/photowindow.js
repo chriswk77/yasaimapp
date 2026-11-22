@@ -57,7 +57,7 @@ import { ARROW_WEIGHTS, TEXT_LEADING, TEXT_SIZES, textStep, arrowWordsGrip, arro
 import { icon, iconHtml } from './icons.js';
 import { readableDate } from './dates.js';
 import { MEDIA, mediaLabel, mediaAlphabetical } from './media.js';
-import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
+import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, GRADE_RANGES, HUE_TRACK, gradeSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
     castMeasure, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
     SPOTS_MAX, PATH_POINTS_MAX, spotRadiusOf, spotSizeOf, spotSourceFind, BRUSHES_MAX, brushNew, brushField, masksOf,
     spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
@@ -2511,7 +2511,7 @@ export function mountPhotoWindow(host) {
         }
         const say = () => {
             const v = Number(input.value);
-            const shown = def.unit ? v.toFixed(1).replace('.', ',') + def.unit : String(v);
+            const shown = def.unit ? v.toFixed(1).replace('.', ',') + def.unit : String(v) + (def.suffix ?? '');
             out.textContent = v > 0 && (def.min ?? -100) < 0 ? '+' + shown : shown.replace('-', '−');
             row.classList.toggle('is-set', v !== 0);
         };
@@ -3231,13 +3231,15 @@ export function mountPhotoWindow(host) {
        machen. Einheitliches Design") — the same sign the rail beside it
        carries, so head and chosen sign say one thing. The folding heads
        keep their triangle. */
-    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', mix: 'colour-mix', light: 'sun', details: 'details', brush: 'brush' };
+    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', mix: 'colour-mix', grade: 'colour-grade', light: 'sun', details: 'details', brush: 'brush' };
     const headSign = (key) => (HEAD_SIGNS[key] ? iconHtml(HEAD_SIGNS[key], { class: 'photo-develop-head-sign' }) : '');
     const DEVELOP_RAIL = [
         { key: 'micro', icon: 'microscope', name: () => t('Mikrofotos') },
         { key: 'color', icon: 'palette' },
         // „Farbmischer" right under „Farbe" (22.11.2026) — the colour's finer hand (mixGroup).
         { key: 'mix', icon: 'colour-mix', name: () => t('Farbmischer') },
+        // „Farbkorrektur" after it (22.11.2026) — the colour by brightness (gradeGroup).
+        { key: 'grade', icon: 'colour-grade', name: () => t('Farbkorrektur') },
         { key: 'light', icon: 'sun' },
         { key: 'details', icon: 'details' },
     ];
@@ -3546,6 +3548,64 @@ export function mountPhotoWindow(host) {
         return group;
     }
 
+    /* „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026; develop.js
+       GRADE_RANGES says what the sliders do). All three ranges in sight,
+       bright to dark as „Licht" orders them, each under its small head
+       with Farbton, Stärke and Luminanz; Abgleich last, because it moves
+       the border between them. Stärke's line ends in the colour its range
+       is pushed towards and follows the Farbton slider while it moves. */
+    function gradeGroup(may, mark) {
+        const group = document.createElement('div');
+        group.className = 'photo-develop-group';
+        group.dataset.group = 'grade';
+        const head = document.createElement('h3');
+        head.className = 'list-label photo-develop-group-head is-plain';
+        head.innerHTML = headSign('grade');
+        head.append(t('Farbkorrektur'));
+        group.append(head);
+        const changed = () => {
+            developSoon();
+            developQueue();
+            mark();
+        };
+        const set = (range, k, v) => {
+            develop.grade ??= {};
+            develop.grade[range] ??= {};
+            if (v) develop.grade[range][k] = v; else delete develop.grade[range][k];
+            if (!Object.keys(develop.grade[range]).length) delete develop.grade[range];
+            if (!Object.keys(develop.grade).length) delete develop.grade;
+        };
+        const strengthTrack = (h) => `linear-gradient(90deg, hsl(${h} 0% 52%), hsl(${h} 80% 52%))`;
+        for (const r of GRADE_RANGES) {
+            const now = develop.grade?.[r.key] ?? {};
+            const sub = document.createElement('div');
+            sub.className = 'photo-grade-range';
+            const name = document.createElement('span');
+            name.className = 'photo-grade-name';
+            name.textContent = r.name();
+            const strength = beforeRow(developSlider({ key: `grade-${r.key}-s`, name: () => t('Stärke'), min: 0, max: 100,
+                track: strengthTrack(now.h ?? 0) }, now.s ?? 0, (v) => { set(r.key, 's', v); changed(); }, may));
+            const hue = beforeRow(developSlider({ key: `grade-${r.key}-h`, name: () => t('Farbton'), min: 0, max: 359, suffix: '°',
+                track: HUE_TRACK }, now.h ?? 0, (v) => {
+                set(r.key, 'h', v);
+                strength.querySelector('input')?.style.setProperty('--track', strengthTrack(v));
+                changed();
+            }, may));
+            const lum = beforeRow(developSlider({ key: `grade-${r.key}-l`, name: () => t('Luminanz'), track: DEVELOP_TRACKS.exposure },
+                now.l ?? 0, (v) => { set(r.key, 'l', v); changed(); }, may));
+            sub.append(name, hue, strength, lum);
+            group.append(sub);
+        }
+        group.append(beforeRow(developSlider({ key: 'grade-balance', name: () => t('Abgleich'),
+            track: 'linear-gradient(90deg, #333, #ccc)' }, develop.grade?.balance ?? 0, (v) => {
+            develop.grade ??= {};
+            if (v) develop.grade.balance = v; else delete develop.grade.balance;
+            if (!Object.keys(develop.grade).length) delete develop.grade;
+            changed();
+        }, may)));
+        return group;
+    }
+
     function castChanged() {
         developSoon();
         developQueue();
@@ -3596,6 +3656,7 @@ export function mountPhotoWindow(host) {
                 page.mark(g.key, g.sliders.some((s) => (Number(develop[s.key]) || 0) !== 0) || (g.key === 'color' && !!develop.cast));
             }
             page.mark('mix', mixSet(develop));
+            page.mark('grade', gradeSet(develop));
         };
         page.body.append(microGroup(may, new Set(), false));
         developGroupsDraw(page.body, develop, '', (s, v) => {
@@ -3604,7 +3665,7 @@ export function mountPhotoWindow(host) {
             developQueue();
             mark();
         }, may, false);
-        page.body.querySelector('.photo-develop-group[data-group="color"]')?.after(mixGroup(may, mark));
+        page.body.querySelector('.photo-develop-group[data-group="color"]')?.after(mixGroup(may, mark), gradeGroup(may, mark));
         page.body.querySelector('.photo-develop-group[data-group="color"]')?.append(castBlock(may));
         mark();
         show(chosen);

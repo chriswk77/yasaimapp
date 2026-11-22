@@ -1050,6 +1050,12 @@ function icon_stock_all(): array
             'path' => '<circle cx="12" cy="8.6" r="5"/><circle cx="8.8" cy="14.2" r="5"/><circle cx="15.2" cy="14.2" r="5"/>',
         ],
 
+        // „Bearbeiten" → Farbkorrektur (22.11.2026): a disc cut into three —
+        // the bright, the middle and the dark tones, each turned on its own.
+        'colour-grade' => [
+            'path' => '<circle cx="12" cy="12" r="8.5"/><path d="M12 12V3.5M12 12l7.4 4.3M12 12l-7.4 4.3"/>',
+        ],
+
         // „Bearbeiten" → Masken (10.11.2026, the tabs became
         // signs, as in Lightroom): a whole circle and a dashed one over it —
         // the part of the picture that is changed, and the line around it.
