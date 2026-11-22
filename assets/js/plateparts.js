@@ -393,18 +393,35 @@ export function cutout(cell, W, H, aspect) {
  */
 export function barGeometry(cell, W, H, mm, umPx, share = .2) {
     if (umPx === null || cell.bar === 'off') return null;
-    const want = share * W * umPx;
-    const um = NICE_UM.filter(n => n <= want).pop() ?? NICE_UM[0];
-    const len = um / umPx;
     const font = BAR_FONT * mm, thick = Math.max(1, BAR_THICK * mm), gap = BAR_GAP * mm;
+    const want = share * W * umPx;
+    let um = NICE_UM.filter(n => n <= want).pop() ?? NICE_UM[0];
+    /* THE LINE IS NEVER SHORTER THAN ITS WORDS (22.11.2026: „dass der
+       Strich kürzer ist als der Text oben drüber. Das darf nicht sein. Der
+       Strich muss immer länger sein als die Textlänge oben drüber,
+       inklusive Einheit"). At a high magnification a fifth of the cell is
+       a few µm, and „2 µm" stood wider than its own line. The length then
+       steps up the round lengths until the line outreaches its words by a
+       tenth — as far as the cell has room; only where even that does not
+       fit does the largest that fits stand. */
+    const wordsW = (n) => mediaCanvas().measureText(barText(n)).width * font / 100;
+    const room = W - 2 * BAR_EDGE * mm;
+    if (um / umPx < wordsW(um) * 1.1) {
+        const enough = NICE_UM.find(n => n > um && n / umPx >= wordsW(n) * 1.1);
+        if (enough !== undefined && enough / umPx <= room) um = enough;
+        else um = NICE_UM.filter(n => n >= um && n / umPx <= room).pop() ?? um;
+    }
+    const len = um / umPx;
     const boxH = font * 1.15 + gap + thick, edge = BAR_EDGE * mm, edgeY = BAR_EDGE_Y * mm;
     return {
         x: cell.bar.endsWith('r') ? W - edge - len : edge,
         y: cell.bar.startsWith('b') ? H - edgeY - boxH : edgeY,
         len, font, thick, gap, boxH,
-        label: um >= 1000 ? `${um / 1000} mm` : `${um} µm`,
+        label: barText(um),
     };
 }
+/** A bar's words: µm, from a millimetre on mm (a no-break space before the unit). */
+const barText = (um) => (um >= 1000 ? `${um / 1000} mm` : `${um} µm`);
 
 /**
  * THE MEDIUM ON THE PICTURE (06.11.2026: „das Medium dann
