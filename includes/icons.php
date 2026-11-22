@@ -427,6 +427,8 @@ function icon_stock_all(): array
         'subject-main' => ['path' => '<path d="M3 7V3h4M17 3h4v4M21 17v4h-4M7 21H3v-4"/><path d="M5.5 12a6.5 5.5 0 0 1 13 0Z"/><path d="M10.3 12v6.5h3.4V12"/>'],
         // Kollektion: several fruit bodies on the ground
         'subject-collection' => ['path' => '<path d="M2 20.5h20"/><path d="M2.5 11a4.5 4 0 0 1 9 0Z"/><path d="M5.8 11v9.5M8.2 11v9.5"/><path d="M13 14a3.5 3 0 0 1 7 0Z"/><path d="M15.7 14v6.5M17.3 14v6.5"/>'],
+        // Studio: a mushroom under a lamp on its stand, the light falling on it
+        'subject-studio' => ['path' => '<path d="M2 20.5h10"/><path d="M2.5 14a4.5 4 0 0 1 9 0Z"/><path d="M5.8 14v6.5M8.2 14v6.5"/><path d="M13 6.5l3.5 4.5 4.5-4.5-1.8-2.5Z"/><path d="M20 6.8v13.7M17.5 20.5h5"/><path d="M11.3 10.2l-1.3.9M13.6 12.6l-.9 1.2"/>'],
         // Größenvergleich: a mushroom beside a ruler
         'subject-size' => ['path' => '<path d="M2.5 11a5 4.5 0 0 1 10 0Z"/><path d="M6.1 11v9h2.8v-9"/><rect x="15" y="3" width="5.5" height="18" rx="1"/><path d="M15 7h2.6M15 11h1.6M15 15h2.6M15 19h1.6"/>'],
         // Habitat: trees on the ground

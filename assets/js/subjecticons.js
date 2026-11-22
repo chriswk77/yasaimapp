@@ -17,6 +17,7 @@ const SUBJECT_ICONS = {
     'belegfoto':                'photo',
     'hauptmotiv':               'subject-main',
     'kollektion':               'subject-collection',
+    'studio':                   'subject-studio',
     'größenvergleich':          'subject-size',
     'habitat':                  'subject-habitat',
     'standort':                 'subject-site',

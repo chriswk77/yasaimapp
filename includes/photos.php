@@ -1569,9 +1569,13 @@ function cloud_file_scale_store(PDO $pdo, int $userId, int $fileId, ?array $scal
    the find beside a ruler, a coin or whatever stands for a length — the
    picture one calibrates a scale on and measures the whole fruit body
    from. Next to Kollektion, the other whole-find picture. */
+/* „STUDIO" (22.11.2026: „Als Makro-Label bitte noch fest Studio"): the
+   find photographed at home under set light, before a plain background —
+   neither the Hauptmotiv out in the woods nor the quick Belegfoto. A
+   stock name, so it reaches saved lists through the ledger. */
 const PHOTO_TITLES_MACRO = [
     'Belegfoto',
-    'Hauptmotiv', 'Kollektion', 'Größenvergleich', 'Habitat', 'Standort', 'Hutoberseite',
+    'Hauptmotiv', 'Kollektion', 'Studio', 'Größenvergleich', 'Habitat', 'Standort', 'Hutoberseite',
     'Unterseite', 'Schnittbild', 'Stielbasis', 'Velum', 'Detail',
     'Makrochemie', 'Sporenpulver', 'Makrochemie SPP', 'Exsikkat',
     /* SKLEROTIUM in both lists (18.11.2026: „Als Motivname fehlt,

@@ -358,7 +358,7 @@ check($fresh['photo_titles_macro'] === PHOTO_TITLES_MACRO && $fresh['photo_title
 // Kollektion and Detail came later.
 $old = json_encode(['photo_titles_macro' => ['Belegfoto', 'Hauptmotiv', 'Eigenes Wort']]);
 $read = measure_style_read($old);
-check($read['photo_titles_macro'] === ['Belegfoto', 'Hauptmotiv', 'Eigenes Wort', 'Kollektion',
+check($read['photo_titles_macro'] === ['Belegfoto', 'Hauptmotiv', 'Eigenes Wort', 'Kollektion', 'Studio',
                                         'Größenvergleich', 'Detail', 'Makrochemie', 'Makrochemie SPP', 'Sklerotium'],
     'A list saved before the ledger gets the names added since at its end, in stock order, not the ones it dropped');
 check($read['photo_titles_micro'] === PHOTO_TITLES_MICRO, 'The untouched micro list stays the stock');
@@ -415,7 +415,7 @@ check($plated['plate'] === ['gutter' => 1.5, 'gutter_color' => '#000000', 'text_
 $noKnown = measure_style_write(['scale_color' => '#ff0000', 'scale_seam_color' => '#000000', 'line_color' => '#ff0000',
     'seam_color' => '#000000', 'font_px' => 16, 'photo_titles_macro' => ['Belegfoto']]);
 check(json_decode($noKnown, true)['photo_titles_macro_known'] === PHOTO_TITLES_KNOWN_BEFORE['photo_titles_macro']
-    && measure_style_read($noKnown)['photo_titles_macro'] === ['Belegfoto', 'Kollektion', 'Größenvergleich', 'Detail',
+    && measure_style_read($noKnown)['photo_titles_macro'] === ['Belegfoto', 'Kollektion', 'Studio', 'Größenvergleich', 'Detail',
                                                                'Makrochemie', 'Makrochemie SPP', 'Sklerotium'],
     'Without a known set the baseline decides, and the newer names still arrive');
 
@@ -423,8 +423,8 @@ check(json_decode($noKnown, true)['photo_titles_macro_known'] === PHOTO_TITLES_K
 $renamed = measure_style_read(json_encode(['photo_titles_macro' => ['Hauptmotiv', 'Makrochemie Sporenpulver', 'Eigenes'],
     'photo_titles_macro_known' => [...PHOTO_TITLES_KNOWN_BEFORE['photo_titles_macro'], 'Kollektion', 'Größenvergleich', 'Detail',
                                    'Makrochemie', 'Makrochemie Sporenpulver']]));
-// Sklerotium (18.11.2026) was never known to this list, so it arrives at the end.
-check($renamed['photo_titles_macro'] === ['Hauptmotiv', 'Makrochemie SPP', 'Eigenes', 'Sklerotium'],
+// Studio and Sklerotium were never known to this list, so they arrive at the end.
+check($renamed['photo_titles_macro'] === ['Hauptmotiv', 'Makrochemie SPP', 'Eigenes', 'Studio', 'Sklerotium'],
     'A saved list with a renamed stock word reads the new word in its place, not twice');
 
 // ---------------------------------------------------------------------------
