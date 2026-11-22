@@ -325,8 +325,17 @@
  * with its pane, still `open`, still in its mode. So the grey asks the
  * page too: there it holds only while the find shows its pictures, and
  * „Übersicht" or the grid wear the user's colours again. The map has no
- * #finds-fund, so the condition never stands in its way. */
-:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) {
+ * #finds-fund, so the condition never stands in its way.
+ *
+ * AND NOT WHILE THE MICROSCOPE IS OPEN (22.11.2026: „sobald ich aus
+ * Bearbeiten … oben auf Mikroskopieren klicke, wird mein
+ * Mikroskopiermodul auch in den Farbthema geladen. Das bitte nicht").
+ * Its window and its devices' window are dialogs over the page with the
+ * picture still open beneath in „Bearbeiten", and they took their colours
+ * from the same tokens. While either is open the whole page wears the
+ * user's theme again; closed, the grey comes back. (The keys bring their
+ * own styles and never needed this.) */
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) {
     /* LOW CONTRAST ON PURPOSE (the same day: „keine großen Kontraste auf
        der Oberfläche", then „gerade helle Farben, helle Schriften, das
        lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler", and the
@@ -350,7 +359,7 @@
     --accent-own:   var(--accent);
     color-scheme: dark !important;
 }
-:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) body {
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) body {
     --accent:       color-mix(in srgb, var(--accent-own) 25%, #525252);
     --accent-light: color-mix(in srgb, var(--accent-own) 25%, #7e7e7e);
 }
