@@ -2240,7 +2240,21 @@ vec3 light(vec3 c, vec4 l, vec2 ends, vec3 detail, float clarity) {
     float dark = (1. - y) * (1. - y), bright = y * y;
     lin *= exp2(l.w * 3. * dark + l.z * 1.5 * bright + ends.x * bright * bright + ends.y * 2. * dark * dark);
     c = pow(lin, vec3(1. / 2.2));
-    c = (c - .5) * (1. + l.y * (l.y > 0. ? .8 : .6)) + .5;
+    /* KONTRAST PLUS IS A GENTLE S-CURVE (22.11.2026: „Der
+       Kontrastregler ist zu stark … bei 100% … absolut unbrauchbar … das
+       Maximum … was wir jetzt bei 15 ungefähr haben. 15 bis 20 … eher
+       20"). It was a straight stretch about middle grey, 1.8 times as
+       steep at +100, which clipped the lights and the darks hard. Now a
+       blend towards smoothstep: at +100 as steep in the middle as the old
+       +20 (1.16), and black and white stay where they are, so nothing
+       clips. Pictures edited before look softer, as he chose. Minus
+       flattens as before. */
+    if (l.y > 0.) {
+        vec3 s = clamp(c, 0., 1.);
+        c = mix(c, s * s * (3. - 2. * s), l.y * .32);
+    } else {
+        c = (c - .5) * (1. + l.y * .6) + .5;
+    }
     float mid = 1. - abs(clamp(luma(c), 0., 1.) - .5) * 2.;
     c += detail * clarity * 1.2 * clamp(mid * 1.5, 0., 1.);
     return c;
@@ -2390,16 +2404,30 @@ void main() {
         if (uRShape[i].z > .5) m = 1. - m;
         if (i == uShow) shown = m;
         if (m <= 0.) continue;
+        /* THE MASK SCALES ITS SETTINGS, IT DOES NOT BLEND TWO PICTURES
+           (22.11.2026, after the inverted ellipse round the subject: „diese
+           Abdunklung nicht so cool … wie in Lightroom … Vielleicht ist der
+           Verlauf nicht gleichmäßig"). Until then the mask's whole
+           development was computed and laid over the picture by m — and a
+           darkening blended that way is not even in stops: measured on a
+           flat grey at -3 EV, half the mask gave -1.2 EV, not -1.5, so the
+           fall came late and steep at the outer line. Now every setting is
+           multiplied by m before it is applied, as Lightroom applies a
+           local adjustment: half the mask is half the exposure in stops,
+           the fall even all the way. Every picture with masks looks a
+           little different since, as he chose. And the mask's Belichtung
+           reaches four stops instead of three (the same day: „dass sie
+           etwas dunkler werden kann") — the picture's own keeps three. */
         // The mask's own development, in the picture's order: white balance, light (with the ends), dehaze, colour, then sharpening.
-        vec3 local = light(c * uRWB[i], vec4(uRLight[i].x, uRLight[i].y, uRLight[i].z, uRLight[i].w), uRColour[i].zw, detail, uRMore[i].z);
-        float hz = uRMore[i].w;
+        vec3 local = light(c * pow(uRWB[i], vec3(m)), uRLight[i] * vec4(m * 4. / 3., m, m, m), uRColour[i].zw * m, detail, uRMore[i].z * m);
+        float hz = uRMore[i].w * m;
         local = hz > 0. ? (local - .12 * hz) / (1. - .12 * hz) : mix(local, vec3(.82), -hz * .35);
-        local = colour(local, uRColour[i].y, uRMore[i].y + max(hz, 0.) * .2);
+        local = colour(local, uRColour[i].y * m, uRMore[i].y * m + max(hz, 0.) * .2);
         // The mask's own sharpening: the same unsharp mask, laid on what the mask has made.
         // Below zero it softens instead: the detail taken off, down to the wide blur at -100 (DEVELOP_GROUPS).
-        float sr = uRSharp[i];
+        float sr = uRSharp[i] * m;
         local += sr > 0. ? fine * sr * 2. : detail * sr;
-        c = mix(c, local, m);
+        c = local;
     }
     // Where the brush has painted, while one paints: Lightroom's red veil.
     c = mix(clamp(c, 0., 1.), vec3(.92, .12, .1), shown * .5);

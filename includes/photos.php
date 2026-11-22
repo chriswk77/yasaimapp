@@ -2483,14 +2483,18 @@ function measure_develop_help(): array
             '6. colour: vibrance, saturation',
             '7. colour mixer ("mix")',
             '8. colour grading by brightness ("grade")',
-            '9. masks: every entry of "radials", then of "linears", then of "brushes", each blending its own local adjustment in by its mask — '
-                . 'its temp and tint first, as gains per channel exactly as in step 2, on what the steps before have made; then its light, dehaze, colour and sharpen',
+            '9. masks: every entry of "radials", then of "linears", then of "brushes", each applying its own local adjustment with every '
+                . 'setting multiplied by its mask value m (0 to 1) at the pixel — its temp and tint first, as gains per channel exactly as in '
+                . 'step 2 raised to the power m, on what the steps before have made; then its light, dehaze, colour and sharpen. A mask\'s '
+                . 'exposure reaches 4 stops at ±100 (the picture\'s 3)',
             '10. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
         ],
         'sliders' => 'Every global slider runs from -100 to +100, 0 = unchanged; "sharpen" runs from 0 to 100.',
         'keys' => [
             'exposure'   => 'Brightness in stops on linear light: +100 = +3 EV, -100 = -3 EV.',
-            'contrast'   => 'Contrast around middle grey: + steeper, - flatter.',
+            'contrast'   => 'Contrast per channel on the display-encoded picture: + blends each channel towards smoothstep(0, 1, v) '
+                . 'by 0.32 × contrast/100 (an S-curve that keeps black and white; +100 is 1.16 times as steep at middle grey), '
+                . '- flattens about middle grey: (v − 0.5) × (1 + 0.6 × contrast/100) + 0.5.',
             'highlights' => 'The bright tones: + brighter, - darker — a gain on linear light of up to 1.5 stops, all channels in the same ratio, '
                 . 'weighted by the square of the brightness, read half off the pixel and half off the picture under a wide blur (as clarity).',
             'shadows'    => 'The dark tones: + lifted, - sunk — a gain on linear light of up to 3 stops, all channels in the same ratio, so black stays '
