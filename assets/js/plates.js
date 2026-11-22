@@ -3324,7 +3324,21 @@ export function mountPlates(host) {
             dragFrom(tile, data, kind);
             into.append(tile);
         };
-        const measureTiles = (layer) => {
+        /* WHICH: 'numbers' — what is reckoned from the measures —, or
+           'crops', the rows of picture cutouts, which reckon nothing. */
+        const measureTiles = (layer, which) => {
+            if (which === 'crops') {
+                /* EACH NAME OF PICTURE CUTOUTS ITS ROW (07.10.2026:
+                   „ein paar angefärbte Ascusspitzen … eine Bildausschnittreihe,
+                   ohne Messen") — cut in the photo window, standing as they
+                   were cut there, base down and tip up. */
+                for (const name of cropsOf(pics, layer)) {
+                    const d = { layer, crop: name };
+                    measureTile('crop:' + layer + '\n' + name, 'block',
+                        t('%s in Reihe (%d)', blockName(d), rowsFor(pics, d, styleNow()).length));
+                }
+                return;
+            }
             const rows = rowsOf(pics, layer, lengthStraight(host.style(), layer));
             const parts = partsOf(pics, layer);
             /* EACH TILE NAMES ITS LAYER (07.10.2026: „wenn man
@@ -3356,15 +3370,18 @@ export function mountPlates(host) {
                 if (partRows.length >= 2) measureTile('plot:' + layer + '\n' + part, 'block', t('Verteilung: %s', blockName(d)));
                 measureTile('row:' + layer + '\n' + part, 'block', t('%s in Reihe (%d)', blockName(d), partRows.length));
             }
-            /* EACH NAME OF PICTURE CUTOUTS ITS ROW (07.10.2026:
-               „ein paar angefärbte Ascusspitzen … eine Bildausschnittreihe,
-               ohne Messen") — cut in the photo window, standing as they
-               were cut there, base down and tip up. */
-            for (const name of cropsOf(pics, layer)) {
-                const d = { layer, crop: name };
-                measureTile('crop:' + layer + '\n' + name, 'block',
-                    t('%s in Reihe (%d)', blockName(d), rowsFor(pics, d, styleNow()).length));
-            }
+        };
+        /* THE CUTOUTS A POINT OF THEIR OWN (22.11.2026: „das Symbol in
+           der Schnellauswahl für Ausschnitte sieht aus wie das
+           Statistiksymbol. Hier würde ich ein Ausschnittsymbol bevorzugen").
+           They stood under „Auswertung" and its bars — but a row of cutouts
+           reckons nothing, it is pictures. Now „Ausschnitte" beside it, with
+           the cutout tool's own corners; a group that yields no tile goes
+           again. */
+        const subGroup = (title, menuText, sub, symbol, layersHere, which) => {
+            const g = group(title, menuText, sub, symbol);
+            for (const layer of layersHere) measureTiles(layer, which);
+            if (!g.section.querySelector('.plate-strip-tile')) { g.section.remove(); g.item.remove(); }
         };
         for (const { name, items } of subjectGroups(entries, host.photoTitles())) {
             group(name ?? t('Ohne Motivnamen'), name ?? t('Ohne Motivnamen'), false, name ? null : 'label');
@@ -3413,18 +3430,17 @@ export function mountPlates(host) {
                    Messungen"): „Auswertung", indented under the pictures' name
                    in the menu, „Sporen · Auswertung" over its tiles in the
                    list. Gone again where the layer yields no tile. */
-                const sub = group(`${name.trim()} · ${t('Auswertung')}`, t('Auswertung'), true, 'bars');
-                measureTiles(layer);
-                if (!sub.section.querySelector('.plate-strip-tile')) { sub.section.remove(); sub.item.remove(); }
+                subGroup(`${name.trim()} · ${t('Auswertung')}`, t('Auswertung'), true, 'bars', [layer], 'numbers');
+                subGroup(`${name.trim()} · ${t('Ausschnitte')}`, t('Ausschnitte'), true, 'crop', [layer], 'crops');
                 placed.add(layer);
             }
         }
         // Layers whose pictures carry another name — or none — keep a group of their own.
         const rest = layers.filter(l => !placed.has(l));
         if (rest.length > 0) {
-            group(t('Aus den Messungen'), t('Aus den Messungen'), false, 'ruler');
             // No name over each layer any more: its tiles say it themselves.
-            for (const layer of rest) measureTiles(layer);
+            subGroup(t('Aus den Messungen'), t('Aus den Messungen'), false, 'ruler', rest, 'numbers');
+            subGroup(t('Ausschnitte'), t('Ausschnitte'), false, 'crop', rest, 'crops');
         }
 
         stripChosenSync();

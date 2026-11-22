@@ -979,6 +979,17 @@ function icon_stock_all(): array
                     . '<path d="M11.4 19.1 11 21"/></g>',
             'stroke' => 2.2,
         ],
+        /* THE PICTURE NAME „SPOREN" HEAD DOWN (22.11.2026: „Auch das
+           Sporenbild gleich mit umdrehen, also Oberseite nach unten"), as the
+           basidia beside it: the spore above turned half round (−28° + 180°),
+           so it leans as before, the germ pore below and the apiculus on top. A drawing of its own, because
+           `spore` stays as it is in the keys' tables and the plate's details. */
+        'subject-spores' => [
+            'path' => '<g transform="rotate(152 12 12)">'
+                    . '<path d="M10.6 4.1h2.8c2.6.9 4.4 3.9 4.4 7.6 0 4.3-2.6 7.4-5.8 7.4s-5.8-3.1-5.8-7.4c0-3.7 1.8-6.7 4.4-7.6Z"/>'
+                    . '<path d="M11.4 19.1 11 21"/></g>',
+            'stroke' => 2.2,
+        ],
 
         // Appearance: the half-filled circle — light against dark is
         // exactly what gets chosen there.

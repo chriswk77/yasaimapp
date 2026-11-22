@@ -37,7 +37,7 @@ const SUBJECT_ICONS = {
     'makrochemie sporenpulver': 'subject-spore-print-chemistry',
     'exsikkat':                 'subject-exsiccate',
     'übersichtsschnitt':        'subject-overview',
-    'sporen':                   'spore',
+    'sporen':                   'subject-spores',
     'konidien':                 'subject-conidia',
     'hymenium':                 'subject-hymenium',
     'basidien':                 'subject-basidia',
