@@ -89,6 +89,14 @@ require_once __DIR__ . '/_frame.php';
  *   per run. When the walk has passed the last folder it notes „done", and
  *   every call after that is a file read.
  *
+ * public_site — the public find book on wkpilz.de (includes/public_site.php,
+ *   22.11.2026): without a new plate one look at the database and a file
+ *   compare, about a second (measured live that day); a new plate page is
+ *   one fetch from the cloud and two shrunk copies, a few seconds. HOURLY
+ *   AND NOT EVERY FIVE MINUTES: a plate is drawn a few times a week, and a
+ *   page the cloud refuses is tried again on every call — twelve times an
+ *   hour would only knock twelve times. No site on the server, no work.
+ *
  * thumbs — the pictures' small previews onto this server (includes/thumbs.php,
  *   10.10.2026): one request at the picture's cloud per preview and a short
  *   pause, some eighty per run while the stock is first filled; afterwards
@@ -117,6 +125,7 @@ function cron_jobs(): array
         'thumbs'          => ['label' => 'Vorschauen', 'lock' => 'thumbs', 'run' => 'cron_job_thumbs'],
         'picture_archives' => ['label' => 'Bildarchive', 'lock' => 'picture_archives', 'run' => 'cron_job_picture_archives'],
         'sidecar_move'    => ['label' => 'Bearbeitung', 'lock' => 'sidecar_move', 'run' => 'cron_job_sidecar_move'],
+        'public_site'     => ['label' => 'Öffentliche Seite', 'lock' => 'public_site', 'run' => 'cron_job_public_site'],
     ];
 }
 
@@ -289,7 +298,7 @@ function cron_job_login_attempts(PDO $pdo, float $deadline): array
  */
 const CRON_GROUPS = [
     'every_5_minutes' => ['cloud_moves', 'elevation', 'municipalities', 'protected_areas', 'cloud_names', 'picture_stamps', 'thumbs', 'sidecar_move'],
-    'hourly'   => ['species', 'cloud_copies'],
+    'hourly'   => ['species', 'public_site', 'cloud_copies'],
     'daily'    => ['login_attempts', 'cloud_names_all', 'rain', 'mykis', 'picture_archives', 'backup'],
 ];
 
@@ -363,6 +372,31 @@ function cron_run_many(PDO $pdo, array $names, float $deadline): void
             }
         }
     }
+}
+
+/**
+ * THE PUBLIC FIND BOOK (includes/public_site.php): the site's own refresh,
+ * given what is left of this job's share. Quiet when the finds did not
+ * change — the run is hourly and mostly finds nothing.
+ */
+function cron_job_public_site(PDO $pdo, float $deadline): array
+{
+    require_once PROJECT_PATH . '/includes/public_site.php';
+    $r = public_site_refresh($pdo, max(1.0, $deadline - microtime(true)));
+    if ($r === null) {
+        return ['parts' => []];
+    }
+    if ($r['held']) {
+        return ['line' => 'nicht aktualisiert — ' . ($r['notes'][0] ?? 'zu viele Tafeln ließen sich nicht holen.')];
+    }
+    $parts = [];
+    if ($r['made'] > 0) {
+        $parts[] = $r['made'] . ' Tafelbild' . ($r['made'] === 1 ? '' : 'er') . ' geholt';
+    }
+    if ($r['changed']) {
+        $parts[] = $r['finds'] . ' Funde veröffentlicht';
+    }
+    return ['parts' => $parts, 'open' => $r['done'] ? 0 : max(0, $r['left'])];
 }
 
 function cron_job_species(PDO $pdo, float $deadline): array

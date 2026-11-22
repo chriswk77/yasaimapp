@@ -23,7 +23,6 @@ require_once __DIR__ . '/../includes/plate_window.php';
 require_once __DIR__ . '/../includes/point_window.php';
 require_once __DIR__ . '/../includes/gallery_windows.php';
 require_once __DIR__ . '/../includes/figure_window.php';
-require_once __DIR__ . '/../includes/public_site.php';
 
 $me = login_required();
 
@@ -54,18 +53,6 @@ page_header(t('Fundbrowser'), [
                 <input type="range" id="finds-size" min="120" max="320" step="10" value="180"
                        aria-label="<?= h(t('Kachelgröße')) ?>">
             </label>
-            <?php /* THE PUBLIC FIND BOOK (20.11.2026: „oben im Fund-Browser
-                 noch einen Button … Aktualisieren der öffentlichen Seite").
-                 Only for the account whose finds wkpilz.de shows
-                 (includes/public_site.php). It works in the background and
-                 answers with one toast (assets/js/publicsite.js) — no page,
-                 no link („einfach stillschweigend … mit einer
-                 Toast-Nachricht"). Quiet in look too: a standing offer,
-                 not something due. */ ?>
-            <?php if (public_site_may($me)): ?>
-            <button type="button" class="button subtle finds-public" id="finds-public"
-                    title="<?= h(t('Holt neue und geänderte Tafeln auf wkpilz.de')) ?>"><?= icon('globe') ?><?= h(t('Öffentliche Seite aktualisieren')) ?></button>
-            <?php endif; ?>
         </div>
 
         <div class="finds-body">
@@ -264,4 +251,4 @@ page_header(t('Fundbrowser'), [
     ] + point_window_start($pdo, $me), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
 <?php
-page_footer(['scripts' => ['assets/js/finds.js', 'assets/js/publicsite.js']]);
+page_footer(['scripts' => ['assets/js/finds.js']]);

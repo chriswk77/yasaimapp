@@ -5999,11 +5999,6 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
 .finds-count { margin-left: auto; color: var(--text-quiet); font-size: .88rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .finds-size { display: flex; align-items: center; gap: .45rem; color: var(--text-quiet); }
 .finds-size input { width: 8rem; accent-color: var(--accent); }
-/* The public site's button while it works in the background: it rests, and its globe turns (assets/js/publicsite.js). */
-.finds-public.is-busy { cursor: progress; }
-.finds-public.is-busy .icon { animation: finds-public-turn 1.4s linear infinite; }
-@keyframes finds-public-turn { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .finds-public.is-busy .icon { animation: none; opacity: .5; } }
 
 .finds-body { flex: 1; min-height: 0; display: flex; }
 

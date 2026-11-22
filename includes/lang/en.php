@@ -10591,21 +10591,4 @@ return [
     'Die KI wird gestartet … (einmal je Besuch, etwa 15 Sekunden)'
         => 'The AI is starting … (once per visit, about 15 seconds)',
 
-    // THE PUBLIC FIND BOOK (the Fundbrowser's button, assets/js/publicsite.js, api/v1/public_site.php, 20.11.2026)
-    'Öffentliche Seite aktualisieren'
-        => 'Update the public site',
-    'Holt neue und geänderte Tafeln auf wkpilz.de'
-        => 'Brings new and changed plates to wkpilz.de',
-    'Diese Seite gehört zu einem anderen Konto.'
-        => 'This page belongs to another account.',
-    'Die öffentliche Seite ist auf diesem Server nicht eingerichtet.'
-        => 'The public site is not set up on this server.',
-    'Die Cloud antwortet nicht.'
-        => 'The cloud does not answer.',
-    'Öffentliche Seite nicht aktualisiert: Zu viele Tafeln ließen sich nicht aus der Cloud holen.'
-        => 'Public site not updated: too many plates could not be fetched from the cloud.',
-    'Öffentliche Seite aktualisiert: %d Funde.'
-        => 'Public site updated: %d finds.',
-    'Öffentliche Seite nicht aktualisiert: %s'
-        => 'Public site not updated: %s',
 ];

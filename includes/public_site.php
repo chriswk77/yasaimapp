@@ -8,13 +8,13 @@
  * that have a plate, and it never reads this database while a visitor
  * looks: its refresh copies what is public into its own media/ folder.
  *
- * THIS FILE IS THE SECOND DOOR TO THAT REFRESH (20.11.2026: „als
- * Seitenprojekt … Modul von YASAIMAPP gestalten, so dass ich aus
- * YASAIMAPP selbst aktualisieren kann"). The first is the site's own secret
- * address (wkpilz.de/refresh/?key=…). Here the login of YASAIMAPP is the
- * key: only the account whose finds the site shows (the site's OWNER_ID)
- * sees the button in the Fundbrowser and may call api/v1/public_site.php,
- * which the button calls in the background (assets/js/publicsite.js).
+ * THIS FILE IS THE SECOND DOOR TO THAT REFRESH, AND THE ONE THAT RUNS BY
+ * ITSELF: the hourly cron (cron_job_public_site in cronjobs/_jobs.php)
+ * calls it, so a plate drawn today stands on the site within the hour
+ * (22.11.2026: „den Button für die Veröffentlichung brauche ich eigentlich
+ * gar nicht … automatisch in einen Cron-Job"). From 20.11.2026 until then
+ * it was a button in the Fundbrowser. The first door is the site's own
+ * secret address (wkpilz.de/refresh/?key=…), for a plate wanted at once.
  *
  * WHAT IS PUBLIC IS DECIDED THERE, NOT HERE. This file only finds the
  * site, asks it whose it is and hands it the connection; the rules — plates
@@ -22,7 +22,7 @@
  * no finer than the Messtischblatt — live in the site's inc/sync.php, once.
  *
  * NO SITE, NO BUTTON: on a server without the site (a fresh install, a
- * test machine) public_site_root() finds nothing and every caller stays
+ * test machine) public_site_root() finds nothing and the cron job stays
  * silent.
  */
 
@@ -72,24 +72,19 @@ function public_site_load(): bool
     return defined('OWNER_ID');
 }
 
-/** Whether this user may refresh the site — the one whose finds it shows. */
-function public_site_may(?array $user): bool
-{
-    return $user !== null && public_site_load() && (int) OWNER_ID === (int) ($user['id'] ?? 0);
-}
-
 /**
- * One slice of the refresh (the site's sync_run: some seconds of work, then
- * an answer). The caller asks again while `done` is false.
+ * One slice of the refresh (the site's sync_run): the missing plate pictures
+ * as far as $seconds reach, then — when none is missing — the site's
+ * finds.json. Null where there is no site.
  *
- * @return array{done: bool, held: bool, made: int, left: int, total: int, finds: int, notes: list<string>, failed: list<string>}
+ * @return array{done: bool, held: bool, changed: bool, made: int, left: int, total: int, finds: int, notes: list<string>, failed: list<string>}|null
  */
-function public_site_refresh(PDO $pdo): array
+function public_site_refresh(PDO $pdo, float $seconds): ?array
 {
     if (!public_site_load()) {
-        throw new RuntimeException(t('Die öffentliche Seite ist auf diesem Server nicht eingerichtet.'));
+        return null;
     }
     require_once public_site_root() . '/inc/sync.php';
     sync_require_map();
-    return sync_run($pdo);
+    return sync_run($pdo, $seconds);
 }
