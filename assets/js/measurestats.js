@@ -1006,7 +1006,7 @@ export function partDirection(style, label, part) {
  * means nothing without the spore's apex it sits in (the air, per part).
  * Only the line's neighbourhood is drawn, as with the spores.
  */
-export function lineDraw(ctx, img, row, pxPerUm, frame = null, direction = 'right') {
+export function lineDraw(ctx, img, row, pxPerUm, frame = null, direction = 'right', edge = null) {
     const m = row.m;
     const across = img.naturalWidth / (m.width ?? img.naturalWidth);
     const [a, b] = m.points.map(([x, y]) => [x * across, y * across]);
@@ -1030,6 +1030,7 @@ export function lineDraw(ctx, img, row, pxPerUm, frame = null, direction = 'righ
         sy = Math.max(0, Math.floor(cy - reach));
         sw = Math.min(img.naturalWidth, Math.ceil(cx + reach)) - sx;
         sh = Math.min(img.naturalHeight, Math.ceil(cy + reach)) - sy;
+        edgeDraw(ctx, img, cx, cy, reach, edge);
     }
     if (sw > 0 && sh > 0) ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
     ctx.restore();
@@ -1474,7 +1475,7 @@ export function lengthStraight(style, label) {
  * turn — so 'h' always swaps what stands left and right, whichever way
  * the axis ran in the picture.
  */
-export function sporeDraw(ctx, img, spore, pxPerUm, frame = null) {
+export function sporeDraw(ctx, img, spore, pxPerUm, frame = null, edge = null) {
     const m = spore.m;
     const across = img.naturalWidth / (m.width ?? img.naturalWidth);
     const [a, b, c, d] = m.points.map(([x, y]) => [x * across, y * across]);
@@ -1507,9 +1508,19 @@ export function sporeDraw(ctx, img, spore, pxPerUm, frame = null) {
         sy = Math.max(0, Math.floor(cy - reach));
         sw = Math.min(img.naturalWidth, Math.ceil(cx + reach)) - sx;
         sh = Math.min(img.naturalHeight, Math.ceil(cy + reach)) - sy;
+        edgeDraw(ctx, img, cx, cy, reach, edge);
     }
     if (sw > 0 && sh > 0) ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
     ctx.restore();
+}
+
+/** THE PLATE'S FILL PAST THE PICTURE'S EDGE (edgefill.js, 22.11.2026):
+ *  `edge(img, cx, cy, reach)` gives a patch — a square of filled pixels in
+ *  the picture's own coordinates, empty where the picture is — or null.
+ *  Drawn under the picture, in the transform the picture is drawn in. */
+function edgeDraw(ctx, img, cx, cy, reach, edge) {
+    const p = edge?.(img, cx, cy, reach);
+    if (p) ctx.drawImage(p.canvas, p.x, p.y, p.side, p.side);
 }
 
 /** How many image pixels one µm of this spore spans in `img` — for the

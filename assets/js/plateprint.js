@@ -30,6 +30,7 @@ import {
 } from './plateparts.js';
 import { icon } from './icons.js';
 import { sporeImagePxPerUm } from './measurestats.js';
+import { edgePatch, edgeFillsDone } from './edgefill.js';
 import { mediaLabel } from './media.js';
 import { noteShapes, drawNotes } from './plateannot.js';
 
@@ -271,9 +272,15 @@ async function drawBlock(g, cell, box, { pics, style, mm }) {
         if (!use) ok = false;
         images.set(key, use);
     }
+    /* THE EDGE FILLED (edgefill.js): a first pass on a canvas of no
+       account asks for every patch the row needs, the page waits for them,
+       and the real pass finds them all — a printed page draws once. */
+    const imageOf = r => images.get(r.obj.key)?.img ?? null;
+    drawSporeRow(document.createElement('canvas').getContext('2d'), rows, cell.block.sort, geo, imageOf, edgePatch);
+    await edgeFillsDone();
     g.save();
     g.translate(x, y);
-    drawSporeRow(g, rows, cell.block.sort, geo, r => images.get(r.obj.key)?.img ?? null);
+    drawSporeRow(g, rows, cell.block.sort, geo, imageOf, edgePatch);
     const b = unscaled ? null : cell.barOver ? rowBarOver(cell, geo, rows.length, mm)
         : barGeometry(cell, w, h, mm, 1 / geo.pxPerUm);
     // Bar, medium and label as the page draws them (plates.js, rowWords; plateparts.js, rowWriting).

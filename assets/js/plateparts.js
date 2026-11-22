@@ -1134,9 +1134,12 @@ export function rowStripsOf(cell, rows, mm, barOwn) {
 /**
  * Draw a row into a context whose origin is the cell's corner. `imageOf`
  * gives a row's loaded picture, or null — then its frame stays a quiet
- * grey until the picture is there.
+ * grey until the picture is there. `edge`: the plate's fill past the
+ * picture's edge (edgefill.js) — the editor and the print pass it, the
+ * strip's small previews do not. A count's frame never reaches past the
+ * picture and takes none.
  */
-export function drawSporeRow(ctx, rows, sort, geo, imageOf) {
+export function drawSporeRow(ctx, rows, sort, geo, imageOf, edge = null) {
     // Cutouts and counts stand in the order they were set — a length says nothing there.
     (rows[0]?.crop !== undefined || rows[0]?.count ? rows : sporeOrder(rows, sort)).forEach((r, i) => {
         const x = geo.x0 + (i % geo.cols) * (geo.fw + geo.gap);
@@ -1150,8 +1153,8 @@ export function drawSporeRow(ctx, rows, sort, geo, imageOf) {
             ctx.translate(x + geo.fw / 2, y + geo.fh / 2);
             // A part's line lies as its tab turns it; a structure stands upright.
             if (r.count) countDraw(ctx, img, r, geo.pxPerUm, { W: geo.fw, H: geo.fh });
-            else if (r.part !== undefined) lineDraw(ctx, img, r, geo.pxPerUm, { W: geo.fw, H: geo.fh }, r.direction);
-            else sporeDraw(ctx, img, r, geo.pxPerUm, { W: geo.fw, H: geo.fh });
+            else if (r.part !== undefined) lineDraw(ctx, img, r, geo.pxPerUm, { W: geo.fw, H: geo.fh }, r.direction, edge);
+            else sporeDraw(ctx, img, r, geo.pxPerUm, { W: geo.fw, H: geo.fh }, edge);
         } else {
             ctx.fillStyle = '#e6e8e7';
             ctx.fillRect(x, y, geo.fw, geo.fh);

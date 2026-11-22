@@ -57,6 +57,7 @@ import { renderPage, jpegBytes, pdfBlob, fileBase } from './plateprint.js';
 import { noteLayers, measureLayers, noteShapes, noteSvg } from './plateannot.js';
 import { ARROW_WEIGHTS, arrowWeightOf, arrowWeightSet, arrowTextLook, arrowWordsGrip, textStep } from './measuredraw.js';
 import { subjectIcon } from './subjecticons.js';
+import { edgePatch } from './edgefill.js';
 import { hoverPick } from './hoverpick.js';
 import { personName } from './names.js';
 
@@ -2032,12 +2033,21 @@ export function mountPlates(host) {
            a row of 25 drew 16 465 times while its pictures came in —
            the maintainer could not scroll the strip meanwhile (06.10.2026). */
         const asked = new Set();
+        /* THE EDGE FILLED where a tile reaches past its picture
+           (edgefill.js): a patch still being computed draws again when it
+           is done, as a picture arriving does — once per row. */
+        let refill = false;
+        const edge = (img, cx, cy, reach) => edgePatch(img, cx, cy, reach, () => {
+            if (refill) return;
+            refill = true;
+            relayoutSoon(el, ctx);
+        });
         drawSporeRow(g, rows, cell.block.sort, geo, (r) => {
             const src = ctx.thumbs ? r.obj.thumb : r.obj.src;
             const e = loadFor(r.obj, src, asked.has(src) ? undefined : () => relayoutSoon(el, ctx));
             asked.add(src);
             return e.ready ? e.img : null;
-        });
+        }, edge);
         const b = unscaled ? null : cell.barOver ? rowBarOver(cell, geo, rows.length, ctx.mm)
             : barGeometry(cell, W, H, ctx.mm, 1 / geo.pxPerUm);
         rowWords(g, cell, rows, W, H, ctx.mm, b, look, strips);
