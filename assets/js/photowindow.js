@@ -57,7 +57,8 @@ import { ARROW_WEIGHTS, TEXT_LEADING, TEXT_SIZES, textStep, arrowWordsGrip, arro
 import { icon, iconHtml } from './icons.js';
 import { readableDate } from './dates.js';
 import { MEDIA, mediaLabel, mediaAlphabetical } from './media.js';
-import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, GRADE_RANGES, HUE_TRACK, gradeSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
+import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, GRADE_RANGES, HUE_TRACK, gradeSet,
+    CURVE_CHANNELS, CURVE_POINTS_MAX, curvePoints, curveSet, curveFunction, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
     castMeasure, castPickRead, castFromPicks, CAST_PICKS_MAX, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
     SPOTS_MAX, PATH_POINTS_MAX, spotRadiusOf, spotSizeOf, spotSourceFind, BRUSHES_MAX, brushNew, brushField, masksOf,
     spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiReachShare, aiOuterRadius, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
@@ -3269,7 +3270,7 @@ export function mountPhotoWindow(host) {
        machen. Einheitliches Design") — the same sign the rail beside it
        carries, so head and chosen sign say one thing. The folding heads
        keep their triangle. */
-    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', mix: 'colour-mix', grade: 'colour-grade', light: 'sun', details: 'details', brush: 'brush' };
+    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', curve: 'curve', mix: 'colour-mix', grade: 'colour-grade', light: 'sun', details: 'details', brush: 'brush' };
     const headSign = (key) => (HEAD_SIGNS[key] ? iconHtml(HEAD_SIGNS[key], { class: 'photo-develop-head-sign' }) : '');
     /* THE RAIL'S ORDER (22.11.2026: „Ganz oben Farbe, dann … Licht. Dann
        Farbmischer, dann Farbkorrektur, dann Details, dann Mikroskop"): the
@@ -3280,6 +3281,8 @@ export function mountPhotoWindow(host) {
     const DEVELOP_RAIL = [
         { key: 'color', icon: 'palette' },
         { key: 'light', icon: 'sun' },
+        // „Gradationskurve" right after „Licht" (22.11.2026) — it shapes the tones too (curveGroup).
+        { key: 'curve', icon: 'curve', name: () => t('Gradationskurve') },
         { key: 'mix', icon: 'colour-mix', name: () => t('Farbmischer') },
         { key: 'grade', icon: 'colour-grade', name: () => t('Farbkorrektur') },
         { key: 'details', icon: 'details' },
@@ -3697,6 +3700,182 @@ export function mountPhotoWindow(host) {
         return group;
     }
 
+    /* „GRADATIONSKURVE" (22.11.2026; develop.js curveFunction says how
+       the line runs). Lightroom's point curve: the channel as a switch on
+       top — RGB, Rot, Grün, Blau, a dot where one is bent —, beneath it a
+       square with the curve, input along the bottom, output up the side.
+       A click on the square sets a point there, dragging moves it between
+       its neighbours, a double click or dragging it out of the square takes
+       it away (the two ends stay — they are the black and the white point,
+       and may move inwards). Every move redraws the picture, as a slider's
+       does. The channel's line wears its colour; RGB the text's. */
+    function curveGroup(may, mark) {
+        const NS = 'http://www.w3.org/2000/svg';
+        const group = document.createElement('div');
+        group.className = 'photo-develop-group';
+        group.dataset.group = 'curve';
+        const head = document.createElement('h3');
+        head.className = 'list-label photo-develop-group-head is-plain';
+        head.innerHTML = headSign('curve');
+        head.append(t('Gradationskurve'));
+        let chosen = CURVE_CHANNELS.some((c) => c.key === settings.get('developCurveChannel')) ? settings.get('developCurveChannel') : 'rgb';
+        const kinds = document.createElement('div');
+        kinds.className = 'blend-kinds-switch photo-mix-kinds';
+        kinds.setAttribute('role', 'tablist');
+        const buttons = CURVE_CHANNELS.map((c) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'blend-kind';
+            b.setAttribute('role', 'tab');
+            b.dataset.kind = c.key;
+            b.textContent = c.name();
+            b.addEventListener('click', () => {
+                if (chosen === c.key) return;
+                chosen = c.key;
+                settings.set('developCurveChannel', chosen);
+                work = null;
+                draw();
+            });
+            kinds.append(b);
+            return b;
+        });
+        const el = (name, attrs) => {
+            const n = document.createElementNS(NS, name);
+            for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+            return n;
+        };
+        // The square in curve units: 0 … 255 both ways, six units of room around for the points at the ends.
+        const svg = el('svg', { viewBox: '-6 -6 267 267', class: 'photo-curve' });
+        svg.setAttribute('aria-label', t('Gradationskurve'));
+        if (may) svg.append(el('title', {}));
+        if (may) svg.querySelector('title').textContent = t('Klicken setzt einen Punkt, Ziehen verschiebt ihn. Doppelklick oder aus dem Feld ziehen nimmt ihn weg.');
+        for (const q of [64, 128, 192]) {
+            svg.append(el('line', { x1: q, y1: 0, x2: q, y2: 255, class: 'photo-curve-grid' }));
+            svg.append(el('line', { x1: 0, y1: q, x2: 255, y2: q, class: 'photo-curve-grid' }));
+        }
+        svg.append(el('rect', { x: 0, y: 0, width: 255, height: 255, class: 'photo-curve-grid', fill: 'none' }));
+        svg.append(el('line', { x1: 0, y1: 255, x2: 255, y2: 0, class: 'photo-curve-grid is-diagonal' }));
+        const line = el('path', { class: 'photo-curve-line' });
+        const dots = el('g', {});
+        svg.append(line, dots);
+        const readout = document.createElement('div');
+        readout.className = 'photo-curve-readout';
+        const reset = document.createElement('button');
+        reset.type = 'button';
+        reset.className = 'button subtle small';
+        reset.textContent = t('Zurücksetzen');
+        reset.title = t('Kurve zurücksetzen');
+        reset.disabled = !may;
+        reset.addEventListener('click', () => { work = null; store([[0, 0], [255, 255]]); draw(); });
+        const foot = document.createElement('div');
+        foot.className = 'photo-curve-foot';
+        foot.append(readout, reset);
+
+        // The points being worked on — the stored ones, or the drag's own copy while a point is in hand.
+        let work = null;
+        let drag = null;
+        const stored = () => curvePoints(develop.curve?.[chosen]) ?? [[0, 0], [255, 255]];
+        const points = () => work ?? stored();
+        const store = (pts) => {
+            const clean = curvePoints(pts);
+            develop.curve ??= {};
+            if (clean) develop.curve[chosen] = clean; else delete develop.curve[chosen];
+            if (!Object.keys(develop.curve).length) delete develop.curve;
+            developSoon();
+            developQueue();
+            marks();
+            mark();
+        };
+        const marks = () => {
+            for (const b of buttons) {
+                b.classList.toggle('is-active', b.dataset.kind === chosen);
+                b.setAttribute('aria-selected', String(b.dataset.kind === chosen));
+                b.classList.toggle('is-set', !!curvePoints(develop.curve?.[b.dataset.kind]));
+            }
+            reset.hidden = !curvePoints(develop.curve?.[chosen]);
+        };
+        const draw = () => {
+            marks();
+            svg.dataset.channel = chosen;
+            const pts = points().filter((p, i) => !(drag?.out && i === drag.i));
+            const f = curveFunction(pts);
+            let d = '';
+            for (let x = 0; x <= 255; x += 1) d += (x ? ' L' : 'M') + x + ' ' + (255 - f(x)).toFixed(2);
+            line.setAttribute('d', d);
+            dots.textContent = '';
+            points().forEach(([x, y], i) => {
+                if (drag?.out && i === drag.i) return;
+                dots.append(el('circle', { cx: x, cy: 255 - y, r: 4.5, class: 'photo-curve-point' + (drag?.i === i ? ' is-active' : '') }));
+            });
+        };
+        const at = (e) => {
+            const r = svg.getBoundingClientRect();
+            return [(e.clientX - r.left) / r.width * 267 - 6, 255 - ((e.clientY - r.top) / r.height * 267 - 6)];
+        };
+        const say = (x, y) => { readout.textContent = t('Eingang %d → Ausgang %d', Math.round(x), Math.round(y)); };
+        if (may) {
+            svg.addEventListener('pointerdown', (e) => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                const [x, y] = at(e);
+                const pts = points().map((p) => [...p]);
+                let i = pts.findIndex(([px, py]) => Math.hypot(px - x, py - y) <= 9);
+                if (i < 0) {
+                    // A new point where the click was — not where an end or a neighbour already stands.
+                    const nx = Math.round(Math.min(255, Math.max(0, x)));
+                    if (pts.length >= CURVE_POINTS_MAX || pts.some(([px]) => px === nx)) return;
+                    pts.push([nx, Math.round(Math.min(255, Math.max(0, y)))]);
+                    pts.sort((a, b) => a[0] - b[0]);
+                    i = pts.findIndex(([px]) => px === nx);
+                }
+                work = pts;
+                drag = { i, id: e.pointerId, out: false };
+                try { svg.setPointerCapture(e.pointerId); } catch { /* without, then */ }
+                say(...pts[i]);
+                store(work.filter((p, k) => !(drag.out && k === drag.i)));
+                draw();
+            });
+            svg.addEventListener('pointermove', (e) => {
+                const [x, y] = at(e);
+                if (!drag || drag.id !== e.pointerId) {
+                    if (x >= 0 && x <= 255) say(x, curveFunction(points())(x));
+                    return;
+                }
+                const pts = work, i = drag.i, last = pts.length - 1;
+                // Dragged well out of the square, an inner point is let go — back in, it returns.
+                drag.out = i > 0 && i < last && (x < -18 || x > 273 || y < -18 || y > 273);
+                const lo = i > 0 ? pts[i - 1][0] + 1 : 0, hi = i < last ? pts[i + 1][0] - 1 : 255;
+                pts[i] = [Math.round(Math.min(hi, Math.max(lo, x))), Math.round(Math.min(255, Math.max(0, y)))];
+                if (drag.out) readout.textContent = t('Loslassen nimmt den Punkt weg'); else say(...pts[i]);
+                store(pts.filter((p, k) => !(drag.out && k === i)));
+                draw();
+            });
+            const end = (e) => {
+                if (!drag || drag.id !== e.pointerId) return;
+                const pts = work.filter((p, k) => !(drag.out && k === drag.i));
+                drag = null;
+                work = null;
+                store(pts);
+                draw();
+            };
+            svg.addEventListener('pointerup', end);
+            svg.addEventListener('pointercancel', end);
+            svg.addEventListener('pointerleave', () => { if (!drag) readout.textContent = ''; });
+            svg.addEventListener('dblclick', (e) => {
+                const [x, y] = at(e);
+                const pts = points().map((p) => [...p]);
+                const i = pts.findIndex(([px, py]) => Math.hypot(px - x, py - y) <= 9);
+                if (i <= 0 || i >= pts.length - 1) return;
+                pts.splice(i, 1);
+                store(pts);
+                draw();
+            });
+        }
+        draw();
+        group.append(head, kinds, svg, foot);
+        return group;
+    }
+
     /* „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026; develop.js
        GRADE_RANGES says what the sliders do). All three ranges in sight,
        bright to dark as „Licht" orders them, each under its small head
@@ -3810,6 +3989,7 @@ export function mountPhotoWindow(host) {
             for (const g of DEVELOP_GROUPS) {
                 page.mark(g.key, g.sliders.some((s) => (Number(develop[s.key]) || 0) !== 0) || (g.key === 'color' && !!develop.cast));
             }
+            page.mark('curve', curveSet(develop));
             page.mark('mix', mixSet(develop));
             page.mark('grade', gradeSet(develop));
         };
@@ -3819,7 +3999,7 @@ export function mountPhotoWindow(host) {
             developQueue();
             mark();
         }, may, false);
-        page.body.querySelector('.photo-develop-group[data-group="light"]')?.after(mixGroup(may, mark), gradeGroup(may, mark));
+        page.body.querySelector('.photo-develop-group[data-group="light"]')?.after(curveGroup(may, mark), mixGroup(may, mark), gradeGroup(may, mark));
         page.body.append(microGroup(may, new Set(), false));
         page.body.querySelector('.photo-develop-group[data-group="color"]')?.append(castBlock(may));
         mark();

@@ -1057,6 +1057,12 @@ function icon_stock_all(): array
                     . '<path d="m11.8 7.5 4.7 4.7"/><path d="m13.6 9.3-7.9 7.9-.9 2.9 2.9-.9 7.9-7.9"/>',
         ],
 
+        // „Bearbeiten" → Gradationskurve (22.11.2026): the square of the curve
+        // and a soft S through it — dark tones down, bright ones up.
+        'curve' => [
+            'path' => '<rect x="3.5" y="3.5" width="17" height="17" rx="2"/><path d="M6 18c5 0 4-6 6-6s1-6 6-6"/>',
+        ],
+
         // „Bearbeiten" → Farbkorrektur (22.11.2026): a disc cut into three —
         // the bright, the middle and the dark tones, each turned on its own.
         'colour-grade' => [

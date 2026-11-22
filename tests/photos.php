@@ -682,6 +682,11 @@ check(($cast['picks'][0] ?? null) === ['px' => 1.0, 'py' => 0.25, 'lum' => 0.6, 
 check((photo_develop_clean(['cast' => ['n' => $five, 'base' => $five]])['cast']['base'] ?? null) === array_fill(0, 5, [1.1, 0.9])
     && photo_develop_clean(['cast' => ['picks' => [['lum' => .5, 'r' => 1, 'b' => 1]]]]) === null,
     'a base of five pairs is kept beside n, and points without n are no cast');
+$curve = photo_develop_clean(['curve' => ['rgb' => [[255, 240], [0, 10], [128.4, 140], [128, 150]], 'r' => [[0, 0], [255, 255]],
+    'g' => [[30, 40]], 'b' => array_map(static fn($i) => [$i * 10, $i * 10 + 5], range(0, 25)), 'x' => [[0, 5], [255, 250]]]])['curve'] ?? null;
+check(($curve['rgb'] ?? null) === [[0, 10], [128, 150], [255, 240]] && !isset($curve['r']) && !isset($curve['g']) && !isset($curve['x'])
+    && count($curve['b'] ?? []) === 16,
+    'the tone curve sorts its points, keeps one per x, drops the bare diagonal, a single point and unknown channels, caps at sixteen');
 $ai = photo_develop_clean(['spots' => [
     ['mode' => 'ai', 'path' => [[.5, .5]], 'radius' => .02, 'feather' => 50, 'wide' => true, 'pieces' => [['id' => 'abcdefgh12', 'box' => [.4, .4, .2, .2]]]],
     ['mode' => 'ai', 'path' => [[.3, .3]], 'radius' => .02, 'pieces' => [['id' => 'abcdefgh13', 'box' => [.2, .2, .2, .2]]]],

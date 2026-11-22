@@ -2934,6 +2934,32 @@
    a setting with a dot after its word. */
 .photo-mix-kinds { margin: .3rem 0 .7rem; }
 .photo-mix-kinds .blend-kind.is-set::after { content: " •"; }
+/* „Gradationskurve" (photowindow.js, curveGroup): the square on a faint
+   ground, a quiet grid in quarters and the diagonal it starts from; the
+   line and its points wear the channel's colour — the colours depict the
+   channel, so they are literal. */
+.photo-curve {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    touch-action: none;
+    cursor: crosshair;
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+    border-radius: var(--radius);
+    --curve-ink: var(--text);
+}
+.photo-curve[data-channel="r"] { --curve-ink: #e0574d; }
+.photo-curve[data-channel="g"] { --curve-ink: #4fb35f; }
+.photo-curve[data-channel="b"] { --curve-ink: #5a8ae6; }
+.photo-curve-grid { stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.photo-curve-grid.is-diagonal { stroke-dasharray: 3 3; }
+.photo-curve-line { fill: none; stroke: var(--curve-ink); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.photo-curve-point { fill: var(--ground-2); stroke: var(--curve-ink); stroke-width: 1.5; vector-effect: non-scaling-stroke; cursor: grab; }
+.photo-curve-point.is-active { fill: var(--curve-ink); cursor: grabbing; }
+.photo-curve-foot { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: var(--field-height-small); margin-top: .4rem; }
+.photo-curve-readout { min-width: 0; color: var(--text-quiet); font-size: .85rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.photo-curve-foot .button { white-space: nowrap; }
+
 /* „Farbkorrektur" (mixGroup's neighbour, gradeGroup): each range under
    a small head of its own, the ranges apart by air. */
 .photo-grade-range + .photo-grade-range { margin-top: .8rem; }

@@ -147,6 +147,94 @@ export function mixTrack(kind, colour) {
     if (kind === 's') return `linear-gradient(90deg, hsl(${h} 0% 52%), hsl(${h} 85% 52%))`;
     return `linear-gradient(90deg, hsl(${h} 70% 18%), hsl(${h} 70% 50%) 50%, hsl(${h} 70% 82%))`;
 }
+/* --- „GRADATIONSKURVE" (22.11.2026) ---------------------------
+   „Was ist mit den Gradationskurven, die es bei Lightroom noch gibt?
+   Manchmal ist es gar nicht schlecht, diese zu benutzen." Lightroom's
+   point curve: one curve for all three channels (RGB) and one each for
+   red, green and blue, every curve a few points through which a smooth
+   line runs, input along the bottom, output up the side, 0 … 255 on the
+   display-encoded picture.
+
+   THE LINE THROUGH THE POINTS IS A MONOTONE CUBIC (Fritsch–Carlson):
+   smooth like Lightroom's, but it never swings beyond its points — a
+   free spline between a lifted and a lowered point overshoots, and an
+   overshooting tone curve turns a tone round (brighter input, darker
+   output), which reads as a solarised band. Beyond the outermost points
+   the line runs flat, so moving the black point up lifts black itself.
+
+   ONE TABLE FOR THE SHADER (curveLut): 256 entries per channel, the RGB
+   curve first and the channel's own after it, laid into a 256 × 1
+   texture that the shader reads with linear filtering — the picture's
+   values are floats by then, and the filtering is the interpolation.
+   After „Farbe" and before the mixer, as in Lightroom; not in the masks.
+   develop.curve = { rgb: [[x, y], …], r, g, b }, whole numbers 0 … 255,
+   x rising, 2 to CURVE_POINTS_MAX points; a channel at its diagonal
+   ([[0, 0], [255, 255]]) is left out. The server's twin is
+   photo_develop_clean (includes/photos.php). */
+export const CURVE_CHANNELS = [
+    { key: 'rgb', name: () => t('RGB') },
+    { key: 'r', name: () => t('Rot') },
+    { key: 'g', name: () => t('Grün') },
+    { key: 'b', name: () => t('Blau') },
+];
+export const CURVE_POINTS_MAX = 16;
+/** A channel's points cleaned: whole numbers in 0 … 255, x rising and each x once, at most CURVE_POINTS_MAX; null for the diagonal. */
+export function curvePoints(list) {
+    if (!Array.isArray(list)) return null;
+    const byX = new Map();
+    for (const p of list) {
+        if (!Array.isArray(p) || !Number.isFinite(Number(p[0])) || !Number.isFinite(Number(p[1]))) continue;
+        const x = Math.round(Math.min(255, Math.max(0, Number(p[0])))), y = Math.round(Math.min(255, Math.max(0, Number(p[1]))));
+        byX.set(x, y);
+    }
+    const pts = [...byX.entries()].sort((a, b) => a[0] - b[0]).slice(0, CURVE_POINTS_MAX);
+    if (pts.length < 2) return null;
+    if (pts.length === 2 && pts[0][0] === 0 && pts[0][1] === 0 && pts[1][0] === 255 && pts[1][1] === 255) return null;
+    return pts;
+}
+/** Whether any curve is bent. */
+export function curveSet(d) {
+    return CURVE_CHANNELS.some((c) => curvePoints(d?.curve?.[c.key]));
+}
+/** The line through a channel's points (monotone cubic), as a function of 0 … 255; the diagonal without points. */
+export function curveFunction(list) {
+    const pts = curvePoints(list);
+    if (!pts) return (x) => x;
+    const n = pts.length;
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const d = [];
+    for (let i = 0; i < n - 1; i++) d.push((ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i]));
+    const m = new Array(n);
+    m[0] = d[0];
+    m[n - 1] = d[n - 2];
+    for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+    for (let i = 0; i < n - 1; i++) {
+        if (d[i] === 0) { m[i] = 0; m[i + 1] = 0; continue; }
+        const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+        if (h > 9) { const t3 = 3 / Math.sqrt(h); m[i] = t3 * a * d[i]; m[i + 1] = t3 * b * d[i]; }
+    }
+    return (x) => {
+        if (x <= xs[0]) return ys[0];
+        if (x >= xs[n - 1]) return ys[n - 1];
+        let i = 0;
+        while (xs[i + 1] < x) i++;
+        const h = xs[i + 1] - xs[i], t = (x - xs[i]) / h, t2 = t * t, t3 = t2 * t;
+        return (2 * t3 - 3 * t2 + 1) * ys[i] + (t3 - 2 * t2 + t) * h * m[i] + (-2 * t3 + 3 * t2) * ys[i + 1] + (t3 - t2) * h * m[i + 1];
+    };
+}
+/** The table the shader reads: per input 0 … 255 the output of RGB then the channel, as RGBA bytes; null where no curve is bent. */
+export function curveLut(d) {
+    if (!curveSet(d)) return null;
+    const all = curveFunction(d.curve.rgb), f = ['r', 'g', 'b'].map((k) => curveFunction(d.curve[k]));
+    const out = new Uint8Array(256 * 4);
+    for (let i = 0; i < 256; i++) {
+        const v = all(i);
+        for (let c = 0; c < 3; c++) out[i * 4 + c] = Math.round(Math.min(255, Math.max(0, f[c](v))));
+        out[i * 4 + 3] = 255;
+    }
+    return out;
+}
+
 /* --- „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026) ------------
    Step two against the same yellow cast: measured on his pictures, the
    greys lean yellow-orange in the middle and dark tones and the brightest
@@ -695,7 +783,7 @@ export function fillImage(f) {
 export function developEmpty(d) {
     if (!d) return true;
     for (const g of DEVELOP_GROUPS) for (const s of g.sliders) if (Number(d[s.key]) || 0) return false;
-    if (geoSet(d) || d.wb || d.cast || mixSet(d) || gradeSet(d) || (d.spots ?? []).length) return false;
+    if (geoSet(d) || d.wb || d.cast || mixSet(d) || gradeSet(d) || curveSet(d) || (d.spots ?? []).length) return false;
     return !(d.radials ?? []).length && !(d.linears ?? []).length && !(d.brushes ?? []).length;
 }
 
@@ -2119,6 +2207,15 @@ export function developClean(d) {
         }
         out.mix = mix;
     }
+    // „Gradationskurve": the bent channels' points.
+    if (curveSet(d)) {
+        const curve = {};
+        for (const c of CURVE_CHANNELS) {
+            const pts = curvePoints(d.curve[c.key]);
+            if (pts) curve[c.key] = pts;
+        }
+        out.curve = curve;
+    }
     // „Farbkorrektur nach Helligkeit": per range what is set, the balance only beside a range.
     if (gradeSet(d)) {
         const grade = {};
@@ -2186,7 +2283,8 @@ void main() {
 
 const DEVELOP = `
 precision highp float;
-uniform sampler2D uImg, uBlurS, uBlurL, uBrush;
+uniform sampler2D uImg, uBlurS, uBlurL, uBrush, uCurve;
+uniform float uCurveOn; // „Gradationskurve": uCurve holds the table (curveLut)
 uniform vec2 uSize;    // the source, in pixels
 uniform vec2 uOut;     // the view (turned and cut), in source pixels
 uniform vec4 uGeo;     // centre x, y in source pixels; cos, sin of the turn
@@ -2342,6 +2440,13 @@ ${MIX_COLOURS.map((col, i) => {
     return pow(lin, vec3(1. / 2.2));
 }
 
+/* „Gradationskurve" (curveLut): each channel looked up in its row of 256, the texel's middle at (i + .5) / 256. */
+vec3 curve(vec3 c) {
+    if (uCurveOn < .5) return c;
+    vec3 u = (clamp(c, 0., 1.) * 255. + .5) / 256.;
+    return vec3(texture2D(uCurve, vec2(u.r, .5)).r, texture2D(uCurve, vec2(u.g, .5)).g, texture2D(uCurve, vec2(u.b, .5)).b);
+}
+
 /* „Farbkorrektur nach Helligkeit" (GRADE_RANGES says what it does). */
 vec3 grade(vec3 c) {
     if (uGradeOn < .5) return c;
@@ -2399,6 +2504,7 @@ void main() {
     float h = uEnds.z;
     c = h > 0. ? (c - .12 * h) / (1. - .12 * h) : mix(c, vec3(.82), -h * .35);
     c = colour(c, uColour.z, uColour.w + max(h, 0.) * .2);
+    c = curve(c);
     c = mixer(c);
     c = grade(c);
 
@@ -2531,6 +2637,9 @@ export function developRenderer(canvas, { edge = EDGE_MAX } = {}) {
        it (full): while one paints, only the stroke in hand is laid anew. */
     let brushTex = null;
     let brushKey = '';
+    // „Gradationskurve": its table as a 256 × 1 texture, made anew when the curves change (curveLut).
+    let curveTex = null;
+    let curveKey = '';
     let brushCache = [];
     let MW = 0, MH = 0;
     const upload = (source, tw = W, th = H) => {
@@ -2742,15 +2851,27 @@ export function developRenderer(canvas, { edge = EDGE_MAX } = {}) {
                     brushKey = key;
                 }
             }
+            const lut = curveLut(d);
+            if (lut) {
+                const key = JSON.stringify(d.curve);
+                if (key !== curveKey) {
+                    curveTex ??= texture();
+                    gl.bindTexture(gl.TEXTURE_2D, curveTex);
+                    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lut);
+                    curveKey = key;
+                }
+            }
             const u = (n) => gl.getUniformLocation(devProg, n);
             draw(devProg, null, () => {
                 const tex = [[src, 'uImg'], [made.s ? blurS.tex : src, 'uBlurS'], [made.l ? blurL.tex : src, 'uBlurL'],
-                    [brushes.length && brushTex ? brushTex : src, 'uBrush']];
+                    [brushes.length && brushTex ? brushTex : src, 'uBrush'], [lut && curveTex ? curveTex : src, 'uCurve']];
                 tex.forEach(([tx, name], i) => {
                     gl.activeTexture(gl.TEXTURE0 + i);
                     gl.bindTexture(gl.TEXTURE_2D, tx);
                     gl.uniform1i(u(name), i);
                 });
+                gl.uniform1f(u('uCurveOn'), lut ? 1 : 0);
                 gl.uniform2f(u('uSize'), W, H);
                 gl.uniform2f(u('uOut'), view.cw * scale, view.ch * scale);
                 const rad = view.R * Math.PI / 180;

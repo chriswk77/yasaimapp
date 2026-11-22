@@ -9939,6 +9939,19 @@ return [
     // „Rückgängig" beside the white balance of „Mikrofotos", 22.11.2026.
     'Temperatur und Tönung wieder so wie vor dem Weißabgleich'
         => 'Temperature and tint back to what they were before the white balance',
+    // „Gradationskurve", 22.11.2026 (Rot, Grün, Blau stand already).
+    'Gradationskurve'
+        => 'Tone curve',
+    'RGB'
+        => 'RGB',
+    'Kurve zurücksetzen'
+        => 'Reset curve',
+    'Eingang %d → Ausgang %d'
+        => 'Input %d → output %d',
+    'Loslassen nimmt den Punkt weg'
+        => 'Let go to remove the point',
+    'Klicken setzt einen Punkt, Ziehen verschiebt ihn. Doppelklick oder aus dem Feld ziehen nimmt ihn weg.'
+        => 'Click sets a point, dragging moves it. Double-click or drag it out of the square to remove it.',
     'Farbstich'
         => 'Colour cast',
     // The pipette of „Farbstich", 22.11.2026 (dunkel and hell stand already).

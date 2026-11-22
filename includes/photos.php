@@ -429,6 +429,8 @@ const PHOTO_DEVELOP_RADIAL  = ['temp', 'tint', 'contrast', 'vibrance', 'saturati
                                'whites', 'blacks', 'clarity', 'dehaze', 'sharpen'];
 const PHOTO_DEVELOP_RADIALS = 12;
 /** „Farbmischer" (22.11.2026): the eight colours — the twin of MIX_COLOURS in assets/js/develop.js. */
+/** „Gradationskurve": the points a channel may have — CURVE_POINTS_MAX in develop.js. */
+const PHOTO_DEVELOP_CURVE_POINTS = 16;
 /** The pipette's points of „Farbstich" — CAST_PICKS_MAX in develop.js. */
 const PHOTO_DEVELOP_CAST_PICKS = 8;
 const PHOTO_DEVELOP_MIX = ['red', 'orange', 'yellow', 'green', 'aqua', 'blue', 'purple', 'magenta'];
@@ -528,6 +530,27 @@ function photo_develop_clean(mixed $d): ?array
             if ($row !== []) $mix[$kind] = $row;
         }
         if ($mix !== []) $out['mix'] = $mix;
+    }
+    /* „GRADATIONSKURVE" (22.11.2026; develop.js curvePoints): per channel
+       — rgb, r, g, b — its points [x, y], whole numbers 0 to 255, x rising
+       and each x once (a later point on the same x wins), at most sixteen;
+       fewer than two, or the bare diagonal, is no curve. */
+    if (is_array($d['curve'] ?? null)) {
+        $curve = [];
+        foreach (['rgb', 'r', 'g', 'b'] as $ch) {
+            $byX = [];
+            foreach (is_array($d['curve'][$ch] ?? null) ? $d['curve'][$ch] : [] as $p) {
+                $p = is_array($p) ? array_values($p) : [];
+                if (!is_numeric($p[0] ?? null) || !is_numeric($p[1] ?? null)) continue;
+                $byX[(int) round(max(0, min(255, (float) $p[0])))] = (int) round(max(0, min(255, (float) $p[1])));
+            }
+            ksort($byX);
+            $pts = [];
+            foreach (array_slice($byX, 0, PHOTO_DEVELOP_CURVE_POINTS, true) as $x => $y) $pts[] = [$x, $y];
+            if (count($pts) < 2 || $pts === [[0, 0], [255, 255]]) continue;
+            $curve[$ch] = $pts;
+        }
+        if ($curve !== []) $out['curve'] = $curve;
     }
     /* „FARBKORREKTUR NACH HELLIGKEIT" (22.11.2026; develop.js
        GRADE_RANGES): per range h 0 to 359 (whole degrees, 360 is 0), s 0
@@ -2486,13 +2509,14 @@ function measure_develop_help(): array
             '4. light: exposure, highlights, shadows, whites, blacks (one gain on linear light), then contrast, then clarity',
             '5. dehaze',
             '6. colour: vibrance, saturation',
-            '7. colour mixer ("mix")',
-            '8. colour grading by brightness ("grade")',
-            '9. masks: every entry of "radials", then of "linears", then of "brushes", each applying its own local adjustment with every '
+            '7. tone curve ("curve")',
+            '8. colour mixer ("mix")',
+            '9. colour grading by brightness ("grade")',
+            '10. masks: every entry of "radials", then of "linears", then of "brushes", each applying its own local adjustment with every '
                 . 'setting multiplied by its mask value m (0 to 1) at the pixel — its temp and tint first, as gains per channel exactly as in '
                 . 'step 2 raised to the power m, on what the steps before have made; then its light, dehaze, colour and sharpen. A mask\'s '
                 . 'exposure reaches 4 stops at ±100 (the picture\'s 3)',
-            '10. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
+            '11. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
         ],
         'sliders' => 'Every global slider runs from -100 to +100, 0 = unchanged; "sharpen" runs from 0 to 100.',
         'keys' => [
@@ -2518,7 +2542,11 @@ function measure_develop_help(): array
             'vibrance'   => 'Saturation that mainly reaches weakly saturated colours.',
             'saturation' => 'Saturation of all colours; -100 = greyscale.',
             'sharpen'    => 'Unsharp mask with a small radius, 0 to 100.',
-            'grade'      => 'Colour grading by brightness, step 8, on the display-encoded picture (gamma 2.2). Three ranges, '
+            'curve'      => 'Tone curve, step 7, on the display-encoded picture with values 0 to 255: rgb applies to all three '
+                . 'channels, then r, g, b each to its own (absent = unchanged). Each is a list of points [x, y] — input, output —, '
+                . 'x rising; the curve through them is a monotone cubic Hermite spline (Fritsch–Carlson tangents), flat '
+                . 'beyond the first and the last point.',
+            'grade'      => 'Colour grading by brightness, step 9, on the display-encoded picture (gamma 2.2). Three ranges, '
                 . 'shadows, midtones, highlights, weighted by the pixel\'s luma y (Rec. 709): with the pivot p = 0.5 − 0.3 × balance/100, '
                 . 'shadows 1 − smoothstep(0, p, y), highlights smoothstep(p, 1, y), midtones the rest. Per range h (degrees, the HSV '
                 . 'hue the range is pushed towards), s (0 to 100), l (-100 to +100), absent = 0. The direction is the fully saturated '
@@ -2526,7 +2554,7 @@ function measure_develop_help(): array
                 . '2^(direction × s/100), the pixel\'s luma restored, then all three by 2^(l/100). The push (not l) is multiplied by '
                 . '1 − smoothstep(0.96, 1, the pixel\'s largest channel), so a burned-out white stays white. The ranges\' numbers are blended by '
                 . 'their weights before they are applied.',
-            'mix'        => 'Colour mixer, step 7, on the display-encoded picture (gamma 2.2). Eight colours at hues (HSV, degrees) '
+            'mix'        => 'Colour mixer, step 8, on the display-encoded picture (gamma 2.2). Eight colours at hues (HSV, degrees) '
                 . 'red 0, orange 30, yellow 60, green 120, aqua 180, blue 240, purple 270, magenta 300; h, s and l each hold, per colour, '
                 . 'a value from -100 to +100 (absent = 0). A pixel\'s hue lies between two neighbouring colours and its adjustment is '
                 . 'blended between theirs with a smoothstep of the position. h: the hue turned by up to ±30 degrees. s: the colour '
