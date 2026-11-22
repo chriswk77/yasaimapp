@@ -47,7 +47,7 @@ import { subjectGroups } from './gallerysort.js';
 import {
     detailLabels, DETAIL_GAP, notePtOf, PT_MM, LINE_ITEM, LINE_TILE, BOX_PAD_X, BOX_PAD_Y, TILE_PAD, clamp, esc,
     load, loadFor, picView, pictureOf, measureBack, aspectOf, inkAt, umPerShownPx, cutout, barGeometry, mediaGeometry, labelGeometry, pictureLabel, pictureMarks, rowMediaLabel, rowLabelSubs, rowLabel, drawMedia, detailsHtml,
-    ROW_AIR_MIN_CROP, layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotEvenSize, plotGroundRect, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
+    ROW_AIR_MIN_CROP, labelShortens, layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotEvenSize, plotGroundRect, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
     inkFor, softRect, softWanted, writeOnCanvas, rowWriting, SOFT_FEATHER, SOFT_FEATHER_Y, SOFT_BLUR,
 } from './plateparts.js';
 import { valueLines, lengthStraight } from './measurestats.js';
@@ -77,7 +77,7 @@ let seq = 0;
 // med: the corner of the picture's medium (plateparts.js, mediaGeometry) — off until asked for;
 // medFull its words written out (media.js, mediaLabel); label the same for its name, labelMarks the marks shown behind it (pictureLabel).
 // ink the colour of each of that writing, {bar, med, label} → 'black' / 'white', absent read off the picture; soft {bar, med, label} → true where the picture beneath is blurred (plateparts.js, softOnCanvas).
-const cellNew = (pic = null, rest = {}) => ({ t: 'cell', id: ++seq, pic, z: 1, cx: .5, cy: .5, bar: 'br', barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelMarks: [], ink: {}, soft: {}, info: null, block: null, items: [], ...rest });
+const cellNew = (pic = null, rest = {}) => ({ t: 'cell', id: ++seq, pic, z: 1, cx: .5, cy: .5, bar: 'br', barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelShort: false, labelMarks: [], ink: {}, soft: {}, info: null, block: null, items: [], ...rest });
 const splitNew = (dir, kids, sizes) => ({ t: 'split', dir, kids, sizes: sizes ?? kids.map(() => 1 / kids.length) });
 const detailsNew = (pt = 9) => ({ fields: [...DETAILS_DEFAULT], labels: true, flow: 'lines', pt, ground: 'none' });
 
@@ -106,7 +106,7 @@ function adopt(node) {
     if (node.block?.kind === 'row' && node.block.pad === 2) node.block.pad = ROW_PAD_THIN;
     return Object.assign(node, cellNew(node.pic ?? null, {
         z: node.z ?? 1, cx: node.cx ?? .5, cy: node.cy ?? .5, bar: node.bar ?? 'br', barOver: node.barOver ?? false, med: node.med ?? 'off', medFull: node.medFull ?? false,
-        medLine: node.medLine ?? false, labelLine: node.labelLine ?? false, label: node.label ?? 'off', labelMarks: node.labelMarks ?? [], ink: writingOf(node.ink, v => v !== 'auto' && v), soft: writingOf(node.soft, v => typeof v === 'boolean'),
+        medLine: node.medLine ?? false, labelLine: node.labelLine ?? false, labelShort: node.labelShort ?? false, label: node.label ?? 'off', labelMarks: node.labelMarks ?? [], ink: writingOf(node.ink, v => v !== 'auto' && v), soft: writingOf(node.soft, v => typeof v === 'boolean'),
         info: node.info ?? null, block: node.block ?? null, items: (node.items ?? []).filter(i => i.kind !== 'text'), notes: node.notes ?? [],
         measures: node.measures ?? [],
     }));
@@ -131,7 +131,7 @@ function writingOf(v, keep) {
    server set off the next save, every few seconds (09.11.2026). */
 const bare = (layout) => JSON.parse(JSON.stringify(layout, (k, v) => (k === 'id' ? undefined
     : (k === 'ink' || k === 'soft') && Array.isArray(v) ? {} : v)));
-const content = c => ({ pic: c.pic, z: c.z, cx: c.cx, cy: c.cy, bar: c.bar, barOver: !!c.barOver, med: c.med ?? 'off', medFull: !!c.medFull, medLine: !!c.medLine, labelLine: !!c.labelLine, label: c.label ?? 'off', labelMarks: c.labelMarks ?? [], ink: c.ink ?? {}, soft: c.soft ?? {}, info: c.info, block: c.block, items: c.items, notes: c.notes ?? [], measures: c.measures ?? [] });
+const content = c => ({ pic: c.pic, z: c.z, cx: c.cx, cy: c.cy, bar: c.bar, barOver: !!c.barOver, med: c.med ?? 'off', medFull: !!c.medFull, medLine: !!c.medLine, labelLine: !!c.labelLine, labelShort: !!c.labelShort, label: c.label ?? 'off', labelMarks: c.labelMarks ?? [], ink: c.ink ?? {}, soft: c.soft ?? {}, info: c.info, block: c.block, items: c.items, notes: c.notes ?? [], measures: c.measures ?? [] });
 // All the lines a values text may show — and since 07.10.2026 all of them
 // when it is laid down, the average too („bei den Werten ist der
 // Durchschnitt initial nicht angehakt … dass der angehakt ist, jedenfalls
@@ -255,10 +255,10 @@ export function mountPlates(host) {
         keying: ['show', 'label', 'ground', 'groundOpacity'],
         row: ['gap', 'gapColor', 'pad'],
         // The cell around a row, and a picture's cell: where its bar, medium and label stand.
-        rowCell: ['bar', 'barOver', 'med', 'medFull', 'medLine', 'label', 'labelLine', 'labelSub', 'ink', 'soft'],
+        rowCell: ['bar', 'barOver', 'med', 'medFull', 'medLine', 'label', 'labelLine', 'labelShort', 'labelSub', 'ink', 'soft'],
         plot: ['ground', 'groundOpacity', 'spread'],
         inset: ['frame'],
-        pic: ['med', 'medFull', 'label', 'ink', 'soft'],
+        pic: ['med', 'medFull', 'label', 'labelShort', 'ink', 'soft'],
     };
     const handOf = (kind) => ({ ...(plateStyle().hand?.[kind] ?? {}) });
     function handTake(kind, from) {
@@ -2684,7 +2684,7 @@ export function mountPlates(host) {
            read as „close this window" and the cell is not that. */
         const filled = cell.pic || cell.info || cell.block;
         add('delete', filled ? t('Inhalt entfernen') : t('Kachel entfernen'), () => {
-            if (filled) Object.assign(cell, { pic: null, info: null, block: null, items: [], notes: [], measures: [], barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelMarks: [], ink: {}, soft: {}, z: 1, cx: .5, cy: .5 });
+            if (filled) Object.assign(cell, { pic: null, info: null, block: null, items: [], notes: [], measures: [], barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelShort: false, labelMarks: [], ink: {}, soft: {}, z: 1, cx: .5, cy: .5 });
             else removeCell(cell);
             selected = null;
             render();
@@ -4281,6 +4281,22 @@ export function mountPlates(host) {
                after the name (plateparts.js, pictureLabel). */
             // A row's label may stand in a line of its own, as its bar (plateparts.js, rowStrips).
             if (set.on && row) set.subs.append(ownLineTick(!!cell.labelLine, (on) => { cell.labelLine = on; }));
+            /* WRITTEN OUT OR SHORT — HDS or Hutdeckschicht, Cheilo or
+               Cheilozystiden (plateparts.js, labelWord): the medium's tick,
+               „abgekürzt", where the name has a short form. */
+            const raw = row ? (typeof cell.block?.crop === 'string' ? '' : cell.block?.layer) : pic?.title;
+            if (set.on && labelShortens(raw)) {
+                const l = document.createElement('label');
+                l.className = 'choice-row plate-corner-sub';
+                const tick = document.createElement('input');
+                tick.type = 'checkbox';
+                tick.checked = !!cell.labelShort;
+                tick.addEventListener('change', () => { cell.labelShort = tick.checked; render(); });
+                const span = document.createElement('span');
+                span.textContent = t('abgekürzt');
+                l.append(tick, span);
+                set.subs.append(l);
+            }
             if (set.on) for (const mark of row ? rowLabelSubs(cell.block, row) : pictureMarks(pic)) {
                 const l = document.createElement('label');
                 l.className = 'choice-row plate-corner-sub';

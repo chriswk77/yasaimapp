@@ -462,8 +462,33 @@ export function mediaGeometry(cell, W, H, mm, label, bar) {
  * („Chrysozystide"), where the picture holds any. Empty where the
  * picture has no name.
  */
+/* THE LABEL WRITTEN OUT OR SHORT (22.11.2026: „Wenn mir in der Tafel
+   das Label HDS angezeigt wird, kürze ich das ja absichtlich ab … dass mir
+   momentan dort HDS in Klammern Hut-Deckschicht dasteht, ist quasi genau
+   das Gegenteil … Ebenso … Cheilo, Kaulo, Pileo und Pleuro … für das
+   Label jeweils noch eine Kurzform anbieten"). The picture name
+   „HDS (Hutdeckschicht)" carries both forms so the chooser explains
+   itself; on a plate it is ONE of them. A tick „abgekürzt" under the
+   label, as under the medium (cell.labelShort). Keyed by the name, lower
+   case, as the picture names are stored as typed; a name without an entry
+   stands as it is. */
+const LABEL_FORMS = {
+    'hds (hutdeckschicht)': ['Hutdeckschicht', 'HDS'],
+    cheilozystiden: ['Cheilozystiden', 'Cheilo'],
+    pleurozystiden: ['Pleurozystiden', 'Pleuro'],
+    kaulozystiden: ['Kaulozystiden', 'Kaulo'],
+    pileozystiden: ['Pileozystiden', 'Pileo'],
+};
+/** Whether a name has a short form to offer. */
+export const labelShortens = (name) => Object.hasOwn(LABEL_FORMS, String(name ?? '').trim().toLowerCase());
+/** A name as the label writes it: written out, or short where the cell asks and a short form exists. */
+export function labelWord(name, short) {
+    const forms = LABEL_FORMS[String(name ?? '').trim().toLowerCase()];
+    return forms ? forms[short ? 1 : 0] : String(name ?? '').trim();
+}
+
 export function pictureLabel(pic, cell) {
-    const name = String(pic?.title ?? '').trim();
+    const name = labelWord(pic?.title, cell.labelShort);
     if (!name) return '';
     const marks = pictureMarks(pic).filter(mark => (cell.labelMarks ?? []).includes(mark));
     return marks.length ? `${name} (${marks.join(', ')})` : name;
@@ -497,7 +522,7 @@ export function rowLabelSubs(d, rows) {
 }
 /** The row's name as the cell shows it, with the ticked subs behind it. */
 export function rowLabel(d, rows, cell) {
-    const name = typeof d.crop === 'string' ? blockName(d) : String(d.layer ?? '').trim();
+    const name = typeof d.crop === 'string' ? blockName(d) : labelWord(d.layer, cell.labelShort);
     if (!name) return '';
     const subs = rowLabelSubs(d, rows).filter(sub => (cell.labelMarks ?? []).includes(sub));
     return subs.length ? `${name} (${subs.join(', ')})` : name;

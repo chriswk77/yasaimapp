@@ -2135,7 +2135,7 @@ function plate_hand_clean(mixed $h): array
                 $o[$key] = $k[$key];
             }
         }
-        foreach (['medFull', 'labelSub', 'medLine', 'labelLine'] as $key) {
+        foreach (['medFull', 'labelSub', 'medLine', 'labelLine', 'labelShort'] as $key) {
             if (is_bool($k[$key] ?? null)) {
                 $o[$key] = $k[$key];
             }
@@ -2176,8 +2176,10 @@ function plate_hand_clean(mixed $h): array
                 $o[$key] = $k[$key];
             }
         }
-        if (is_bool($k['medFull'] ?? null)) {
-            $o['medFull'] = $k['medFull'];
+        foreach (['medFull', 'labelShort'] as $key) {
+            if (is_bool($k[$key] ?? null)) {
+                $o[$key] = $k[$key];
+            }
         }
         foreach (['ink', 'soft'] as $key) {
             // Only what was chosen — an empty one would go out as [] (plates.php, plate_node).

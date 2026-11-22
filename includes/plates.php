@@ -30,6 +30,9 @@
  *   barOver   true where a row's bar lies over its pictures instead of a
  *             strip of its own (plateparts.js rowBarOver, 08.11.2026)
  *   medFull   true where the medium stands written out (media.js mediaLabel)
+ *   labelShort  true where the label stands short — HDS, Cheilo —
+ *             where its name has a short form (plateparts.js, labelWord,
+ *             22.11.2026)
  *   medLine, labelLine  on a row cell: true where the medium or the label
  *             stands in a strip of its own instead of over the pictures
  *             (plateparts.js rowStrips, 22.11.2026)
@@ -331,6 +334,8 @@ function plate_node(mixed $n, int $depth, array $pictures, int &$cells): array
         // A row's medium and label in a line of their own (22.11.2026; plateparts.js, rowStrips).
         'medLine'   => ($block['kind'] ?? '') === 'row' && ($n['medLine'] ?? false) === true,
         'labelLine' => ($block['kind'] ?? '') === 'row' && ($n['labelLine'] ?? false) === true,
+        // The label short where its name has a short form (22.11.2026; plateparts.js, labelWord).
+        'labelShort' => $named && ($n['labelShort'] ?? false) === true,
         'label' => $named && in_array($n['label'] ?? '', PLATE_CORNERS, true) ? $n['label'] : 'off',
         'labelMarks' => $named ? plate_notes($n['labelMarks'] ?? null) : [],
         /* As objects, also when empty, so what is stored reads {}. Reading
@@ -388,6 +393,7 @@ function plate_inset(array $item, array $pictures): ?array
             'medFull' => $named && ($inner['medFull'] ?? false) === true,
             'medLine'   => ($block['kind'] ?? '') === 'row' && ($inner['medLine'] ?? false) === true,
             'labelLine' => ($block['kind'] ?? '') === 'row' && ($inner['labelLine'] ?? false) === true,
+            'labelShort' => $named && ($inner['labelShort'] ?? false) === true,
             'label' => $named && in_array($inner['label'] ?? '', PLATE_CORNERS, true) ? $inner['label'] : 'off',
             'labelMarks' => $named ? plate_notes($inner['labelMarks'] ?? null) : [],
             'ink'   => (object) plate_writing($inner['ink'] ?? null, 'ink'),
