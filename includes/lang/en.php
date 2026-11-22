@@ -7315,6 +7315,24 @@ return [
         => 'You can switch this off under <b>Settings → Photos → Scale presets</b>.',
     'Nicht mehr anzeigen'
         => 'Do not show again',
+    // Administration → Cloud-Anbieter → Aufräumen: the sweep of every cloud (cloud_providers_content.php; 04.10.2026, back 22.11.2026)
+    'Aufräumen'
+        => 'Tidy up',
+    'Manchmal bleibt in einer Cloud etwas liegen, das zu nichts mehr gehört: leere Ordner und Messwert-Dateien ohne ihr Bild.'
+        => 'Now and then something is left lying in a cloud that belongs to nothing any more: empty folders and measurement files without their picture.',
+    'Dieser Knopf räumt das weg, in den Clouds aller Nutzer. Es geht nur, was leer ist oder zu keinem Bild mehr gehört, und es landet im Papierkorb der Cloud. Bei Google Drive bleiben leere Ordner stehen.'
+        => 'This button clears that away, in every user\'s cloud. Only what is empty or belongs to no picture any more goes, and it lands in the cloud\'s trash. At Google Drive empty folders stay.',
+    'Alles war schon aufgeräumt.'
+        => 'Everything was tidy already.',
+    'Aufgeräumt: %d Messwert-Dateien ohne Bild und %d leere Ordner entfernt.'
+        => 'Tidied up: %d measurement files without a picture and %d empty folders removed.',
+    'Bis hierher %d Messwert-Dateien ohne Bild und %d leere Ordner entfernt. Es ist noch nicht alles durch. Drück noch einmal auf „Aufräumen".'
+        => 'So far %d measurement files without a picture and %d empty folders removed. Not everything is done yet. Press "Tidy up" once more.',
+    'Eine Cloud hat nicht geantwortet.'
+        => 'One cloud did not answer.',
+    '%d Clouds haben nicht geantwortet.'
+        => '%d clouds did not answer.',
+
     // Administration → Cloud-Anbieter: the registrations at the providers (cloud_providers_content.php; 02.10.2026)
     'Cloud-Anbieter'
         => 'Cloud providers',

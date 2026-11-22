@@ -546,4 +546,16 @@ if ($what === 'enqueue') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts | enqueue');
+/* tidy — the sweep of every connected cloud, exactly what the button
+   under Administration → Cloud-Anbieter → „Aufräumen" does
+   (cloud_tidy_run): sidecars without their picture and empty folders go,
+   numbers come back and nothing else. Here so it can be run and watched
+   from outside on the day it was built; the button is its lasting door. */
+if ($what === 'tidy') {
+    require_once __DIR__ . '/../includes/cloud_providers_content.php';
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['at' => date('c')] + cloud_tidy_run($pdo, microtime(true) + 70));
+    exit;
+}
+
+survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts | enqueue | tidy');

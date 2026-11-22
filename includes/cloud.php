@@ -3749,7 +3749,7 @@ function storage_prune_empty(PDO $pdo, int $userId, array $s, string|int $folder
         $home = onedrive_folder_id($s['token'], 'approot');
     }
     $stop = [$home, (string) storage_root($s), 'approot', 'root', '', '0'];
-    $keep = [defined('BACKUP_FOLDER') ? BACKUP_FOLDER : 'Datensicherung', 'Kalibrierung'];
+    $keep = storage_kept_folders();
     $realRoot = $s['provider'] !== 'pcloud';   // pCloud's true number is asked only when the walk climbs
 
     $gone = 0;
@@ -3806,6 +3806,153 @@ function storage_prune_empty(PDO $pdo, int $userId, array $s, string|int $folder
         }
     }
     return $gone;
+}
+
+/**
+ * The folders no tidying ever deletes, by name: the backup's and the
+ * calibration's. They hold what no find shows, and an empty one is the
+ * place the next sweep writes into.
+ *
+ * @return string[]
+ */
+function storage_kept_folders(): array
+{
+    return [defined('BACKUP_FOLDER') ? BACKUP_FOLDER : 'Datensicherung', 'Kalibrierung'];
+}
+
+/**
+ * pCloud's whole tree below a folder — ONE listfolder with recursive=1.
+ *
+ * @return ?array{id: string, name: string, files: list<array{id: string, name: string}>, folders: list<array>}
+ */
+function pcloud_tree(string $host, string $token, int $folderId): ?array
+{
+    try {
+        $d = pcloud_call($host, 'listfolder', ['access_token' => $token, 'folderid' => $folderId, 'recursive' => 1]);
+    } catch (RuntimeException $e) {
+        if (str_contains($e->getMessage(), '(2005)')) {
+            return null;
+        }
+        throw $e;
+    }
+    $node = static function (array $m) use (&$node): array {
+        $out = ['id' => (string) ($m['folderid'] ?? ''), 'name' => (string) ($m['name'] ?? ''),
+                'files' => [], 'folders' => []];
+        foreach ((array) ($m['contents'] ?? []) as $e) {
+            if (!empty($e['isfolder'])) {
+                $out['folders'][] = $node((array) $e);
+            } else {
+                $out['files'][] = ['id' => (string) ($e['fileid'] ?? ''), 'name' => (string) ($e['name'] ?? '')];
+            }
+        }
+        return $out;
+    };
+    return $node((array) ($d['metadata'] ?? []));
+}
+
+/**
+ * The whole tree below a folder, as the app can see it — for the sweep.
+ * Null at S3 (no folders) and when the folder is gone.
+ *
+ * @return ?array{id: string, name: string, files: list<array{id: string, name: string}>, folders: list<array>}
+ */
+function storage_tree(array $s, string|int $folderId): ?array
+{
+    return match ($s['provider']) {
+        'gdrive'   => gdrive_tree($s['token'], (string) $folderId),
+        'onedrive' => onedrive_tree($s['token'], (string) $folderId),
+        's3'       => null,
+        default    => pcloud_tree($s['host'], $s['token'], (int) $folderId),
+    };
+}
+
+/**
+ * THE SWEEP OF A WHOLE CLOUD. storage_prune_empty() tidies only the way a
+ * picture just left; what lies on ways nobody walks again stays. This
+ * walks the whole tree below the app's folder once, from the leaves up,
+ * by the same rules: a sidecar without its picture goes — in a folder
+ * itself and in its „Bearbeitung", where the patches and masks of a
+ * picture that is gone go too (storage_stray_sidecars) —, a folder goes
+ * when nothing is left in it, the app's folder itself and the kept ones
+ * never, and at Google Drive no folder at all
+ * (storage_folder_delete_empty says why).
+ *
+ * IT CAME TWICE. First on 04.10.2026 („das einmalige Aufräumen auch
+ * bauen"): empty folders after deleted test pictures and the sidecars of
+ * recordings deleted before the deleting tidied its own way. It did its
+ * one job and went again the same day. On 22.11.2026 it came back, because
+ * a whole stock had moved in between („Arten/" and „Listen/", 18.11.2026)
+ * and the old tree stood on, held up by sidecars a race had left under old
+ * names and by folders no picture had ever lain in: „Wenn noch was in
+ * Fungi Pilze ist im Grundverzeichnis, dann ist das ein Fehler." A rule
+ * that changes for the whole stock leaves ways nobody walks again — so it
+ * stays this time, as a button with the administrator
+ * (cloud_providers_content.php).
+ *
+ * WHAT IT NEVER TOUCHES: a file that is neither a sidecar nor a patch.
+ * A picture no row knows — the stump of a broken upload, a file the user
+ * laid there — is not ours to judge by its name, and the folder it lies
+ * in stays with it.
+ *
+ * The deadline cuts it anywhere; everything done stays done, and the next
+ * run lists the tree anew and finds only what is still left.
+ *
+ * @return array{sidecars: int, folders: int, done: bool}
+ */
+function storage_tidy(PDO $pdo, int $userId, array $s, float $deadline): array
+{
+    $count = ['sidecars' => 0, 'folders' => 0, 'done' => true];
+    if ($s['provider'] === 's3') {
+        return $count;
+    }
+    $tree = storage_tree($s, cloud_home_resolve($pdo, $userId, $s));
+    if ($tree !== null) {
+        storage_tidy_node($s, $tree, true, null, $deadline, $count);
+    }
+    return $count;
+}
+
+/**
+ * One folder of the sweep, its subfolders first.
+ *
+ * @param ?list<string> $pictures for a „Bearbeitung" folder: the file names one storey up, which its sidecars pair with
+ * @return bool whether it went
+ */
+function storage_tidy_node(array $s, array $node, bool $top, ?array $pictures, float $deadline, array &$count): bool
+{
+    $names = array_map(static fn(array $f): string => (string) $f['name'], $node['files']);
+    $left = 0;
+    foreach ($node['folders'] as $sub) {
+        if (in_array($sub['name'], storage_kept_folders(), true)
+            || !storage_tidy_node($s, $sub, false, $sub['name'] === SIDECAR_FOLDER ? $names : null, $deadline, $count)) {
+            $left++;
+        }
+        if (!$count['done']) {
+            return false;
+        }
+    }
+    $entries = array_map(static fn(array $f): array => $f + ['folder' => false], $node['files']);
+    $stray = storage_stray_sidecars($entries, $pictures);
+    foreach ($stray as $id) {
+        if (microtime(true) >= $deadline) {
+            $count['done'] = false;
+            return false;
+        }
+        storage_file_delete($s, $id);
+        $count['sidecars']++;
+    }
+    if ($top || $left > 0 || count($stray) < count($entries)) {
+        return false;
+    }
+    if (microtime(true) >= $deadline) {
+        $count['done'] = false;
+        return false;
+    }
+    if (!storage_folder_delete_empty($s, $node['id'])) {
+        return false;
+    }
+    $count['folders']++;
+    return true;
 }
 
 /**

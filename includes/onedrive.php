@@ -689,3 +689,28 @@ function onedrive_upload_session(string $access, string $folderId, string $name,
     return $url;
 }
 
+/**
+ * The whole tree below a folder (storage_tree) — folder by folder, since
+ * Graph lists one storey at a time. The app folder is all the app sees.
+ *
+ * @return ?array{id: string, name: string, files: list<array{id: string, name: string}>, folders: list<array>}
+ */
+function onedrive_tree(string $access, string $folderId, int $depth = 0): ?array
+{
+    $state = onedrive_folder_state($access, $folderId);
+    if ($state === null) {
+        return null;
+    }
+    $out = ['id' => $folderId, 'name' => $state['name'], 'files' => [], 'folders' => []];
+    foreach ($state['entries'] as $e) {
+        if (!$e['folder']) {
+            $out['files'][] = ['id' => $e['id'], 'name' => $e['name']];
+        } elseif ($depth < 16) {
+            $sub = onedrive_tree($access, $e['id'], $depth + 1);
+            if ($sub !== null) {
+                $out['folders'][] = $sub;
+            }
+        }
+    }
+    return $out;
+}

@@ -24,15 +24,83 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/cloud.php';
 
+/** The tidy button's time budget — the same a chunk of copies gets. */
+const CLOUD_TIDY_SECONDS = 25;
+
+/**
+ * THE SWEEP over every connected cloud (storage_tidy explains what goes,
+ * and why it is here a second time and stays). Here and not under
+ * Nachtragen: it fills in no value for points, it tidies the clouds — the
+ * clouds of everybody, which is why it sits with the administrator and
+ * says only numbers, never whose or what. No cron twin: every deletion and
+ * every renaming tidies its own way (storage_prune_empty,
+ * cloud_names_sweep); this is for the day a rule changed for the whole
+ * stock and left ways nobody walks again. Pressing it at any other time
+ * does no harm — it finds what somebody left by hand.
+ *
+ * @return array{clouds: int, sidecars: int, folders: int, failed: int, done: bool}
+ */
+function cloud_tidy_run(PDO $pdo, float $deadline): array
+{
+    $sum = ['clouds' => 0, 'sidecars' => 0, 'folders' => 0, 'failed' => 0, 'done' => true];
+    if (!cloud_ready($pdo)) {
+        return $sum;
+    }
+    $accounts = $pdo->query('SELECT user_id, provider FROM map_cloud_accounts ORDER BY user_id, provider')->fetchAll();
+    foreach ($accounts as $a) {
+        if (microtime(true) >= $deadline) {
+            $sum['done'] = false;
+            break;
+        }
+        try {
+            $s = cloud_storage_for($pdo, (int) $a['user_id'], (string) $a['provider']);
+            if ($s === null) {
+                $sum['failed']++;
+                continue;
+            }
+            $one = storage_tidy($pdo, (int) $a['user_id'], $s, $deadline);
+        } catch (RuntimeException $e) {
+            error_log('cloud_tidy_run (' . $a['user_id'] . ' ' . $a['provider'] . '): ' . $e->getMessage());
+            $sum['failed']++;
+            continue;
+        }
+        $sum['clouds']++;
+        $sum['sidecars'] += $one['sidecars'];
+        $sum['folders']  += $one['folders'];
+        if (!$one['done']) {
+            $sum['done'] = false;
+            break;
+        }
+    }
+    return $sum;
+}
+
+/** What the tidy run says — one sentence for its toast. */
+function cloud_tidy_message(array $sum): string
+{
+    $out = $sum['done']
+        ? ($sum['sidecars'] + $sum['folders'] === 0
+            ? t('Alles war schon aufgeräumt.')
+            : t('Aufgeräumt: %d Messwert-Dateien ohne Bild und %d leere Ordner entfernt.', $sum['sidecars'], $sum['folders']))
+        : t('Bis hierher %d Messwert-Dateien ohne Bild und %d leere Ordner entfernt. Es ist noch nicht alles durch. Drück noch einmal auf „Aufräumen".',
+            $sum['sidecars'], $sum['folders']);
+    if ($sum['failed'] === 1) {
+        $out .= ' ' . t('Eine Cloud hat nicht geantwortet.');
+    } elseif ($sum['failed'] > 1) {
+        $out .= ' ' . t('%d Clouds haben nicht geantwortet.', $sum['failed']);
+    }
+    return $out;
+}
+
 /**
  * Must run BEFORE any output. Saves a provider's Client-ID and Secret into
  * the vault (data/cloud.php, see cloud_vault_path()).
  *
- * @return array{message: ?string, error: string[]}
+ * @return array{message: ?string, hint: ?string, error: string[]}
  */
 function cloud_providers_process(PDO $pdo): array
 {
-    $state = ['message' => null, 'error' => []];
+    $state = ['message' => null, 'hint' => null, 'error' => []];
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || ($_POST['section'] ?? '') !== 'cloud_providers') {
         return $state;
@@ -42,6 +110,12 @@ function cloud_providers_process(PDO $pdo): array
     try {
         if (!is_admin(user_current())) {
             throw new RuntimeException(t('Das darf nur ein Verwalter.'));
+        }
+        if (($_POST['action'] ?? '') === 'tidy') {
+            $sum = cloud_tidy_run($pdo, microtime(true) + CLOUD_TIDY_SECONDS);
+            // Yellow instead of green while it is not through, or a cloud did not answer.
+            $state[$sum['done'] && $sum['failed'] === 0 ? 'message' : 'hint'] = cloud_tidy_message($sum);
+            return $state;
         }
         $provider = (string) ($_POST['provider'] ?? '');
         if (!cloud_provider_valid($provider) || empty(CLOUD_PROVIDERS[$provider]['ready'])
@@ -143,6 +217,9 @@ function cloud_providers_render(PDO $pdo, array $state): void
     if ($state['message'] !== null) {
         notice('success', $state['message'], true);
     }
+    if (($state['hint'] ?? null) !== null) {
+        notice('hint', $state['hint'], true);
+    }
     $counts = cloud_providers_counts($pdo);
     // A secret running out is said at the head of the whole administration
     // (pages/administration.php), like a pending migration — not a second
@@ -205,6 +282,22 @@ function cloud_providers_render(PDO $pdo, array $state): void
         </tbody>
     </table>
 </div>
+
+<?php /* RARELY NEEDED, SO LAST AND QUIET (the page is sorted by weight):
+         the explanation first, then the one button — subtle, because
+         nothing is due; it is a standing offer for the day something was
+         left lying. */ ?>
+<div class="column-header">
+    <h3><?= h(t('Aufräumen')) ?></h3>
+</div>
+<p class="hint-text"><?= h(t('Manchmal bleibt in einer Cloud etwas liegen, das zu nichts mehr gehört: leere Ordner und Messwert-Dateien ohne ihr Bild.')) ?></p>
+<p class="hint-text"><?= h(t('Dieser Knopf räumt das weg, in den Clouds aller Nutzer. Es geht nur, was leer ist oder zu keinem Bild mehr gehört, und es landet im Papierkorb der Cloud. Bei Google Drive bleiben leere Ordner stehen.')) ?></p>
+<form method="post" action="<?= h(url('pages/administration.php') . '#cloud_providers') ?>" class="button-row right">
+    <?= csrf_field() ?>
+    <input type="hidden" name="section" value="cloud_providers">
+    <input type="hidden" name="action" value="tidy">
+    <button type="submit" class="button subtle small"><?= h(t('Aufräumen')) ?></button>
+</form>
 
 <?php foreach (CLOUD_PROVIDERS as $key => $a): ?>
     <?php if ($a['ready'] && $a['kind'] === 'oauth'): ?>

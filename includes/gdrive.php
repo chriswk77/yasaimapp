@@ -785,3 +785,50 @@ function gdrive_upload_session(string $access, string $folderId, string $name, s
     return $location;
 }
 
+/**
+ * The whole tree below a folder (storage_tree) — ONE paged listing of
+ * everything the app can see, sorted into the tree here. drive.file shows
+ * only what YASAIMAPP made, which is all the sweep may touch anyway.
+ *
+ * @return ?array{id: string, name: string, files: list<array{id: string, name: string}>, folders: list<array>}
+ */
+function gdrive_tree(string $access, string $folderId): ?array
+{
+    if (gdrive_folder_name($access, $folderId) === null) {
+        return null;
+    }
+    $children = [];
+    $page = null;
+    do {
+        $l = gdrive_call($access, 'GET', GDRIVE_API . '/files?' . http_build_query(array_filter([
+            'q'         => 'trashed = false',
+            'fields'    => 'nextPageToken,files(id,name,parents,mimeType)',
+            'pageSize'  => 1000,
+            'pageToken' => $page,
+        ])));
+        foreach ((array) ($l['files'] ?? []) as $e) {
+            foreach ((array) ($e['parents'] ?? []) as $parent) {
+                $children[(string) $parent][] = $e;
+            }
+        }
+        $page = (string) ($l['nextPageToken'] ?? '') ?: null;
+    } while ($page !== null);
+
+    $seen = [];
+    $node = static function (string $id, string $name) use (&$node, &$seen, $children): array {
+        $seen[$id] = true;
+        $out = ['id' => $id, 'name' => $name, 'files' => [], 'folders' => []];
+        foreach ($children[$id] ?? [] as $e) {
+            $childId = (string) ($e['id'] ?? '');
+            if (($e['mimeType'] ?? '') === 'application/vnd.google-apps.folder') {
+                if (!isset($seen[$childId])) {   // a folder with two parents is walked once
+                    $out['folders'][] = $node($childId, (string) ($e['name'] ?? ''));
+                }
+            } else {
+                $out['files'][] = ['id' => $childId, 'name' => (string) ($e['name'] ?? '')];
+            }
+        }
+        return $out;
+    };
+    return $node($folderId, '');
+}
