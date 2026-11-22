@@ -560,7 +560,19 @@ export function mountPlates(host) {
      */
     async function openPlate(p) {
         if (win.open && !(await close())) return false;
-        open(p);
+        /* THE NEWEST RECORD OF THIS PLATE, not the one handed in
+           (22.11.2026: „dass die Tafel bereits auf einem anderen Gerät
+           geöffnet sei … Das ist aber Quatsch"). The overview beside the
+           texts keeps the record it was drawn from, and every save puts a
+           NEW object into the row (save, plates[at] = saved). Opened from
+           the overview after a save, the editor began from the old
+           updated_at — and the server, rightly, refused every save as one
+           overwriting a newer version. Closing and opening again through
+           the overview handed in the same old record, so it never healed.
+           Looked up here, every way into the editor starts from the last
+           saved version. The close above runs first: its save is the one
+           that makes the record new. */
+        open(p?.id ? (plates.find(x => x.id === p.id) ?? p) : p);
         return true;
     }
 
@@ -792,13 +804,18 @@ export function mountPlates(host) {
     async function save() {
         clearTimeout(autosaveTimer);
         autosaveTimer = null;
-        if (saving) {
+        /* ONE SAVE AFTER THE OTHER, also for two that waited together —
+           the autosave and the close, say. With a plain „if" both went on
+           after the first save and sent the SAME updated_at; the second
+           then met the first's new one and was refused as „another
+           device" (22.11.2026, found beside the stale record above). */
+        while (saving) {
             await saving;
             if (!dirty()) return true;
         }
         const sent = JSON.stringify(bare(layout));
         savedSay('saving');
-        saving = (async () => {
+        const mine = saving = (async () => {
             try {
                 const answer = await host.request('plates.php', {
                     method: 'POST',
@@ -853,9 +870,9 @@ export function mountPlates(host) {
             }
         })();
         try {
-            return await saving;
+            return await mine;
         } finally {
-            saving = null;
+            if (saving === mine) saving = null;
             saveSync();
         }
     }
@@ -4501,6 +4518,8 @@ export function mountPlates(host) {
     let faceAt = null;   // the face last drawn: {el, width, p}
     function face(el, width, p = plates[0]) {
         el.textContent = '';
+        // The newest record of it — the caller may hold one from before a save (openPlate says why).
+        if (p?.id) p = plates.find(x => x.id === p.id) ?? p;
         if (!p?.layout.pages?.[0]) return false;
         const pictures = picturesOf(pointId);
         miniPage(el, p, width, new Map(pictures.map(x => [x.key, x])), host.details(pointId));
