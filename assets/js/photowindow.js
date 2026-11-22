@@ -12084,6 +12084,20 @@ export function mountPhotoWindow(host) {
        writing on it is listed from the data, like every layer.
        A user's word like the structures: German, stored verbatim. */
     const LABEL_LAYER = 'Beschriftung';
+    /* „AUSSCHNITTE", A LAYER FOR CUTTING ALONE (22.11.2026: „Ich nutze
+       oft die Messebene Beschriftung für kleine Ausschnitte … Dazu passt
+       aber natürlich nicht die Bezeichnung Beschriftung"). A text says
+       something about a picture; a cutout becomes a row of its own on the
+       plate — two things under one name, and the name fitted neither.
+       Renaming „Beschriftung" would have meant rewriting every stored
+       measure and every plate that names its row by the layer; so the
+       cutouts got a layer of their own, always offered, with the one tool,
+       and „Beschriftung" keeps text and arrow. Cutouts already lying on
+       „Beschriftung" stay there — listed from the data, editable with
+       „Auswählen", and the plates that show them unchanged. A cutout that
+       belongs to a structure is cut on that structure's layer instead
+       (layerTools). */
+    const CROP_LAYER = 'Ausschnitte';
     const LABEL_LAYER_NEW = '__new_label__';
     const NOTE_KINDS = ['text', 'arrow', 'box'];
     const ownLabelLayers = new Set();
@@ -12263,6 +12277,7 @@ export function mountPhotoWindow(host) {
         // A layer holding nothing but writing is a writing layer, wherever it was named.
         for (const name of [...labels]) if (names.has(name) || measured.has(name)) labels.delete(name);
         labels.add(LABEL_LAYER);
+        labels.add(CROP_LAYER);
         for (const name of ownLabelLayers) labels.add(name);
         statsLabelSelect.textContent = '';
         // „Frei" FIRST — it is the preselection, and the first row of a
@@ -12299,13 +12314,14 @@ export function mountPhotoWindow(host) {
            unten"). */
         const further = [...names].filter((name) => !MEASURE_STRUCTURES.includes(name) && !labels.has(name));
         if (further.length > 0) groupOf(t('Weitere'), abc(further), 'further');
-        const sorted = [...labels].sort((a, b) => (a === LABEL_LAYER ? -1 : b === LABEL_LAYER ? 1
-            : a.localeCompare(b, 'de', { numeric: true })));
+        // „Beschriftung" first, „Ausschnitte" second, one's own writing layers after them.
+        const head = (name) => (name === LABEL_LAYER ? 0 : name === CROP_LAYER ? 1 : 2);
+        const sorted = [...labels].sort((a, b) => head(a) - head(b) || a.localeCompare(b, 'de', { numeric: true }));
         const own = document.createElement('option');
         own.value = LABEL_LAYER_NEW;
         own.textContent = t('+ Neue Beschriftungsebene …');
         // Marked, so the quick switches know a writing layer from a measuring one (layerFits).
-        const writing = groupOf(t('Beschriften'), sorted);
+        const writing = groupOf(t('Beschriften und Ausschneiden'), sorted);
         writing.dataset.writing = '1';
         writing.append(own);
         statsLabelSelect.value = statsLabel;
@@ -13136,7 +13152,8 @@ export function mountPhotoWindow(host) {
      * Bildausschnitt"). The rail and the phone's menu offer only what the
      * layer is measured with — a cystidium has no business with
      * „Lamellen zählen", a gill count none with „Strecke". „Auswählen" is
-     * always there. A writing layer takes the three tools that write; a
+     * always there. A writing layer takes the two tools that write
+     * („Ausschnitte" the cutout alone, since 22.11.2026); a
      * layer he named no tools for — what stands under „Weitere", „Frei" —
      * keeps every tool, as before.
      *
@@ -13187,9 +13204,16 @@ export function mountPhotoWindow(host) {
             'Hyphen hymenial': hyphae, 'Hyphen Hutdeckschicht': hyphae, 'Hyphen Stiel': hyphae,
             'Hyphen Kontext': hyphae, Myzel: hyphae,
         };
-        if (table[name]) return table[name];
+        /* EVERY STRUCTURE CUTS AGAIN (22.11.2026, „mach beides"): the
+           cutout was made for „ein paar angefärbte Ascusspitzen" on the asci
+           (07.10.2026), and the table above took it from them by leaving it
+           out — so cutouts went to „Beschriftung". Now each structure layer
+           carries it, and its row on the plate says what it shows
+           („Asci · Ausschnitte"); „Ausschnitte" holds what belongs to none. */
+        if (table[name]) return [...table[name], 'crop'];
+        if (name === CROP_LAYER) return ['crop'];
         const group = [...statsLabelSelect.options].find((o) => o.value === name)?.closest('optgroup');
-        if (group?.dataset.writing || name === LABEL_LAYER) return ['text', 'arrow', 'crop'];
+        if (group?.dataset.writing || name === LABEL_LAYER) return ['text', 'arrow'];
         return null;
     }
     /** Show only the layer's tools (layerTools), and lay down an armed one it does not offer. */

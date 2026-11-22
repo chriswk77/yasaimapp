@@ -4715,6 +4715,8 @@ return [
         => 'What should the layer be called? Each layer holds its own texts, arrows and boxes. On the plate you choose later which layer a picture shows.',
     'Beschriften'
         => 'Label',
+    'Beschriften und Ausschneiden'
+        => 'Label and cut out',
     'Breite messen'
         => 'Measure breadth',
     'Reihenfolge'
