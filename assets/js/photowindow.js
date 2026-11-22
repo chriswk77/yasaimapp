@@ -3235,15 +3235,19 @@ export function mountPhotoWindow(host) {
        keep their triangle. */
     const HEAD_SIGNS = { micro: 'microscope', color: 'palette', mix: 'colour-mix', grade: 'colour-grade', light: 'sun', details: 'details', brush: 'brush' };
     const headSign = (key) => (HEAD_SIGNS[key] ? iconHtml(HEAD_SIGNS[key], { class: 'photo-develop-head-sign' }) : '');
+    /* THE RAIL'S ORDER (22.11.2026: „Ganz oben Farbe, dann … Licht. Dann
+       Farbmischer, dann Farbkorrektur, dann Details, dann Mikroskop"): the
+       two broad groups first, the colour's finer hands after them —
+       „Farbmischer" (mixGroup) and „Farbkorrektur" by brightness
+       (gradeGroup) —, „Mikrofotos" last, the one group a macro picture
+       never needs. The groups stand in the page in the same order. */
     const DEVELOP_RAIL = [
-        { key: 'micro', icon: 'microscope', name: () => t('Mikrofotos') },
         { key: 'color', icon: 'palette' },
-        // „Farbmischer" right under „Farbe" (22.11.2026) — the colour's finer hand (mixGroup).
-        { key: 'mix', icon: 'colour-mix', name: () => t('Farbmischer') },
-        // „Farbkorrektur" after it (22.11.2026) — the colour by brightness (gradeGroup).
-        { key: 'grade', icon: 'colour-grade', name: () => t('Farbkorrektur') },
         { key: 'light', icon: 'sun' },
+        { key: 'mix', icon: 'colour-mix', name: () => t('Farbmischer') },
+        { key: 'grade', icon: 'colour-grade', name: () => t('Farbkorrektur') },
         { key: 'details', icon: 'details' },
+        { key: 'micro', icon: 'microscope', name: () => t('Mikrofotos') },
     ];
     /**
      * A page with the rail: `body` for what the chosen sign shows, the signs
@@ -3773,14 +3777,14 @@ export function mountPhotoWindow(host) {
             page.mark('mix', mixSet(develop));
             page.mark('grade', gradeSet(develop));
         };
-        page.body.append(microGroup(may, new Set(), false));
         developGroupsDraw(page.body, develop, '', (s, v) => {
             develop[s.key] = v;
             developSoon();
             developQueue();
             mark();
         }, may, false);
-        page.body.querySelector('.photo-develop-group[data-group="color"]')?.after(mixGroup(may, mark), gradeGroup(may, mark));
+        page.body.querySelector('.photo-develop-group[data-group="light"]')?.after(mixGroup(may, mark), gradeGroup(may, mark));
+        page.body.append(microGroup(may, new Set(), false));
         page.body.querySelector('.photo-develop-group[data-group="color"]')?.append(castBlock(may));
         mark();
         show(chosen);
