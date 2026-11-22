@@ -944,11 +944,21 @@ export function plotInner(rows, W, H, mm, ink = PLOT_INK) {
    that is read as today's „schmal" (plates.js, adopt). */
 export const ROW_PAD_THIN = .6;
 export const ROW_DEFAULTS = { gap: .6, gapColor: '#ffffff', pad: ROW_PAD_THIN };
+/* A CUTOUT ROW MAY GO BELOW ITS CUT (22.11.2026: „bei den
+   Bildausschnitten macht es manchmal Sinn, dass ich unter 0% komme, also
+   den Ausschnitt vergrößere, eben um diese … Bildränder abzuschneiden"):
+   its frame then shows less than was cut, and the picture stands larger
+   in it — a cutout set close to the picture's edge loses the edge instead
+   of needing the fill (edgefill.js). Down to half the cut. A measured
+   structure keeps 100 % as its floor: a spore cut into is no spore. The
+   server keeps the same bounds (plate_block). */
+export const ROW_AIR_MIN_CROP = 50;
 export function rowLook(block, style) {
     const own = Number(block?.air);
+    const least = typeof block?.crop === 'string' ? ROW_AIR_MIN_CROP : 100;
     return {
         // A cutout shows what was cut, no more: no air unless the row sets it.
-        air: own >= 100 && own <= 300 ? own / 100
+        air: own >= least && own <= 300 ? own / 100
             : typeof block?.crop === 'string' ? 1
             // A count shows its frame or ellipse with a breath of cap around it.
             : block?.count === true ? 1.06

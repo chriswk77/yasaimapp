@@ -129,6 +129,11 @@ $look = plate_block(['kind' => 'row', 'layer' => 'Sporen', 'air' => 250, 'gap' =
 check($look['air'] === 250 && $look['gap'] === 1.5 && $look['gapColor'] === '#000000' && $look['pad'] === 10.0
       && plate_block(['kind' => 'row', 'layer' => 'Sporen', 'air' => 50])['air'] === null,
     'a row keeps its own air, lines, colour and margin, each in its range; an air out of range follows the photo window');
+// A cutout row may stand larger than its cut, down to half of it (22.11.2026); a spore row may not.
+check(plate_block(['kind' => 'row', 'layer' => 'Sporen', 'crop' => 'Spitzen', 'air' => 60])['air'] === 60
+      && plate_block(['kind' => 'row', 'layer' => 'Sporen', 'crop' => 'Spitzen', 'air' => 40])['air'] === null
+      && plate_block(['kind' => 'row', 'layer' => 'Sporen', 'air' => 60])['air'] === null,
+    'a cutout row keeps an air down to 50 %, a measured row only from 100 %');
 check($blocks[0]['items'][0]['lines'] === ['range', 'mean'] && $blocks[0]['items'][0]['name'] === true,
     'a values text keeps the lines it knows, in their own order, and its name in front');
 check($blocks[1]['block'] === null, 'a block of a kind nobody knows is dropped');

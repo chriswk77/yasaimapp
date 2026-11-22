@@ -47,7 +47,7 @@ import { subjectGroups } from './gallerysort.js';
 import {
     detailLabels, DETAIL_GAP, notePtOf, PT_MM, LINE_ITEM, LINE_TILE, BOX_PAD_X, BOX_PAD_Y, TILE_PAD, clamp, esc,
     load, loadFor, picView, pictureOf, measureBack, aspectOf, inkAt, umPerShownPx, cutout, barGeometry, mediaGeometry, labelGeometry, pictureLabel, pictureMarks, rowMediaLabel, rowLabelSubs, rowLabel, drawMedia, detailsHtml,
-    layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotEvenSize, plotGroundRect, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
+    ROW_AIR_MIN_CROP, layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotEvenSize, plotGroundRect, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
     inkFor, softRect, softWanted, writeOnCanvas, rowWriting, SOFT_FEATHER, SOFT_FEATHER_Y, SOFT_BLUR,
 } from './plateparts.js';
 import { valueLines, lengthStraight } from './measurestats.js';
@@ -4536,7 +4536,8 @@ export function mountPlates(host) {
         line.className = 'plate-slider';
         const slider = document.createElement('input');
         slider.type = 'range';
-        slider.min = '100';
+        // A cutout row may go below its cut and stand larger (plateparts.js, ROW_AIR_MIN_CROP).
+        slider.min = String(cropRow ? ROW_AIR_MIN_CROP : 100);
         slider.max = '300';
         slider.step = '1';
         slider.value = String(Math.round(rowLook(d, styleNow()).air * 100));

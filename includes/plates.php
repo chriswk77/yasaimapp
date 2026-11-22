@@ -476,7 +476,8 @@ function plate_block(mixed $b): ?array
            spores, their colour, the margin around them. */
         $air = $b['air'] ?? null;
         $out += [
-            'air'      => is_numeric($air) && (int) $air >= 100 && (int) $air <= 300 ? (int) $air : null,
+            // A cutout row down to half its cut, every other row from 100 (plateparts.js, ROW_AIR_MIN_CROP).
+            'air'      => is_numeric($air) && (int) $air >= (is_string($b['crop'] ?? null) ? 50 : 100) && (int) $air <= 300 ? (int) $air : null,
             'gap'      => plate_number($b['gap'] ?? .6, 0, 5, .6, 1),
             'gapColor' => ($b['gapColor'] ?? '') === '#000000' ? '#000000' : '#ffffff',
             // „schmal" is 0.6 mm since 07.10.2026, as wide as the fine lines
