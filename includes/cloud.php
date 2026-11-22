@@ -3579,6 +3579,40 @@ function storage_sidecar_delete(array $s, string|int $pictureFolder, string $pic
 }
 
 /**
+ * A name as it is COMPARED — never as it is written.
+ *
+ * TWO SPELLINGS OF ONE UMLAUT LIE IN THE CLOUDS (measured in the
+ * maintainer's pCloud, 22.11.2026): „ü" as one sign (NFC — what the
+ * database holds and this code sends) and as „u" with two dots after it
+ * (NFD — 266 file names and 25 folder names up there, everything named
+ * before about 20.11.2026). They look alike in every listing and are
+ * different bytes. A write test the same day showed pCloud keeping each
+ * spelling exactly as sent and treating the two as different names — so a
+ * sidecar „… Krün 02 Sporen.jpg.messwerte.json" compared byte for byte
+ * against its picture can come out as belonging to nothing, and the stray
+ * rule would delete it.
+ *
+ * So whoever asks „is this the same name?" asks through this key. Where
+ * the server has no Normalizer (the intl extension — the web side has it,
+ * a cron's PHP may not) the name comes back as it is, and
+ * cloud_name_comparable() says whether a judgement may be built on it.
+ */
+function cloud_name_key(string $name): string
+{
+    if ($name === '' || !preg_match('/[\x80-\xFF]/', $name) || !class_exists('Normalizer')) {
+        return $name;
+    }
+    $key = Normalizer::normalize($name, Normalizer::FORM_C);
+    return is_string($key) && $key !== '' ? $key : $name;
+}
+
+/** May two names be told apart by cloud_name_key()? Plain ASCII always; anything else only where it can normalise. */
+function cloud_name_comparable(string $name): bool
+{
+    return !preg_match('/[\x80-\xFF]/', $name) || class_exists('Normalizer');
+}
+
+/**
  * The measure sidecars in a folder whose picture is not beside them — ids.
  * The patches of „Entfernen" likewise (storage_sidecars_of).
  *
@@ -3590,31 +3624,47 @@ function storage_sidecar_delete(array $s, string|int $pictureFolder, string $pic
  * 03.10.2026. A picture renamed by hand orphans its sidecar too — and the
  * next scale change writes a fresh one under the new name.
  *
+ * PAIRED BY THE COMPARISON KEY, NOT BY THE BYTES (22.11.2026,
+ * cloud_name_key): a picture and its sidecar may carry the two spellings
+ * of one umlaut, and a sidecar that only LOOKS unpaired must not go. Where
+ * the names cannot be normalised here, a name with anything but ASCII in
+ * it is never called a stray — left lying is the smaller harm.
+ *
  * @param list<array{id: string, name: string, folder: bool}> $entries
  * @param ?list<string> $pictures the picture names to pair against, when
  *                                they lie elsewhere (the parent of „Bearbeitung")
+ * @param bool $sidecarsOnly leave patches and masks alone, whatever they
+ *                           pair with — for a sweep that may take only what
+ *                           can be written anew (cloud_names_sweep)
  * @return list<string>
  */
-function storage_stray_sidecars(array $entries, ?array $pictures = null): array
+function storage_stray_sidecars(array $entries, ?array $pictures = null, bool $sidecarsOnly = false): array
 {
     require_once __DIR__ . '/photos.php';
     $suffix = measure_sidecar_name('');
     /* $pictures for a „Bearbeitung" folder: its sidecars belong to the
        pictures one storey UP, so their names are handed in from there. */
-    $files = $pictures === null ? [] : array_fill_keys($pictures, true);
+    $files = [];
+    foreach ($pictures ?? [] as $name) {
+        $files[cloud_name_key((string) $name)] = true;
+    }
     foreach ($pictures === null ? $entries : [] as $e) {
         if (!$e['folder']) {
-            $files[$e['name']] = true;
+            $files[cloud_name_key($e['name'])] = true;
         }
     }
     $stray = [];
     foreach ($entries as $e) {
-        if ($e['folder']) {
+        if ($e['folder'] || !cloud_name_comparable($e['name'])) {
             continue;
         }
-        if (str_ends_with($e['name'], $suffix) && strlen($e['name']) > strlen($suffix)
-            && !isset($files[substr($e['name'], 0, -strlen($suffix))])) {
-            $stray[] = $e['id'];
+        if (str_ends_with($e['name'], $suffix) && strlen($e['name']) > strlen($suffix)) {
+            if (!isset($files[cloud_name_key(substr($e['name'], 0, -strlen($suffix)))])) {
+                $stray[] = $e['id'];
+            }
+            continue;
+        }
+        if ($sidecarsOnly) {
             continue;
         }
         // A patch of „Entfernen" or a mask of „Ebenen" whose picture is gone belongs to nothing any more (11.11.2026).
@@ -3622,7 +3672,7 @@ function storage_stray_sidecars(array $entries, ?array $pictures = null): array
            app's own. Beside the pictures a „… .ebene.png" may be a file the
            user laid there himself, and it is not ours to judge. */
         $patch = $pictures === null ? null : develop_patch_split($e['name']);
-        if ($patch !== null && !isset($files[$patch['picture']])) {
+        if ($patch !== null && !isset($files[cloud_name_key($patch['picture'])])) {
             $stray[] = $e['id'];
         }
     }

@@ -709,6 +709,7 @@ function cloud_names_group(PDO $pdo, array $s, array $point, array $items, float
         $byFile[$item['fileid']] = $n;
     }
     $left = [];   // folders something moved out of — tidied at the end
+    $into = [];   // folders a picture was named in or moved into — swept at the end
 
     foreach (array_keys($todo) as $n) {
         if (microtime(true) >= $deadline) {
@@ -747,6 +748,7 @@ function cloud_names_group(PDO $pdo, array $s, array $point, array $items, float
             if ($from !== '' && $from !== $item['to']) {
                 $left[$from] = true;
             }
+            $into[(string) $item['to']] = true;
             $out['renamed']++;
         } catch (RuntimeException $e) {
             error_log('cloud_names_group (' . $item['kind'] . ' ' . $item['id'] . '): ' . $e->getMessage());
@@ -761,7 +763,80 @@ function cloud_names_group(PDO $pdo, array $s, array $point, array $items, float
             error_log('cloud_names_group prune: ' . $e->getMessage());
         }
     }
+    // Only after a run that came to its end: a picture still parked under
+    // its temporary name would make its neighbours' sidecars look paired
+    // or not by accident.
+    if ($out['done']) {
+        foreach (array_keys($into) as $folder) {
+            try {
+                cloud_names_sweep($s, (string) $folder);
+            } catch (RuntimeException $e) {
+                error_log('cloud_names_group sweep: ' . $e->getMessage());
+            }
+        }
+    }
     return $out;
+}
+
+/**
+ * After the renaming: the sidecars in a folder's „Bearbeitung" that no
+ * picture of the folder answers to any more go.
+ *
+ * WHY THEY ARISE (found in the maintainer's pCloud, 22.11.2026: 203 of
+ * them, 184 from two days at the microscope). Two things run at the same
+ * moment. A request saves a scale and writes the sidecar — it asks the
+ * provider for the picture's name, then uploads under it
+ * (measure_sidecar_write). The renaming gives that picture its derived
+ * name in between: it looks for the old sidecar, finds none yet, and moves
+ * on. Then the upload arrives — under the name the picture had a second
+ * ago. „Mikroskop 2026-11-22 15-22-27.jpg.messwerte.json" stayed beside
+ * „… 18 Sporen.jpg.messwerte.json", and nothing ever looked at it again,
+ * because the run's listings are asked once and kept
+ * (cloud_names_listing).
+ *
+ * SO THE FOLDER IS LOOKED AT ONCE MORE, FRESH, when the run is through —
+ * not through the kept listings, which are exactly what missed it. What
+ * arrives later still is the writer's own to catch
+ * (measure_sidecar_settle, photo_cloud.php); the two together close the
+ * gap from both ends.
+ *
+ * ONLY THE JSON SIDECARS, never a patch of „Entfernen" or a mask of
+ * „Ebenen": a sidecar is a copy of what the row holds and is written anew
+ * at the next change — a patch is pixels and exists once. Those keep to
+ * the tidying that runs when a folder empties (storage_prune_empty). And
+ * paired by the comparison key (cloud_name_key), so the two spellings of
+ * an umlaut do not turn a good sidecar into a stray.
+ *
+ * Not at S3, which has no folder to ask the state of.
+ *
+ * @return int how many went
+ */
+function cloud_names_sweep(array $s, string $folder): int
+{
+    require_once __DIR__ . '/cloud.php';
+    $state = $folder === '' ? null : storage_folder_state($s, $folder);
+    if ($state === null) {
+        return 0;
+    }
+    $pictures = [];
+    $sub = null;
+    foreach ($state['entries'] as $e) {
+        if (!$e['folder']) {
+            $pictures[] = $e['name'];
+        } elseif ($e['name'] === SIDECAR_FOLDER) {
+            $sub = $e['id'];
+        }
+    }
+    $inner = $sub === null ? null : storage_folder_state($s, $sub);
+    if ($inner === null) {
+        return 0;
+    }
+    $gone = 0;
+    foreach (storage_stray_sidecars($inner['entries'], $pictures, true) as $id) {
+        storage_file_delete($s, $id);
+        $gone++;
+    }
+    return $gone;
 }
 
 /**
@@ -905,10 +980,25 @@ function cloud_names_sidecar_folder(array $s, string $folder, array &$listings):
     return $listings[$key];
 }
 
-/** The sidecar of a renamed picture, written from its row as everywhere. */
+/**
+ * The sidecar of a renamed picture, written from its row as everywhere.
+ *
+ * FROM THE ROW AS IT IS NOW, not as the run read it at its start
+ * (22.11.2026): a find with forty pictures is renamed over many seconds,
+ * and a scale saved meanwhile is in the database but not in the copy the
+ * run carries. Written from that copy, the new sidecar would say less than
+ * the row — and replace the one the save itself just wrote. One SELECT per
+ * renamed picture; the row the run carries stays the fallback.
+ */
 function cloud_names_sidecar(PDO $pdo, array $s, array $item, string $fileid): void
 {
     $r = $item['row'];
+    $table = $item['kind'] === 'photo' ? 'map_photos' : ($item['kind'] === 'cloud' ? 'map_cloud_files' : null);
+    if ($table !== null && isset($r['id'])) {
+        $fresh = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
+        $fresh->execute([(int) $r['id']]);
+        $r = $fresh->fetch() ?: $r;
+    }
     $scale    = photo_scale_read($r['scale'] ?? null);
     $measures = photo_measures_read($r['measures'] ?? null);
     $title    = photo_title_clean($r['title'] ?? null);

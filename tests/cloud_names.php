@@ -227,6 +227,68 @@ try {
     check((FakePcloud::$folders[$moved][0] ?? '') === '2026-08-29 Krün wk-T2' && FakePcloud::names($folder) === [$head . '04.JPG'],
         'renumbered, the pictures follow into „… wk-T2" — only the user\'s own file stays behind');
 
+    // LEFT-OVER SIDECARS (22.11.2026): a save wrote its sidecar under the
+    // name a picture had a moment before the renaming — 203 of those lay in
+    // the maintainer's cloud. The run sweeps its folder when it is through.
+    $sub = null;
+    foreach (FakePcloud::$folders as $fid => [$fn, $fp]) {
+        if ($fp === $moved && $fn === SIDECAR_FOLDER) { $sub = $fid; }
+    }
+    $nfd = static fn(string $n): string => str_replace("\u{00FC}", "u\u{0308}", $n);
+    FakePcloud::$files[970] = ['Mikroskop 2026-11-22 15-22-27.JPG.messwerte.json', (int) $sub];   // under the upload name
+    FakePcloud::$files[971] = ['Weg.JPG.flicken-abcdef12.png', (int) $sub];                         // pixels: not the sweep's
+    // A picture named before the provider kept the spelling: „ü" as u + dots up there, one sign in the row.
+    $second = FakePcloud::name(901);
+    FakePcloud::$files[901][0] = $nfd((string) $second);
+    check($nfd((string) $second) !== $second && cloud_name_key($nfd((string) $second)) === $second,
+        'the two spellings of „ü" are different bytes and one name to the comparison key');
+    $pdo->prepare('UPDATE map_cloud_files SET title = "Sporen" WHERE id = ?')->execute([$d]);
+    $r = cloud_names_point($pdo, $point, microtime(true) + 30, $open);
+    $sides = FakePcloud::names((int) $sub);
+    check($r['renamed'] === 1 && !isset(FakePcloud::$files[970]), 'after a renaming the sidecar left under an upload name is gone');
+    check(isset(FakePcloud::$files[971]), 'a patch is pixels and is not the sweep\'s to take');
+    check(in_array($second . '.messwerte.json', $sides, true),
+        'the sidecar of a picture spelt the other way stays — it only looks unpaired');
+    check(in_array((string) FakePcloud::name(903) . '.messwerte.json', $sides, true)
+          && in_array((string) FakePcloud::name(900) . '.messwerte.json', $sides, true), 'every picture keeps its own');
+    unset(FakePcloud::$files[971]);
+    FakePcloud::$files[901][0] = (string) $second;
+
+    // The writer's side of the same gap: its upload landed after the renaming.
+    $write = static fn(string $fileid, string $title): ?array => measure_sidecar_write($fake, $fileid, null, [], null, null, $title);
+    FakePcloud::$files[972] = ['P1010001.JPG.messwerte.json', (int) $sub];
+    measure_sidecar_settle($pdo, $user, $fake, '900', ['name' => 'P1010001.JPG', 'folder' => (string) $moved,
+        'sidecar' => '972', 'again' => static fn() => $write('900', 'Hauptmotiv')]);
+    check(!isset(FakePcloud::$files[972]) && in_array((string) FakePcloud::name(900) . '.messwerte.json', FakePcloud::names((int) $sub), true),
+        'a sidecar written under the name of a moment ago goes, and stands under the name the picture has now');
+    // … and it had replaced the sidecar of the picture that took that name: that one gets its own back.
+    $third = (string) FakePcloud::name(902);
+    $thirdSide = null;
+    foreach (FakePcloud::$files as $id => [$n, $parent]) {
+        if ($parent === (int) $sub && $n === $third . '.messwerte.json') { $thirdSide = $id; }
+    }
+    FakePcloud::$bytes[$thirdSide] = '{"image":{"name":"somebody else"}}';
+    measure_sidecar_settle($pdo, $user, $fake, '900', ['name' => $third, 'folder' => (string) $moved,
+        'sidecar' => (string) $thirdSide, 'again' => static fn() => $write('900', 'Hauptmotiv')]);
+    $back = null;
+    foreach (FakePcloud::$files as $id => [$n, $parent]) {
+        if ($parent === (int) $sub && $n === $third . '.messwerte.json') { $back = json_decode(FakePcloud::$bytes[$id], true); }
+    }
+    check(($back['image']['name'] ?? '') === $third && ($back['title'] ?? '') === 'Sporen',
+        'the picture that holds the old name now has its own sidecar again, not the other\'s measures');
+    // The usual save: the row's name is the one written under — the cloud is not asked a second time.
+    $calls = count(FakePcloud::$calls);
+    measure_sidecar_settle($pdo, $user, $fake, '900', ['name' => (string) FakePcloud::name(900), 'folder' => (string) $moved, 'sidecar' => '1']);
+    check(count(FakePcloud::$calls) === $calls, 'a save while nothing is renamed costs no further call');
+    // A file renamed by hand: row and cloud disagree for good — the sidecar lies right where it is.
+    $own = (string) FakePcloud::name(903);
+    FakePcloud::$files[903][0] = 'Von Hand.JPG';
+    FakePcloud::$files[973] = ['Von Hand.JPG.messwerte.json', (int) $sub];
+    measure_sidecar_settle($pdo, $user, $fake, '903', ['name' => 'Von Hand.JPG', 'folder' => (string) $moved, 'sidecar' => '973']);
+    check(isset(FakePcloud::$files[973]), 'beside a picture renamed by hand its sidecar stays');
+    unset(FakePcloud::$files[973]);
+    FakePcloud::$files[903][0] = $own;
+
     // The queue: marked, claimed, done, gone.
     cloud_names_touch($pdo, $point);
     $due = static fn(): int => (int) $pdo->query('SELECT COUNT(*) FROM map_cloud_names_due WHERE point_id = ' . $point)->fetchColumn();

@@ -547,19 +547,112 @@ function measure_sidecar_store(PDO $pdo, int $userId, string $provider, string $
         if ($s === null) {
             return;
         }
-        measure_sidecar_write($s, $fileid, $scale, $measures, $width, $height, $title, $original, $media, $develop);
+        $written = measure_sidecar_write($s, $fileid, $scale, $measures, $width, $height, $title, $original, $media, $develop);
+        if ($written !== null) {
+            measure_sidecar_settle($pdo, $userId, $s, $fileid, $written);
+        }
     } catch (Throwable $e) {
         error_log('measure_sidecar_store (' . $provider . ' ' . $fileid . '): ' . get_class($e) . ': ' . $e->getMessage());
     }
 }
 
 /**
+ * WAS THE PICTURE RENAMED WHILE ITS SIDECAR WAS ON THE WAY? Then the
+ * sidecar just written lies under a name the picture no longer has — and
+ * is put right here.
+ *
+ * THE GAP (22.11.2026, 203 left-over sidecars in the maintainer's pCloud).
+ * measure_sidecar_write() asks the provider for the picture's name and
+ * uploads under it; between the two the renaming (cloud_names.php) may
+ * give the picture its derived name — it runs right after the answer of
+ * the very upload that brought the picture, at the moment the microscope
+ * saves its scale. The renaming looked for the old sidecar before this one
+ * existed; cloud_names_sweep() catches what lands before its end, this
+ * function what lands after.
+ *
+ * THE DATABASE SAYS IT FOR NOTHING. The renaming writes the new name on
+ * the row the moment the picture has it, so one SELECT tells whether
+ * anything happened — a second question to the provider on every save of
+ * a measurement would be a quarter more waiting for a case that passes.
+ * Only when the row's name is not the one written under is the provider
+ * asked again, and only when THAT name differs too is something done:
+ *
+ *   - the file under the old name goes — as a sidecar it describes nothing;
+ *   - WHOEVER HOLDS THAT NAME NOW gets its own sidecar back. Numbers shift
+ *     when a picture is added: „20 Sporen" becomes „21 Sporen" and its
+ *     neighbour takes „20 Sporen" — the late upload then REPLACED that
+ *     neighbour's sidecar with this picture's measures (one picture, one
+ *     sidecar: the upload overwrites its namesake);
+ *   - this picture's sidecar is written again, under the name it has now.
+ *     Once: a picture renamed a second time within that second is caught
+ *     by the renaming's own sweep.
+ *
+ * Compared through cloud_name_key(): a row says „ü" in one spelling and an
+ * older file up there carries the other — that is no renaming.
+ *
+ * @param array{name: string, folder: string, sidecar: string, again?: callable} $written
+ */
+function measure_sidecar_settle(PDO $pdo, int $userId, array $s, string $fileid, array $written): void
+{
+    $now = null;
+    foreach ([['map_cloud_files', 'fileid', 'name'], ['map_photos', 'cloud_fileid', 'cloud_name']] as [$table, $idColumn, $nameColumn]) {
+        if (!table_exists($pdo, $table) || !column_exists($pdo, $table, $nameColumn)) {
+            continue;
+        }
+        $q = $pdo->prepare("SELECT $nameColumn FROM $table WHERE user_id = ? AND $idColumn = ? LIMIT 1");
+        $q->execute([$userId, $fileid]);
+        $found = $q->fetchColumn();
+        if (is_string($found) && $found !== '') {
+            $now = $found;
+            break;
+        }
+    }
+    if ($now === null || cloud_name_key($now) === cloud_name_key($written['name'])) {
+        return;   // the usual case: nothing moved
+    }
+    $meta = storage_file_meta($s, $fileid);
+    if ($meta !== null && cloud_name_key((string) $meta['name']) === cloud_name_key($written['name'])
+        && (string) $meta['parent'] === $written['folder']) {
+        return;   // row and cloud merely disagree (a file renamed by hand) — the sidecar lies right
+    }
+
+    storage_file_delete($s, $written['sidecar']);
+
+    // Whoever holds the old name now, in the old folder: its sidecar from its own row.
+    require_once __DIR__ . '/cloud_names.php';
+    foreach ([['cloud', 'map_cloud_files', 'fileid', 'folderid', 'name'],
+              ['photo', 'map_photos', 'cloud_fileid', 'cloud_folderid', 'cloud_name']] as [$kind, $table, $idColumn, $folderColumn, $nameColumn]) {
+        if (!table_exists($pdo, $table) || !column_exists($pdo, $table, $nameColumn)) {
+            continue;
+        }
+        $q = $pdo->prepare("SELECT * FROM $table WHERE user_id = ? AND $folderColumn = ? AND $nameColumn = ? AND $idColumn <> ? LIMIT 1");
+        $q->execute([$userId, $written['folder'], $written['name'], $fileid]);
+        $holder = $q->fetch();
+        // The database compares names loosely (an accent more or less is the same to it) — the key decides.
+        if ($holder !== false && (string) ($holder[$idColumn] ?? '') !== ''
+            && cloud_name_key((string) $holder[$nameColumn]) === cloud_name_key($written['name'])) {
+            cloud_names_sidecar($pdo, $s, ['kind' => $kind, 'row' => $holder], (string) $holder[$idColumn]);
+        }
+    }
+
+    if ($meta !== null && isset($written['again'])) {
+        ($written['again'])();
+    }
+}
+
+/**
  * The same, at a storage already open — the renaming (cloud_names.php)
  * holds one for the whole find and need not open it once per picture.
+ *
+ * @return ?array{name: string, folder: string, sidecar: string, again: callable}
+ *         what was written: the picture's name and folder as the provider
+ *         named them, the sidecar's id, and the same write once more — for
+ *         measure_sidecar_settle(), which checks whether the picture was
+ *         renamed meanwhile. Null where nothing was written.
  */
 function measure_sidecar_write(array $s, string $fileid, ?array $scale, array $measures,
                                ?int $width, ?int $height, ?string $title = null, ?string $original = null,
-                               ?array $media = null, ?array $develop = null): void
+                               ?array $media = null, ?array $develop = null): ?array
 {
     $provider = (string) $s['provider'];
     try {
@@ -568,13 +661,13 @@ function measure_sidecar_write(array $s, string $fileid, ?array $scale, array $m
         $folderId = (string) ($meta['parent'] ?? '');
         // A picture never lies in the very top (pCloud's 0): no sidecar there.
         if ($name === '' || $folderId === '' || $folderId === '0') {
-            return;
+            return null;
         }
 
         if ($scale === null && $measures === [] && $title === null && $media === null && $develop === null) {
             // Wherever it lies — an old one beside the picture too (storage_sidecar_delete).
             storage_sidecar_delete($s, $folderId, $name);
-            return;
+            return null;
         }
 
         /* INTO „BEARBEITUNG" (10.11.2026; cloud.php,
@@ -582,7 +675,7 @@ function measure_sidecar_write(array $s, string $fileid, ?array $scale, array $m
            one-time job, which finds this newer one and drops the old
            (sidecar_move.php) — looking for it here would cost every save a
            listing for a case that passes. */
-        storage_upload_bytes(
+        $up = storage_upload_bytes(
             $s, storage_sidecar_folder($s, $folderId, true),
             measure_sidecar_json($scale, $measures, $name, $width, $height, $title, $original, $media, $develop),
             measure_sidecar_name($name),
@@ -590,9 +683,17 @@ function measure_sidecar_write(array $s, string $fileid, ?array $scale, array $m
             true,   // replace: one picture, one sidecar — re-calibrating heals it
             'application/json'
         );
+        return [
+            'name'    => $name,
+            'folder'  => $folderId,
+            'sidecar' => (string) $up['fileid'],
+            'again'   => static fn(): ?array => measure_sidecar_write($s, $fileid, $scale, $measures,
+                $width, $height, $title, $original, $media, $develop),
+        ];
     } catch (Throwable $e) {
         // Any failure, not only the provider's own (measure_sidecar_store says why).
         error_log('measure_sidecar_store (' . $provider . ' ' . $fileid . '): ' . get_class($e) . ': ' . $e->getMessage());
+        return null;
     }
 }
 
