@@ -77,6 +77,8 @@ export const PT_MM = 25.4 / 72;
 export const notePtOf = (layout, style) => layout?.notePt ?? style?.plate?.text_pt ?? 10;
 // The round lengths a bar may take, in µm (Reul's plates use 20 to 500).
 export const NICE_UM = [1, 2, 5, 10, 20, 30, 50, 100, 200, 300, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000];
+// The lengths a bar steps up through when its words outreach it (barGeometry): the usual ones and 15, 75 in every decade.
+const STEP_UM = [...NICE_UM, 1.5, 7.5, 15, 75, 150, 750, 1500, 7500, 15000, 75000].sort((a, b) => a - b);
 // The bar in millimetres of the page: distance to the cell's edge, line, label.
 const BAR_EDGE = 2.6, BAR_THICK = .7, BAR_FONT = 3, BAR_GAP = .6;
 /* UP AND DOWN CLOSER THAN SIDEWAYS (20.11.2026: „die
@@ -403,13 +405,18 @@ export function barGeometry(cell, W, H, mm, umPx, share = .2) {
        a few µm, and „2 µm" stood wider than its own line. The length then
        steps up the round lengths until the line outreaches its words by a
        tenth — as far as the cell has room; only where even that does not
-       fit does the largest that fits stand. */
+       fit does the largest that fits stand.
+       THE STEP UP TAKES THE UNUSUAL LENGTHS TOO (the same day: „Dann nimm
+       zur Not unten unübliche Maße wie 15 … Also 5 10 15, 20, 30, 50, 75,
+       100"): from 10 straight to 20 doubles the line where half as much
+       more would do. Only here, „zur Not" — a bar that fits as it is keeps
+       the usual lengths (NICE_UM). */
     const wordsW = (n) => mediaCanvas().measureText(barText(n)).width * font / 100;
     const room = W - 2 * BAR_EDGE * mm;
     if (um / umPx < wordsW(um) * 1.1) {
-        const enough = NICE_UM.find(n => n > um && n / umPx >= wordsW(n) * 1.1);
+        const enough = STEP_UM.find(n => n > um && n / umPx >= wordsW(n) * 1.1);
         if (enough !== undefined && enough / umPx <= room) um = enough;
-        else um = NICE_UM.filter(n => n >= um && n / umPx <= room).pop() ?? um;
+        else um = STEP_UM.filter(n => n >= um && n / umPx <= room).pop() ?? um;
     }
     const len = um / umPx;
     const boxH = font * 1.15 + gap + thick, edge = BAR_EDGE * mm, edgeY = BAR_EDGE_Y * mm;
@@ -420,8 +427,8 @@ export function barGeometry(cell, W, H, mm, umPx, share = .2) {
         label: barText(um),
     };
 }
-/** A bar's words: µm, from a millimetre on mm (a no-break space before the unit). */
-const barText = (um) => (um >= 1000 ? `${um / 1000} mm` : `${um} µm`);
+/** A bar's words: µm, from a millimetre on mm (a no-break space before the unit, a decimal comma — 1,5 µm). */
+const barText = (um) => (um >= 1000 ? `${String(um / 1000).replace('.', ',')} mm` : `${String(um).replace('.', ',')} µm`);
 
 /**
  * THE MEDIUM ON THE PICTURE (06.11.2026: „das Medium dann
