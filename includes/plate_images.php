@@ -145,8 +145,6 @@ function plate_image_store(PDO $pdo, int $userId, int $plateId, int $page, strin
     $q = $pdo->prepare('SELECT * FROM map_plate_images WHERE plate_id = ? AND page = ?');
     $q->execute([$plateId, $page]);
     $old = $q->fetch();
-    $sameSpot = $old !== false && $old['provider'] === $s['provider']
-        && (string) $old['folderid'] === (string) $target['folderid'] && $old['name'] === $name;
 
     /* REPLACE, ALWAYS: the name is ours, and a file of that name in the
        find's folder is a page of this plate from before (a row lost, a
@@ -163,8 +161,16 @@ function plate_image_store(PDO $pdo, int $userId, int $plateId, int $page, strin
     )->execute([$plateId, $page, $s['provider'], (string) $up['fileid'], (string) $target['folderid'],
                 mb_substr((string) ($up['name'] ?? $name), 0, 255), $hash, (int) $info[0], (int) $info[1]]);
 
-    // The page that lay elsewhere (the find renamed, refiled, another cloud) goes.
-    if ($old !== false && !$sameSpot && (string) $old['fileid'] !== (string) $up['fileid']) {
+    /* THE PAGE THE ROW POINTED AT GOES WHENEVER THE UPLOAD IS ANOTHER FILE
+       — elsewhere (the find renamed, refiled, another cloud), and ALSO IN
+       THE SAME SPOT (22.11.2026). „Replace" is by name, and a name with an
+       umlaut can lie up there in the other of its two spellings
+       (cloud_name_key): the row says „… Krün 00 Tafel.jpg", the provider
+       holds the same letters as other bytes, and the upload lands BESIDE
+       the old page instead of over it. Five plates stood twice in the
+       maintainer's cloud that way. Where the upload did replace in place,
+       both ids are one and nothing is deleted. */
+    if ($old !== false && (string) $old['fileid'] !== '' && (string) $old['fileid'] !== (string) $up['fileid']) {
         plate_image_file_delete($pdo, $userId, $old, $open);
     }
 

@@ -558,4 +558,45 @@ if ($what === 'tidy') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts | enqueue | tidy');
+/* ends — is a picture whole? For up to twenty file ids of this account's
+   pCloud: the first and the last two bytes, fetched by range. A JPEG
+   begins with ffd8 and ends with ffd9; one that broke off on the way up
+   has no end. The survey found files no row knows, some of them several
+   times under one name with different sizes — whether such a file is a
+   stump or a whole picture nobody recorded cannot be read off its name,
+   and it decides whether it may go. Nothing but four bytes and the size
+   of each file comes back. */
+if ($what === 'ends') {
+    $s = cloud_storage_for($pdo, $userId, 'pcloud');
+    if ($s === null) {
+        survey_refuse(409, 'This account has no pCloud connected.');
+    }
+    $out = [];
+    foreach (array_slice(array_filter(array_map('trim', explode(',', (string) ($_POST['ids'] ?? '')))), 0, 20) as $id) {
+        $one = ['id' => $id];
+        try {
+            $meta = storage_file_meta($s, $id);
+            $link = $meta === null ? null : pcloud_file_link($s['host'], $s['token'], (int) $id);
+            if ($link === null) {
+                $one['gone'] = true;
+            } else {
+                $one['size'] = $meta['size'];
+                foreach (['head' => 'bytes=0-1', 'tail' => 'bytes=-2'] as $part => $range) {
+                    $bytes = @file_get_contents($link, false, stream_context_create(['http' => [
+                        'header' => "Range: $range\r\n", 'timeout' => 20, 'ignore_errors' => true]]));
+                    // A server that ignores the range sends the whole file: only its edge is looked at.
+                    $one[$part] = $bytes === false ? null
+                        : bin2hex($part === 'head' ? substr($bytes, 0, 2) : substr($bytes, -2));
+                }
+            }
+        } catch (Throwable $e) {
+            $one['refused'] = $e->getMessage();
+        }
+        $out[] = $one;
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($out);
+    exit;
+}
+
+survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts | enqueue | tidy | ends');
