@@ -11732,6 +11732,14 @@ export function mountPhotoWindow(host) {
     /** The request alone, its failure left to the caller — the renaming
      *  of cutouts must know whether every picture took it (cropRename). */
     function measureSaveRequest(ref) {
+        /* EVERY WRITE SHARES THE LIST (22.11.2026: „Bei den Ausschnitten
+           habe ich im Bild eine Spiegelung angewandt. Diese wird mir in der
+           Tafel noch nicht dargestellt"). Only the debounced save handed
+           the window's list to the find's list (measureSaveQueue); the
+           tiles' mirror, „Umdrehen" and the renaming of cutouts write here
+           directly — stored, but the plate, which reads the find's list,
+           drew the old tile until the page was loaded again. */
+        measuresShare(ref);
         return (ref.kind === 'cloud'
             ? request(`cloud.php?id=${ref.pointId}&action=scale`, {
                 method: 'POST',
