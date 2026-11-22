@@ -13147,7 +13147,7 @@ export function mountPhotoWindow(host) {
      * zählen · sector Lamellen zählen · text · arrow · crop Bildausschnitt.
      */
     function layerTools(name) {
-        const hyphae = ['line', 'cutout'];   // a hypha's breadth, and its length to the septum where it can be seen
+        const hyphae = ['line', 'path', 'cutout'];   // a hypha's breadth, its winding length, and its length to the septum where it can be seen
         /* THE PARTS NEED THE LINE (18.11.2026: „bei Sporen haben
            wir ja noch die Linie … für Keimporus, Ornamenthöhe etc. … schau
            doch mal, was da irgendwie noch so zusammenhängen könnte"): every
@@ -13160,7 +13160,13 @@ export function mountPhotoWindow(host) {
            Kaulozystiden und … Basidien … Und beim Messen von Velum fehlt
            das Länge mal Breite gebogen Werkzeug"): a straight element is
            measured fastest with the box, a bent one needs its bent twin —
-           so these four carry both, as the Cheilozystiden already did. */
+           so these four carry both, as the Cheilozystiden already did.
+           THE WINDING LINE FOR WHAT WINDS (22.11.2026, the same day): asci,
+           paraphyses, marginal hairs and every hypha and the mycelium got
+           „Gebogene Länge"; the excipulum the box „falls man Zellengrößen
+           messen will". The paraphyses LOST „Zystide in Teilen" on that
+           call — its method „Paraphyse" stays in the tool for whoever
+           measures one on another layer. */
         const table = {
             // Spores and conidia: straight and bent — the bent one for the allantoid spore (18.11.2026).
             Sporen: ['rect', 'cutout', 'line'],
@@ -13174,10 +13180,10 @@ export function mountPhotoWindow(host) {
             Pileozystiden: ['cutout', 'line'],
             Pleurozystiden: ['rect', 'cutout', 'line'],
             Velum: ['rect', 'cutout'],
-            Asci: ['cutout'],
-            Excipulum: ['line'],
-            Paraphysen: ['cutout', 'cystid'],   // „Zystide in Teilen" with the method „Paraphyse": length, breadth, head
-            Randhaare: ['cutout', 'line'],
+            Asci: ['cutout', 'path'],
+            Excipulum: ['rect', 'line'],   // the box for the size of its cells
+            Paraphysen: ['cutout', 'path'],
+            Randhaare: ['cutout', 'line', 'path'],
             'Hyphen hymenial': hyphae, 'Hyphen Hutdeckschicht': hyphae, 'Hyphen Stiel': hyphae,
             'Hyphen Kontext': hyphae, Myzel: hyphae,
         };
