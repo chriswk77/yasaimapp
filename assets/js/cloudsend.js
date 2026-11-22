@@ -137,6 +137,16 @@ async function sendRanges(url, file, onProgress) {
  * same evening may well be called DSC_0001.jpg — pCloud then makes a second
  * name out of it instead of replacing the first one. Losing a picture in the
  * archive because a camera restarts its counter is not acceptable.
+ *
+ * nopartial=1 SO A BROKEN UPLOAD LEAVES NOTHING BEHIND (22.11.2026). Without
+ * it pCloud keeps whatever arrived before the connection dropped — as a file
+ * under the picture's name, with the rest of the picture grey. Out in the
+ * woods one photo went up three times: „aufnahme-….jpg" with 2.7 MB,
+ * „… (2).jpg" with 1.5 and „… (4).jpg" with 2.0, all three stumps, and the
+ * attempt that finally got through stood beside them. No row ever knew the
+ * stumps, so nothing tidied them away; eight of them lay in the maintainer's
+ * cloud. The server's own upload has said nopartial from the start
+ * (pcloud_upload_bytes) — the browser's had been forgotten.
  */
 function sendPcloud(target, file, onProgress) {
     return new Promise((done, failed) => {
@@ -147,6 +157,7 @@ function sendPcloud(target, file, onProgress) {
             + '?access_token=' + encodeURIComponent(target.token)
             + '&folderid=' + encodeURIComponent(target.folderid)
             + '&renameifexists=1'
+            + '&nopartial=1'
             // The file's own timestamp, so the archive sorts by when it was
             // taken and not by when it was uploaded.
             + (file.lastModified ? '&mtime=' + Math.floor(file.lastModified / 1000) : '');
