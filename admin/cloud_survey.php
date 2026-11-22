@@ -1,7 +1,7 @@
 <?php
 /**
- * A look at what lies in the maintainer's cloud — read-only, and gone again
- * after three days.
+ * A look at what lies in the maintainer's cloud — reading, but for one
+ * small write test — and gone again after three days.
  *
  * WHY THIS FILE EXISTS (22.11.2026). After the folders were rebuilt
  * („Arten/" and „Listen/", 18.11.2026) the move stopped half way: old
@@ -13,10 +13,20 @@
  * what the database believes — with the name and the folder the naming
  * worker (includes/cloud_names.php) wants for every picture.
  *
- * IT READS AND NOTHING ELSE. One listfolder call at pCloud, SELECTs in the
- * database. Nothing is moved, renamed or deleted here; what the survey finds
- * is mended by code that is written afterwards, with the findings in hand.
- * The token never leaves the server: it goes to pCloud and is in no answer.
+ * IT READS, WITH ONE EXCEPTION. One listfolder call at pCloud, SELECTs in
+ * the database. Nothing of the user's is moved, renamed or deleted here;
+ * what the survey finds is mended by code that is written afterwards, with
+ * the findings in hand. The token never leaves the server: it goes to
+ * pCloud and is in no answer.
+ *
+ * THE EXCEPTION IS `probe` (22.11.2026: „mach den Schreibtest"). The survey
+ * found names with umlauts in two spellings up there — „ü" as one sign
+ * (NFC) and as „u" plus two dots (NFD) — and six find folders twice because
+ * of it. Which call makes which cannot be read out of a listing. So the
+ * probe makes a folder of its OWN in the app's top, „YASAIMAPP-Schreibtest
+ * <random>", tries the cases inside it (folders, uploads, renames in both
+ * spellings), reports every name byte for byte, and takes its folder away
+ * again. It touches nothing it did not make itself.
  *
  * WHO MAY CALL IT. No login — the one who reads the answer is a script on
  * the maintainer's own machine. A key comes as a header (never in the
@@ -31,6 +41,7 @@
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=rows  …/admin/cloud_survey.php
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=tree  …/admin/cloud_survey.php
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=log   …/admin/cloud_survey.php
+ *   curl -H "X-Survey-Key: …" -d user=<id> -d what=probe …/admin/cloud_survey.php
  */
 
 declare(strict_types=1);
@@ -274,4 +285,139 @@ if ($what === 'log') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | log');
+/* ---------------------------------------------------------------------------
+ * probe — how pCloud treats the two spellings of an umlaut, tried in a
+ * folder of the probe's own (the head of this file says why).
+ *
+ * EVERY NAME COMES BACK AS HEX. The two spellings look alike in any
+ * listing; only the bytes tell them apart („c3bc" is the one sign, „75cc88"
+ * the letter with its dots). Each step is reported whether it worked or was
+ * refused — a refusal („already exists") is an answer too.
+ *
+ * WHAT IT MADE GOES AGAIN, file by file and folder by folder, with the
+ * calls that take one thing each (deletefile, deletefolder — which refuses
+ * a folder that is not empty). No recursive delete is spoken here: a wrong
+ * id in one of those would be somebody's archive.
+ * ------------------------------------------------------------------------- */
+if ($what === 'probe') {
+    $s = cloud_storage_for($pdo, $userId, 'pcloud');
+    if ($s === null) {
+        survey_refuse(409, 'This account has no pCloud connected.');
+    }
+    $host = $s['host'];
+    $token = $s['token'];
+    $u = ['ü' => ["\u{00FC}", "u\u{0308}"], 'ö' => ["\u{00F6}", "o\u{0308}"], 'ä' => ["\u{00E4}", "a\u{0308}"]];
+    $name = static fn(?string $n): ?array => $n === null ? null : ['text' => $n, 'hex' => bin2hex($n)];
+    $steps = [];
+    $try = static function (string $label, callable $do) use (&$steps): mixed {
+        try {
+            $r = $do();
+            $steps[] = ['step' => $label] + (is_array($r) ? $r : ['value' => $r]);
+            return $r;
+        } catch (Throwable $e) {
+            $steps[] = ['step' => $label, 'refused' => $e->getMessage()];
+            return null;
+        }
+    };
+    $folder = static function (int $parent, string $n) use ($host, $token, $name): array {
+        $d = pcloud_call($host, 'createfolderifnotexists', ['access_token' => $token, 'folderid' => $parent, 'name' => $n]);
+        return ['sent' => $name($n), 'got' => $name((string) ($d['metadata']['name'] ?? '')),
+                'id' => (string) ($d['metadata']['folderid'] ?? ''), 'created' => (bool) ($d['created'] ?? false)];
+    };
+    $upload = static function (int $parent, string $n, bool $replace) use ($host, $token, $name): array {
+        $r = pcloud_upload_bytes($host, $token, $parent, 'Schreibtest ' . bin2hex(random_bytes(4)), $n, null, $replace);
+        return ['sent' => $name($n), 'got' => $name($r['name']), 'id' => (string) $r['fileid'], 'replace' => $replace];
+    };
+    $rename = static function (string $fileId, int $parent, string $n) use ($host, $token, $name): array {
+        $d = pcloud_call($host, 'renamefile', ['access_token' => $token, 'fileid' => (int) $fileId,
+                                               'tofolderid' => $parent, 'toname' => $n]);
+        return ['sent' => $name($n), 'got' => $name((string) ($d['metadata']['name'] ?? '')),
+                'id' => (string) ($d['metadata']['fileid'] ?? ''),
+                'deletedfileid' => isset($d['metadata']['deletedfileid']) ? (string) $d['metadata']['deletedfileid'] : null];
+    };
+    $listing = static function (int $id) use ($host, $token, $name): array {
+        $d = pcloud_call($host, 'listfolder', ['access_token' => $token, 'folderid' => $id]);
+        $out = [];
+        foreach ((array) ($d['metadata']['contents'] ?? []) as $e) {
+            $out[] = ['folder' => (bool) ($e['isfolder'] ?? false),
+                      'id' => (string) ($e['isfolder'] ?? false ? $e['folderid'] : $e['fileid']),
+                      'name' => $name((string) $e['name'])];
+        }
+        return $out;
+    };
+
+    // A fresh name each time, so the folder is the probe's own — never one that was there.
+    $made = pcloud_call($host, 'createfolderifnotexists', ['access_token' => $token, 'folderid' => cloud_root_id($s['connection']),
+        'name' => 'YASAIMAPP-Schreibtest ' . bin2hex(random_bytes(6))]);
+    if (!($made['created'] ?? false)) {
+        survey_refuse(409, 'The probe folder was there already — nothing done.');
+    }
+    $base = (int) $made['metadata']['folderid'];
+    $left = [];
+    try {
+        // Folders: the one-sign spelling first, then the other, then the first again.
+        $a = $try('folder NFC', fn() => $folder($base, 'Pr' . $u['ü'][0] . 'fung'));
+        $try('folder NFD, the NFC one exists', fn() => $folder($base, 'Pr' . $u['ü'][1] . 'fung'));
+        $try('folder NFC again', fn() => $folder($base, 'Pr' . $u['ü'][0] . 'fung'));
+        // And the other way round, in a second name.
+        $try('folder NFD first', fn() => $folder($base, 'Gegenpr' . $u['ü'][1] . 'fung'));
+        $try('folder NFC, the NFD one exists', fn() => $folder($base, 'Gegenpr' . $u['ü'][0] . 'fung'));
+
+        // Uploads that keep both (renameifexists=1, the pictures' way).
+        $f1 = $try('upload NFC', fn() => $upload($base, 'Gr' . $u['ö'][0] . 'sse.txt', false));
+        $f2 = $try('upload NFD, the NFC one exists, keep both', fn() => $upload($base, 'Gr' . $u['ö'][1] . 'sse.txt', false));
+        // Uploads that replace (renameifexists=0, the sidecars' way).
+        $try('upload NFD to be replaced', fn() => $upload($base, 'Ersatz ' . $u['ä'][1] . '.txt', true));
+        $try('upload NFC replacing — one file or two?', fn() => $upload($base, 'Ersatz ' . $u['ä'][0] . '.txt', true));
+
+        // Renames: does the name keep its spelling, and does one spelling overwrite the other?
+        if (is_array($f1)) {
+            $try('rename to NFC', fn() => $rename($f1['id'], $base, 'Umbenannt ' . $u['ü'][0] . '.txt'));
+        }
+        if (is_array($f2)) {
+            $try('rename to NFD, the NFC one exists — replaced?', fn() => $rename($f2['id'], $base, 'Umbenannt ' . $u['ü'][1] . '.txt'));
+        }
+        if (is_array($f1)) {
+            $try('stat of the first file', function () use ($host, $token, $f1, $name) {
+                $m = pcloud_call($host, 'stat', ['access_token' => $token, 'fileid' => (int) $f1['id']])['metadata'] ?? [];
+                return ['got' => $name((string) ($m['name'] ?? ''))];
+            });
+            // A move without a name, into the NFC folder: does the name change on the way?
+            if (is_array($a)) {
+                $try('move without toname', function () use ($host, $token, $f1, $a, $name) {
+                    $d = pcloud_call($host, 'renamefile', ['access_token' => $token, 'fileid' => (int) $f1['id'], 'tofolderid' => (int) $a['id']]);
+                    return ['got' => $name((string) ($d['metadata']['name'] ?? ''))];
+                });
+            }
+        }
+        $steps[] = ['step' => 'listing at the end', 'entries' => $listing($base)];
+    } finally {
+        // Away again: what lies in the probe's folder, one storey deep, then the folder.
+        try {
+            foreach ($listing($base) as $e) {
+                if ($e['folder']) {
+                    foreach ($listing((int) $e['id']) as $inner) {
+                        pcloud_call($host, $inner['folder'] ? 'deletefolder' : 'deletefile',
+                            ['access_token' => $token, ($inner['folder'] ? 'folderid' : 'fileid') => (int) $inner['id']]);
+                    }
+                    pcloud_call($host, 'deletefolder', ['access_token' => $token, 'folderid' => (int) $e['id']]);
+                } else {
+                    pcloud_call($host, 'deletefile', ['access_token' => $token, 'fileid' => (int) $e['id']]);
+                }
+            }
+            pcloud_call($host, 'deletefolder', ['access_token' => $token, 'folderid' => $base]);
+        } catch (Throwable $e) {
+            $left = ['folderid' => (string) $base, 'why' => $e->getMessage()];
+        }
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'at' => date('c'), 'steps' => $steps, 'left_behind' => $left,
+        'php' => PHP_VERSION, 'sapi' => PHP_SAPI, 'normalizer' => class_exists('Normalizer'),
+        'mb_internal' => mb_internal_encoding(), 'default_charset' => ini_get('default_charset'),
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    exit;
+}
+
+survey_refuse(400, 'what = tree | rows | log | probe');
