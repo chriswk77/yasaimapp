@@ -1330,6 +1330,8 @@ export function mountPhotoWindow(host) {
         developSwitcherSync();
         developMode = mode === 'develop' && desk.matches && developHere();
         photoWindow.classList.toggle('is-developing', developMode);
+        // The whole page goes grey and quiet around the picture (app.css, is-editing-picture).
+        document.documentElement.classList.toggle('is-editing-picture', developMode && photoWindow.open);
         for (const b of document.querySelectorAll('#photo-mode [data-mode]')) {
             const on = b.dataset.mode === (developMode ? 'develop' : 'measure');
             b.classList.toggle('is-active', on);
@@ -2038,6 +2040,8 @@ export function mountPhotoWindow(host) {
         const want = settings.get('photoMode', 'measure') === 'develop' && desk.matches && developHere();
         if (want !== developMode) developModeSet(want ? 'develop' : 'measure');
         else {
+            // Closing took the grey off the page while the mode stayed: reopened, it comes back.
+            document.documentElement.classList.toggle('is-editing-picture', developMode && photoWindow.open);
             developPanelDraw();
             viewUpdate();
         }
@@ -2470,6 +2474,7 @@ export function mountPhotoWindow(host) {
     exportButton?.addEventListener('click', exportOpen);
 
     photoWindow.addEventListener('close', () => {
+        document.documentElement.classList.remove('is-editing-picture');
         developFlush();
         aiJobsLeave();
         expandLeave();

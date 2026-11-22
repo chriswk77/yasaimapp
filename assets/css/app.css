@@ -296,6 +296,64 @@
 :root:is([data-theme="warmlight"], [data-theme="slate"], [data-theme="taupe"])[data-accent="orange"]    { --accent-light: #8a4a08; }
 :root:is([data-theme="warmlight"], [data-theme="slate"], [data-theme="taupe"])[data-accent="purple"]    { --accent-light: #4a1a8f; }
 
+/* --- THE PAGE STEPS BACK WHILE A PICTURE IS EDITED -------------------------
+ * (22.11.2026: „das Design automatisch zurücknehmen der Seite, also die
+ * Seite in einen Grauton machen, die Akzentfarben gedämpft … so dass man
+ * sich voll und ganz auf das Bild konzentrieren kann … vielleicht auch
+ * alles etwas dunkler"). photowindow.js puts `is-editing-picture` on
+ * <html> while „Bearbeiten" is on, and takes it off with the mode or the
+ * window. A NEUTRAL GREY, because a tinted ground — petrol, amber, a
+ * light theme — shifts the eye's white point and so the very colours one
+ * is judging; that is why picture editors wear grey.
+ *
+ * !important BECAUSE IT MUST BEAT ALL SEVEN THEMES AND SIX ACCENTS, the
+ * compound light-theme selectors included, and a specificity race against
+ * :is() lists is a fragile thing to win. Every surface follows the tokens,
+ * so nothing below needs a rule of its own. The light themes turn dark too
+ * — a white page beside a picture is the loudest distraction of all — and
+ * so they also get the dark colour scheme.
+ *
+ * THE ACCENT IS DAMPED, NOT REMOVED: it stays the user's colour, a
+ * quarter of it in a dark grey, and every accent writes the same dark text on it
+ * — white on the red or purple would be the brightest spot on the page.
+ * A custom property cannot be mixed from itself on one element (a cycle,
+ * and the whole value is dropped), so <html> keeps the theme's accent as
+ * --accent-own and <body> — one step down, where that arrives as a
+ * finished colour — mixes the damped one from it.
+ *
+ * IN THE FUNDBROWSER THE WINDOW STAYS OPEN BEHIND THE OTHER TABS — hidden
+ * with its pane, still `open`, still in its mode. So the grey asks the
+ * page too: there it holds only while the find shows its pictures, and
+ * „Übersicht" or the grid wear the user's colours again. The map has no
+ * #finds-fund, so the condition never stands in its way. */
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) {
+    /* LOW CONTRAST ON PURPOSE (the same day: „keine großen Kontraste auf
+       der Oberfläche", then „gerade helle Farben, helle Schriften, das
+       lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler"): the
+       grounds lie close together, the frames barely lift off them, the
+       text is a dim grey at 4.4 against the ground — enough to read a
+       label, too little to pull the eye — and the meaning colours are
+       damped like the accent. Nothing on the page shines next to the
+       picture. */
+    --ground:       #0e0e0e !important;
+    --ground-2:     #111111 !important;
+    --ground-3:     #161616 !important;
+    --border:       #1f1f1f !important;
+    --text:         #7a7a7a !important;
+    --text-quiet:   #555555 !important;
+    --accent-text:  #0a0a0a !important;
+    --accent-text-hover: #0a0a0a !important;
+    --ok:           #3f7a3f !important;
+    --warn:         #94622c !important;
+    --error:        #96413e !important;
+    --accent-own:   var(--accent);
+    color-scheme: dark !important;
+}
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) body {
+    --accent:       color-mix(in srgb, var(--accent-own) 25%, #4a4a4a);
+    --accent-light: color-mix(in srgb, var(--accent-own) 25%, #727272);
+}
+
 * { box-sizing: border-box; }
 
 /* THE hidden ATTRIBUTE, SETTLED IN ONE LINE — the head of map.css carries
