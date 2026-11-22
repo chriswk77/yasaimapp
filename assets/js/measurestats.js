@@ -735,30 +735,12 @@ export function spreadText(rows, withCount = true) {
 }
 
 /**
- * Length against breadth, every spore a dot, the core's centre as a dashed cross —
- * the picture Piximètre made the habit of, because a cloud shows two
- * species where an average hides them. Returns the SVG's inner markup for
- * a box W × H; the colours are the caller's — theme variables in the
- * window, ink on paper on a plate.
- *
- * THE TREND ELLIPSES, after Piximètre's own book (Henriot's Comparateur
- * page, read 28.08.2026 — his words: the ellipse is descriptive, „sans
- * signification mathématique particulière"): centred on the CENTROID, the
- * major axis along the cloud's trend line (the principal axis of the 2×2
- * covariance), the OUTER ellipse spanning the raw series' full length and
- * width. OURS ADDS AN INNER ONE along the same axes — the maintainer asked to
- * see „das engere Feld" against the outliers (28.08.2026). SINCE
- * 07.10.2026 BOTH COME FROM THE CORE (cloudCore, above): centre, axes and
- * spread robust, the outer rim at 97.5 % of that spread instead of at the
- * farthest measure — a giant spore stands outside it as an ordinary dot
- * and no longer drags either ellipse along. Drawn as sampled polygons, because the plot's x and y
- * scales are different µm-per-pixel and a rotated <ellipse> cannot
- * survive anisotropic mapping.
- *
- * @param {{L: number, B: number}[]} rows  two or more, each with a breadth
- * @param {{axis: string, quiet: string, accent: string, dot?: string}} ink
+ * Where the distribution's frame stands in a box W × H — its margins, the
+ * data's domain on both axes and the trend ellipses —, apart from the
+ * drawing, so that a plate can ask what scale each axis has (plotPxPerUm)
+ * without drawing it. plotSvg draws from exactly this.
  */
-export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {}) {
+function plotFrame(rows, W, H, font) {
     const k = font / 9;   // everything around the data grows with the type
     /* THE AXIS TITLES ARE SMALLER THAN THE NUMBERS AND STAND AT THE AXES'
        ENDS (09.11.2026: „von der Schrift kleiner machen und
@@ -829,6 +811,46 @@ export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {})
     const lowest = Math.min(...Bs, ...rimB);
     const need = titleSize * 1.5 / (H - top - bottom);
     const y0 = Math.min(yLow, (lowest - need * y1) / (1 - need));
+    return { k, left, right, top, bottom, titleSize, Ls, Bs, mx, my, ellipses, x0, x1, y0, y1 };
+}
+
+/**
+ * Pixels per µm along the length (x) and the breadth (y) of a distribution
+ * drawn W × H — equal where one µm is as long on both axes (22.11.2026:
+ * „einen kurzen Einrastpunkt an der Stelle, an der … die Länge und Breite
+ * im gleichen Maßstab sind"; plateparts.js, plotEvenSize, asks it).
+ */
+export function plotPxPerUm(rows, W, H, font = 9) {
+    const f = plotFrame(rows, W, H, font);
+    return { x: (W - f.left - f.right) / (f.x1 - f.x0), y: (H - f.top - f.bottom) / (f.y1 - f.y0) };
+}
+
+/**
+ * Length against breadth, every spore a dot, the core's centre as a dashed cross —
+ * the picture Piximètre made the habit of, because a cloud shows two
+ * species where an average hides them. Returns the SVG's inner markup for
+ * a box W × H; the colours are the caller's — theme variables in the
+ * window, ink on paper on a plate.
+ *
+ * THE TREND ELLIPSES, after Piximètre's own book (Henriot's Comparateur
+ * page, read 28.08.2026 — his words: the ellipse is descriptive, „sans
+ * signification mathématique particulière"): centred on the CENTROID, the
+ * major axis along the cloud's trend line (the principal axis of the 2×2
+ * covariance), the OUTER ellipse spanning the raw series' full length and
+ * width. OURS ADDS AN INNER ONE along the same axes — the maintainer asked to
+ * see „das engere Feld" against the outliers (28.08.2026). SINCE
+ * 07.10.2026 BOTH COME FROM THE CORE (cloudCore, above): centre, axes and
+ * spread robust, the outer rim at 97.5 % of that spread instead of at the
+ * farthest measure — a giant spore stands outside it as an ordinary dot
+ * and no longer drags either ellipse along. Drawn as sampled polygons, because the plot's x and y
+ * scales are different µm-per-pixel and a rotated <ellipse> cannot
+ * survive anisotropic mapping.
+ *
+ * @param {{L: number, B: number}[]} rows  two or more, each with a breadth
+ * @param {{axis: string, quiet: string, accent: string, dot?: string}} ink
+ */
+export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {}) {
+    const { k, left, right, top, bottom, titleSize, Ls, Bs, mx, my, ellipses, x0, x1, y0, y1 } = plotFrame(rows, W, H, font);
     const X = v => left + (v - x0) / (x1 - x0) * (W - left - right);
     const Y = v => H - bottom - (v - y0) / (y1 - y0) * (H - top - bottom);
     const path = (points) => points.map(p => `${X(p[0])},${Y(p[1])}`).join(' ');

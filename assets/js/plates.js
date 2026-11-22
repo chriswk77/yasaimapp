@@ -47,7 +47,7 @@ import { subjectGroups } from './gallerysort.js';
 import {
     detailLabels, DETAIL_GAP, notePtOf, PT_MM, LINE_ITEM, LINE_TILE, BOX_PAD_X, BOX_PAD_Y, TILE_PAD, clamp, esc,
     load, loadFor, picView, pictureOf, measureBack, aspectOf, inkAt, umPerShownPx, cutout, barGeometry, mediaGeometry, labelGeometry, pictureLabel, pictureMarks, rowMediaLabel, rowLabelSubs, rowLabel, drawMedia, detailsHtml,
-    layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotGroundRect, rowGeometry, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
+    layersOf, partsOf, cropsOf, countsOf, blockName, rowsOf, rowsFor, marksOf, straightOf, valuesRows, keyingRows, blockPlotInner, plotEvenSize, plotGroundRect, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, ROW_PAD_THIN, EDGE_MM,
     inkFor, softRect, softWanted, writeOnCanvas, rowWriting, SOFT_FEATHER, SOFT_FEATHER_Y, SOFT_BLUR,
 } from './plateparts.js';
 import { valueLines, lengthStraight } from './measurestats.js';
@@ -76,7 +76,7 @@ let seq = 0;
 // med: the corner of the picture's medium (plateparts.js, mediaGeometry) — off until asked for;
 // medFull its words written out (media.js, mediaLabel); label the same for its name, labelMarks the marks shown behind it (pictureLabel).
 // ink the colour of each of that writing, {bar, med, label} → 'black' / 'white', absent read off the picture; soft {bar, med, label} → true where the picture beneath is blurred (plateparts.js, softOnCanvas).
-const cellNew = (pic = null, rest = {}) => ({ t: 'cell', id: ++seq, pic, z: 1, cx: .5, cy: .5, bar: 'br', barOver: false, med: 'off', medFull: false, label: 'off', labelMarks: [], ink: {}, soft: {}, info: null, block: null, items: [], ...rest });
+const cellNew = (pic = null, rest = {}) => ({ t: 'cell', id: ++seq, pic, z: 1, cx: .5, cy: .5, bar: 'br', barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelMarks: [], ink: {}, soft: {}, info: null, block: null, items: [], ...rest });
 const splitNew = (dir, kids, sizes) => ({ t: 'split', dir, kids, sizes: sizes ?? kids.map(() => 1 / kids.length) });
 const detailsNew = (pt = 9) => ({ fields: [...DETAILS_DEFAULT], labels: true, flow: 'lines', pt, ground: 'none' });
 
@@ -105,7 +105,7 @@ function adopt(node) {
     if (node.block?.kind === 'row' && node.block.pad === 2) node.block.pad = ROW_PAD_THIN;
     return Object.assign(node, cellNew(node.pic ?? null, {
         z: node.z ?? 1, cx: node.cx ?? .5, cy: node.cy ?? .5, bar: node.bar ?? 'br', barOver: node.barOver ?? false, med: node.med ?? 'off', medFull: node.medFull ?? false,
-        label: node.label ?? 'off', labelMarks: node.labelMarks ?? [], ink: writingOf(node.ink, v => v !== 'auto' && v), soft: writingOf(node.soft, v => typeof v === 'boolean'),
+        medLine: node.medLine ?? false, labelLine: node.labelLine ?? false, label: node.label ?? 'off', labelMarks: node.labelMarks ?? [], ink: writingOf(node.ink, v => v !== 'auto' && v), soft: writingOf(node.soft, v => typeof v === 'boolean'),
         info: node.info ?? null, block: node.block ?? null, items: (node.items ?? []).filter(i => i.kind !== 'text'), notes: node.notes ?? [],
         measures: node.measures ?? [],
     }));
@@ -130,7 +130,7 @@ function writingOf(v, keep) {
    server set off the next save, every few seconds (09.11.2026). */
 const bare = (layout) => JSON.parse(JSON.stringify(layout, (k, v) => (k === 'id' ? undefined
     : (k === 'ink' || k === 'soft') && Array.isArray(v) ? {} : v)));
-const content = c => ({ pic: c.pic, z: c.z, cx: c.cx, cy: c.cy, bar: c.bar, barOver: !!c.barOver, med: c.med ?? 'off', medFull: !!c.medFull, label: c.label ?? 'off', labelMarks: c.labelMarks ?? [], ink: c.ink ?? {}, soft: c.soft ?? {}, info: c.info, block: c.block, items: c.items, notes: c.notes ?? [], measures: c.measures ?? [] });
+const content = c => ({ pic: c.pic, z: c.z, cx: c.cx, cy: c.cy, bar: c.bar, barOver: !!c.barOver, med: c.med ?? 'off', medFull: !!c.medFull, medLine: !!c.medLine, labelLine: !!c.labelLine, label: c.label ?? 'off', labelMarks: c.labelMarks ?? [], ink: c.ink ?? {}, soft: c.soft ?? {}, info: c.info, block: c.block, items: c.items, notes: c.notes ?? [], measures: c.measures ?? [] });
 // All the lines a values text may show — and since 07.10.2026 all of them
 // when it is laid down, the average too („bei den Werten ist der
 // Durchschnitt initial nicht angehakt … dass der angehakt ist, jedenfalls
@@ -254,7 +254,7 @@ export function mountPlates(host) {
         keying: ['show', 'label', 'ground', 'groundOpacity'],
         row: ['gap', 'gapColor', 'pad'],
         // The cell around a row, and a picture's cell: where its bar, medium and label stand.
-        rowCell: ['bar', 'barOver', 'med', 'medFull', 'label', 'labelSub', 'ink', 'soft'],
+        rowCell: ['bar', 'barOver', 'med', 'medFull', 'medLine', 'label', 'labelLine', 'labelSub', 'ink', 'soft'],
         plot: ['ground', 'groundOpacity', 'spread'],
         inset: ['frame'],
         pic: ['med', 'medFull', 'label', 'ink', 'soft'],
@@ -1540,10 +1540,24 @@ export function mountPlates(host) {
             const total = slots.reduce((s, el) => s + (across ? el.offsetWidth : el.offsetHeight), 0);
             const start = across ? e.clientX : e.clientY;
             const a0 = node.sizes[i - 1], sum = a0 + node.sizes[i];
+            /* A DISTRIBUTION ON EITHER SIDE CATCHES where its two axes share
+               one scale (plotEvenSnap) — the size its slot then has, as a
+               share. Only a cell standing right at the line: deeper in, the
+               line moves a whole group of cells. */
+            const unit = total / node.sizes.reduce((s, v) => s + v, 0);
+            const evenAt = [i - 1, i].map((j) => {
+                const el = slots[j].firstElementChild;
+                const even = el?.classList.contains('plate-cell') ? plotEvenSnap(el.cell) : null;
+                const size = even?.(across ? { height: el.clientHeight } : { width: el.clientWidth });
+                if (size == null) return null;
+                const slotPx = (across ? slots[j].offsetWidth : slots[j].offsetHeight) + size - (across ? el.clientWidth : el.clientHeight);
+                return j === i - 1 ? slotPx / unit : sum - slotPx / unit;
+            }).filter((a) => a != null && a > .03 && a < sum - .03);
             const move = (ev) => {
                 let a = clamp(a0 + ((across ? ev.clientX : ev.clientY) - start) / total, .03, sum - .03);
                 // Two neighbours alike is what one usually wants — it snaps.
                 if (Math.abs(a - sum / 2) < .012) a = sum / 2;
+                for (const even of evenAt) if (Math.abs(a - even) * unit < SNAP_PX) a = even;
                 node.sizes[i - 1] = a;
                 node.sizes[i] = sum - a;
                 slots[i - 1].style.flexGrow = a;
@@ -1925,7 +1939,9 @@ export function mountPlates(host) {
         g.fillRect(0, 0, W, H);
         // Cutouts without a common scale stand alike and carry no bar.
         const unscaled = rows[0]?.unscaled === true;
-        const geo = rowGeometry(rows, W, H, look, ctx.mm, unscaled || cell.barOver ? 'off' : cell.bar);
+        const barOwn = !unscaled && !cell.barOver;
+        const strips = rowStripsOf(cell, rows, ctx.mm, barOwn);
+        const geo = rowGeometry(rows, W, H, look, ctx.mm, barOwn ? cell.bar : 'off', strips);
         if (!geo) {
             g.fillStyle = '#6f7674';
             g.font = `${3 * ctx.mm}px Arial, Helvetica, sans-serif`;
@@ -1947,16 +1963,15 @@ export function mountPlates(host) {
         });
         const b = unscaled ? null : cell.barOver ? rowBarOver(cell, geo, rows.length, ctx.mm)
             : barGeometry(cell, W, H, ctx.mm, 1 / geo.pxPerUm);
-        rowWords(g, cell, rows, W, H, ctx.mm, b, look);
+        rowWords(g, cell, rows, W, H, ctx.mm, b, look, strips);
     }
 
     /** A row's bar, medium and label on its canvas, their ink read off what
      *  lies beneath — a frame's picture or the row's ground (inkOnCanvas) —
      *  unless the cell sets it, and a soft ground under each where it asks
      *  for one (plateparts.js, writeOnCanvas). The print draws the same. */
-    function rowWords(g, cell, rows, W, H, mm, b, look) {
-        const m = mediaGeometry(cell, W, H, mm, rowMediaLabel(rows, cell.medFull), b);
-        const lab = labelGeometry(cell, W, H, mm, rowLabel(cell.block, rows, cell), b, m);
+    function rowWords(g, cell, rows, W, H, mm, b, look, strips) {
+        const { m, lab } = rowTexts(cell, W, H, mm, rows, b, strips);
         writeOnCanvas(g, cell, mm, rowWriting(g, cell, b, m, lab, look));
     }
 
@@ -2049,6 +2064,7 @@ export function mountPlates(host) {
             return [sx === 0 ? start.w : clamp(w, .08, maxW), sy === 0 ? start.h : clamp(h, .05, maxH)];
         };
         const snap = snapResize(wrap, host, W, H);
+        const even = plotEvenSnap(item.cell);
         const move = (ev) => {
             const keep = ev.shiftKey;
             let [w, h] = fit(start.w + sx * (ev.clientX - start.x) / W, start.h + sy * (ev.clientY - start.y) / H, keep);
@@ -2061,6 +2077,18 @@ export function mountPlates(host) {
             [w, h] = keep
                 ? (sx !== 0 ? fit(w2, w2 * W * ratio / H, true) : fit(h2 * H / ratio / W, h2, true))
                 : fit(w2, h2, false);
+            /* A distribution catches where its axes share one scale
+               (plotEvenSnap): a side pulled sideways on its width, one
+               pulled up or down — or a corner — on its height. */
+            if (even && !keep) {
+                if (sy === 0) {
+                    const want = even({ height: h * H });
+                    if (want != null && Math.abs(want - w * W) < SNAP_PX) [w, h] = fit(want / W, h, false);
+                } else {
+                    const want = even({ width: w * W });
+                    if (want != null && Math.abs(want - h * H) < SNAP_PX) [w, h] = fit(w, want / H, false);
+                }
+            }
             item.w = w;
             item.h = h;
             item.x = clamp(place(sx, start.bx, start.w, w), 0, 1 - w);
@@ -2335,6 +2363,27 @@ export function mountPlates(host) {
     }
     const SNAP_PX = 6;
 
+    /**
+     * A DISTRIBUTION CATCHES WHERE ITS AXES SHARE ONE SCALE (22.11.2026:
+     * „Die Verteilungsansicht hat ja mit den 2 Achsen eigentlich … das
+     * gleiche Maß, µ … Prinzipiell finde ich das ganz gut, aber ich hätte
+     * gerne noch einen kurzen Einrastpunkt an der Stelle, an der eben die
+     * Länge und Breite im gleichen Maßstab sind"). Sized freely the box
+     * stays free; within SNAP_PX of the size at which a µm is as long
+     * across as up, it catches and lets go beyond, as every snap here.
+     * For a cell holding a length-against-breadth cloud this returns
+     * ({width} | {height}) → the other measure in pixels (plateparts.js,
+     * plotEvenSize); null for anything else. The rows are read once, when
+     * the pull begins.
+     */
+    function plotEvenSnap(cell) {
+        const block = cell?.block;
+        if (block?.kind !== 'plot' || block.part) return null;
+        const ctx = ctxNow();
+        const rows = rowsFor(ctx.byKey, block, ctx.style);
+        return (given) => plotEvenSize(block, rows, ctx.mm, given);
+    }
+
     // The millimetre the page was laid out with — REF_MM where it is shown scaled (drawPageShown).
     let pageMm = 1;
     const ctxNow = () => ({ layout, page: layout.pages[pageAt], mm: pageMm, byKey: pics, details: values, style: styleNow(), thumbs: false, editable });
@@ -2548,7 +2597,7 @@ export function mountPlates(host) {
            read as „close this window" and the cell is not that. */
         const filled = cell.pic || cell.info || cell.block;
         add('delete', filled ? t('Inhalt entfernen') : t('Kachel entfernen'), () => {
-            if (filled) Object.assign(cell, { pic: null, info: null, block: null, items: [], notes: [], measures: [], barOver: false, med: 'off', medFull: false, label: 'off', labelMarks: [], ink: {}, soft: {}, z: 1, cx: .5, cy: .5 });
+            if (filled) Object.assign(cell, { pic: null, info: null, block: null, items: [], notes: [], measures: [], barOver: false, med: 'off', medFull: false, medLine: false, label: 'off', labelLine: false, labelMarks: [], ink: {}, soft: {}, z: 1, cx: .5, cy: .5 });
             else removeCell(cell);
             selected = null;
             render();
@@ -4094,18 +4143,7 @@ export function mountPlates(host) {
             /* ONE TICK, „in eigener Zeile" (20.11.2026: „In
                eigener Zeile Haken rein, in eigener Zeile ohne Haken über
                dem Bild") — before, two radios with „über dem Bild". */
-            if (set.on && cell.block?.kind === 'row') {
-                const l = document.createElement('label');
-                l.className = 'choice-row plate-corner-sub';
-                const tick = document.createElement('input');
-                tick.type = 'checkbox';
-                tick.checked = !cell.barOver;
-                tick.addEventListener('change', () => { cell.barOver = !tick.checked; render(); });
-                const span = document.createElement('span');
-                span.textContent = t('in eigener Zeile');
-                l.append(tick, span);
-                set.subs.append(l);
-            }
+            if (set.on && cell.block?.kind === 'row') set.subs.append(ownLineTick(!cell.barOver, (on) => { cell.barOver = !on; }));
             out.push(set);
         }
         const label = row ? rowMediaLabel(row, cell.medFull) : mediaLabel(pic?.media, cell.medFull);
@@ -4116,6 +4154,8 @@ export function mountPlates(host) {
                „Haken dran, ist es abgekürzt, ist der Haken raus, ist es
                ausgeschrieben, brauchen wir keine 2 Zeilen für") — before,
                two radios „abgekürzt" and „ausgeschrieben". */
+            // A row's medium may stand in a line of its own, as its bar (plateparts.js, rowStrips).
+            if (set.on && row) set.subs.append(ownLineTick(!!cell.medLine, (on) => { cell.medLine = on; }));
             if (set.on) {
                 const l = document.createElement('label');
                 l.className = 'choice-row plate-corner-sub';
@@ -4136,6 +4176,8 @@ export function mountPlates(host) {
             /* THE MARKS BEHIND THE NAME — the kinds the picture's measures
                were given (Chrysozystide …): a tick each, shown in brackets
                after the name (plateparts.js, pictureLabel). */
+            // A row's label may stand in a line of its own, as its bar (plateparts.js, rowStrips).
+            if (set.on && row) set.subs.append(ownLineTick(!!cell.labelLine, (on) => { cell.labelLine = on; }));
             if (set.on) for (const mark of row ? rowLabelSubs(cell.block, row) : pictureMarks(pic)) {
                 const l = document.createElement('label');
                 l.className = 'choice-row plate-corner-sub';
@@ -4155,6 +4197,24 @@ export function mountPlates(host) {
             out.unshift(set);
         }
         return out;
+    }
+
+    /* „IN EIGENER ZEILE" — ONE TICK for a row's bar (20.11.2026: „In
+       eigener Zeile Haken rein, in eigener Zeile ohne Haken über dem
+       Bild"), and since 22.11.2026 for its medium and label too („für
+       Medium und Label hätte ich gerne auch die Option, es in eine eigene
+       Zeile zu setzen"). take(on) sets the cell; the page is drawn anew. */
+    function ownLineTick(on, take) {
+        const l = document.createElement('label');
+        l.className = 'choice-row plate-corner-sub';
+        const tick = document.createElement('input');
+        tick.type = 'checkbox';
+        tick.checked = on;
+        tick.addEventListener('change', () => { take(tick.checked); render(); });
+        const span = document.createElement('span');
+        span.textContent = t('in eigener Zeile');
+        l.append(tick, span);
+        return l;
     }
 
     /* EACH PIECE OF WRITING ITS OWN INK AND SOFT GROUND

@@ -25,7 +25,7 @@ import { t } from './i18n.js';
 import {
     notePtOf, PT_MM, LINE_ITEM, LINE_TILE, BOX_PAD_X, BOX_PAD_Y, PAGE_FONT,
     loadForDone, developImage, aspectOf, inkAt, umPerShownPx, cutout, barGeometry, mediaGeometry, labelGeometry, pictureLabel, rowMediaLabel, rowLabel, drawMedia, detailsRows,
-    rowsFor, valuesRows, keyingRows, blockPlotInner, plotGroundRect, plotGroundOpacity, rowGeometry, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, writeOnCanvas, rowWriting,
+    rowsFor, valuesRows, keyingRows, blockPlotInner, plotGroundRect, plotGroundOpacity, rowGeometry, rowStripsOf, rowTexts, drawSporeRow, drawBar, rowLook, rowInk, rowBarOver, inkOnCanvas, tileTextAt, writeOnCanvas, rowWriting,
     DETAIL_ICONS, EDGE_MM,
 } from './plateparts.js';
 import { icon } from './icons.js';
@@ -254,7 +254,9 @@ async function drawBlock(g, cell, box, { pics, style, mm }) {
     g.fillRect(x, y, w, h);
     // Cutouts without a common scale stand alike and carry no bar.
     const unscaled = rows[0]?.unscaled === true;
-    const geo = rowGeometry(rows, w, h, look, mm, unscaled || cell.barOver ? 'off' : cell.bar);
+    const barOwn = !unscaled && !cell.barOver;
+    const strips = rowStripsOf(cell, rows, mm, barOwn);
+    const geo = rowGeometry(rows, w, h, look, mm, barOwn ? cell.bar : 'off', strips);
     if (!geo) return true;
     const images = new Map();   // picture key -> {img, temporary}
     let ok = true;
@@ -275,8 +277,7 @@ async function drawBlock(g, cell, box, { pics, style, mm }) {
     const b = unscaled ? null : cell.barOver ? rowBarOver(cell, geo, rows.length, mm)
         : barGeometry(cell, w, h, mm, 1 / geo.pxPerUm);
     // Bar, medium and label as the page draws them (plates.js, rowWords; plateparts.js, rowWriting).
-    const m = mediaGeometry(cell, w, h, mm, rowMediaLabel(rows, cell.medFull), b);
-    const lab = labelGeometry(cell, w, h, mm, rowLabel(cell.block, rows, cell), b, m);
+    const { m, lab } = rowTexts(cell, w, h, mm, rows, b, strips);
     writeOnCanvas(g, cell, mm, rowWriting(g, cell, b, m, lab, look));
     g.restore();
     for (const e of images.values()) {

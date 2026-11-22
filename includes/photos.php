@@ -2135,7 +2135,7 @@ function plate_hand_clean(mixed $h): array
                 $o[$key] = $k[$key];
             }
         }
-        foreach (['medFull', 'labelSub'] as $key) {
+        foreach (['medFull', 'labelSub', 'medLine', 'labelLine'] as $key) {
             if (is_bool($k[$key] ?? null)) {
                 $o[$key] = $k[$key];
             }

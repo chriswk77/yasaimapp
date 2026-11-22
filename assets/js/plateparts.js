@@ -15,7 +15,7 @@ import { mediaLabel } from './media.js';
 import { iconHtml } from './icons.js';
 import { developEmpty, developRenderer, geoSet, geoView, aiPatchesFor } from './develop.js';
 import {
-    measureLabel, measurePart, measureRows, rowsMarked, valueLines, spreadText, plotSvg, sporeDraw, sporeOrder, sporeAir, lengthStraight,
+    measureLabel, measurePart, measureRows, rowsMarked, valueLines, spreadText, plotSvg, plotPxPerUm, sporeDraw, sporeOrder, sporeAir, lengthStraight,
     partRows, partLines, curveSvg, lineDraw, partAir, partDirection, cropNames, cropRows, countRows, countLines, countDraw,
 } from './measurestats.js';
 
@@ -854,6 +854,47 @@ export function blockPlotInner(block, rows, W, H, mm) {
 }
 const plotInk = (block) => (block?.ground === 'black' ? PLOT_INK_DARK : PLOT_INK);
 
+/**
+ * THE SIZE AT WHICH BOTH AXES SHARE ONE SCALE (22.11.2026: „einen kurzen
+ * Einrastpunkt an der Stelle, an der eben die Länge und Breite im gleichen
+ * Maßstab sind"). The two axes are both µm, and a box pulled freely gives
+ * each its own scale; the cloud then shows a spore rounder or slimmer
+ * than it is. Given one measure of the box, this is the other at which a
+ * µm is as long across as up — the place where sizing a distribution on
+ * a plate catches (plates.js, plotEvenSnap). Null for a part's curve (one
+ * axis only), for too few dots, and where no size reaches it.
+ *
+ * FOUND BY HALVING, not by a formula: the breadth's domain gives up some
+ * air to the axis title as the box changes height (plotSvg, „AIR FOR
+ * LÄNGE µm"), so the scale is no straight line in the size. The line
+ * under the cloud takes its height off the plot, as in blockPlotInner.
+ */
+export function plotEvenSize(block, rows, mm, { width = null, height = null } = {}) {
+    if (block?.part) return null;
+    const dots = rows.filter(r => r.B != null);
+    if (dots.length < 2 || (width == null) === (height == null)) return null;
+    const font = 2.6 * mm;
+    const k = font / 9;
+    const lineH = block?.spread !== false && spreadText(dots) ? 2.6 * mm * 1.7 : 0;
+    // Positive while the length's axis is the finer one; it falls as the box grows taller, rises as it grows wider.
+    const gap = (W, H) => {
+        const s = plotPxPerUm(dots, W, H - lineH, font);
+        return s.x - s.y;
+    };
+    const known = width ?? height;
+    // The least size the frame's margins leave room in (plotSvg: 34 + 10 across, 16 + 18 up).
+    let lo = width != null ? lineH + 34 * k + 1 : 44 * k + 1;
+    let hi = 50 * known;
+    const at = (v) => (width != null ? gap(width, v) : -gap(v, height));
+    const a = at(lo), b = at(hi);
+    if (!Number.isFinite(a) || !Number.isFinite(b) || Math.sign(a) === Math.sign(b)) return null;
+    for (let i = 0; i < 48; i++) {
+        const mid = (lo + hi) / 2;
+        if (Math.sign(at(mid)) === Math.sign(a)) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
 /** The plot's inner SVG for a cell W × H pixels, its type in millimetres. */
 export function plotInner(rows, W, H, mm, ink = PLOT_INK) {
     // The page's type for the plot too — an SVG drawn as an image knows no stylesheet.
@@ -962,12 +1003,14 @@ export function rowBarOver(cell, geo, n, mm) {
  * The bar keeps a strip of its own, so it never lies on a spore — unless
  * the cell lays it over the pictures (rowBarOver).
  */
-export function rowGeometry(rows, W, H, look, mm, corner) {
+export function rowGeometry(rows, W, H, look, mm, corner, strips = null) {
     if (rows.length === 0) return null;
     const tall = Math.max(...rows.map(r => r.cropL)) * look.air;
     const wide = Math.max(...rows.map(r => r.cropB)) * look.air;
     const pad = look.pad * mm, gap = look.gap * mm;
-    const strip = corner === 'off' ? 0 : (BAR_FONT * 1.15 + BAR_GAP + BAR_THICK + BAR_EDGE_Y) * mm;
+    // The lines of their own — the bar's, and medium and label where they ask for one (rowStrips).
+    const lines = strips ?? rowStrips({ bar: corner }, mm, '', '', corner !== 'off');
+    const strip = lines.top + lines.bottom;
     const roomW = W - 2 * pad, roomH = H - 2 * pad - strip;
     let best = null;
     for (let cols = 1; cols <= rows.length; cols++) {
@@ -987,8 +1030,81 @@ export function rowGeometry(rows, W, H, look, mm, corner) {
        line that is not full keeps its end empty. */
     const fw = (roomW - (best.cols - 1) * gap) / best.cols;
     const fh = (roomH - (best.lines - 1) * gap) / best.lines;
-    const above = corner.startsWith('t') ? strip : 0;
-    return { pxPerUm: best.s, cols: best.cols, fw, fh, gap, x0: pad, y0: above + pad };
+    return { pxPerUm: best.s, cols: best.cols, fw, fh, gap, x0: pad, y0: lines.top + pad };
+}
+
+/**
+ * MEDIUM AND LABEL IN A LINE OF THEIR OWN (22.11.2026: „für Medium
+ * und Label hätte ich gerne auch die Option, es in eine eigene Zeile zu
+ * setzen") — as the row's bar has stood since 08.11.2026 (rowBarOver):
+ * cell.medLine and cell.labelLine move each off the pictures into a
+ * strip of the row's ground, above or below by its corner, left or right
+ * in it. The strips stack away from the cell's edge in the order the
+ * corners stack them on a picture — bar, medium, label —, so the three
+ * never lie over one another, and the grid gives up exactly their height.
+ *
+ * Returns {top, bottom} — each side's strips in pixels — and where in
+ * them the medium and the label stand: at.med / at.label = {side, off},
+ * off measured from that side's edge. barOwn: the bar stands in its line
+ * (not over the pictures, not off). medText / labelText: what would be
+ * written — an empty one takes no line.
+ */
+export function rowStrips(cell, mm, medText, labelText, barOwn) {
+    const font = BAR_FONT * mm, edgeY = BAR_EDGE_Y * mm, h = font * 1.1;
+    const out = { top: 0, bottom: 0, at: {} };
+    for (const side of ['t', 'b']) {
+        let reach = 0;       // how far from this edge the lines reach
+        let last = null;     // what stands outermost so far
+        // The bar's strip exactly as it always was, so a row without the new lines keeps its look.
+        if (barOwn && typeof cell.bar === 'string' && cell.bar.startsWith(side)) {
+            reach = (BAR_FONT * 1.15 + BAR_GAP + BAR_THICK + BAR_EDGE_Y) * mm;
+            last = 'bar';
+        }
+        for (const [key, text, own] of [['med', medText, cell.medLine], ['label', labelText, cell.labelLine]]) {
+            const corner = cell[key];
+            if (!own || !text || typeof corner !== 'string' || corner === 'off' || !corner.startsWith(side)) continue;
+            // At the edge its margin; beyond the bar half a line, beyond the medium a quarter (mediaGeometry, labelGeometry).
+            reach += last === null ? edgeY : last === 'bar' ? font * .5 : font * .25;
+            out.at[key] = { side, off: reach };
+            reach += h;
+            last = key;
+        }
+        // The last text line keeps the margin to the pictures that the bar keeps to the edge.
+        if (last === 'med' || last === 'label') reach += edgeY;
+        out[side === 't' ? 'top' : 'bottom'] = reach;
+    }
+    return out;
+}
+
+/** A medium or label in its own line (rowStrips) — the same shape as mediaGeometry's; null where it has none. */
+export function rowLineGeometry(cell, key, W, H, mm, text, strips) {
+    const at = strips?.at?.[key];
+    if (!at || !text) return null;
+    const font = BAR_FONT * mm, edge = BAR_EDGE * mm, h = font * 1.1;
+    const w = mediaCanvas().measureText(text).width * font / 100;
+    return {
+        x: cell[key].endsWith('r') ? W - edge - w : edge,
+        y: at.side === 't' ? at.off : H - at.off - h,
+        w, h, font, label: text, line: true,
+    };
+}
+
+/**
+ * A row's medium and label where they stand — each in its own line or over
+ * the pictures, as the cell asks. The page and the print ask this alike.
+ */
+export function rowTexts(cell, W, H, mm, rows, b, strips) {
+    const medText = rowMediaLabel(rows, cell.medFull), labelText = rowLabel(cell.block, rows, cell);
+    const m = cell.medLine ? rowLineGeometry(cell, 'med', W, H, mm, medText, strips) : mediaGeometry(cell, W, H, mm, medText, b);
+    const lab = cell.labelLine ? rowLineGeometry(cell, 'label', W, H, mm, labelText, strips)
+        : labelGeometry(cell, W, H, mm, labelText, b, m);
+    return { m, lab };
+}
+
+/** The strips a row's cell keeps (rowStrips), from the cell and its rows. */
+export function rowStripsOf(cell, rows, mm, barOwn) {
+    return rowStrips(cell, mm, cell.medLine ? rowMediaLabel(rows, cell.medFull) : '',
+        cell.labelLine ? rowLabel(cell.block, rows, cell) : '', barOwn);
 }
 
 /**
@@ -1143,8 +1259,10 @@ export function rowWriting(g, cell, b, m, lab, look) {
             auto: () => (cell.barOver ? inkOnCanvas(g, b.x, b.y, b.x + b.len, b.y + b.boxH) : rowInk(look)),
             draw: ink => drawBar(g, b, ink) });
     }
+    // In a line of its own (rowStrips) a text stands on the row's ground, as the bar there: that ink, no soft ground.
     for (const [key, w] of [['med', m], ['label', lab]]) {
-        if (w) parts.push({ key, x: w.x, y: w.y, w: w.w, h: w.h, auto: () => inkOnCanvas(g, w.x, w.y, w.x + w.w, w.y + w.h), draw: ink => drawMedia(g, w, ink) });
+        if (w) parts.push({ key, x: w.x, y: w.y, w: w.w, h: w.h, soft: !w.line,
+            auto: () => (w.line ? rowInk(look) : inkOnCanvas(g, w.x, w.y, w.x + w.w, w.y + w.h)), draw: ink => drawMedia(g, w, ink) });
     }
     return parts;
 }
