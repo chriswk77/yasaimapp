@@ -329,29 +329,30 @@
 :root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) {
     /* LOW CONTRAST ON PURPOSE (the same day: „keine großen Kontraste auf
        der Oberfläche", then „gerade helle Farben, helle Schriften, das
-       lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler"): the
-       grounds lie close together, the frames barely lift off them, the
-       text is a dim grey at 4.4 against the ground — enough to read a
-       label, too little to pull the eye — and the meaning colours are
-       damped like the accent. Nothing on the page shines next to the
+       lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler", and the
+       next day back up by a tick: „kann doch ein Tick heller werden
+       wieder"): the grounds lie close together, the frames barely lift
+       off them, the text is a dim grey at 5.3 against the ground — enough
+       to read a label, too little to pull the eye — and the meaning
+       colours are damped like the accent. Nothing on the page shines next to the
        picture. */
-    --ground:       #0e0e0e !important;
-    --ground-2:     #111111 !important;
-    --ground-3:     #161616 !important;
-    --border:       #1f1f1f !important;
-    --text:         #7a7a7a !important;
-    --text-quiet:   #555555 !important;
+    --ground:       #141414 !important;
+    --ground-2:     #181818 !important;
+    --ground-3:     #1e1e1e !important;
+    --border:       #282828 !important;
+    --text:         #8a8a8a !important;
+    --text-quiet:   #626262 !important;
     --accent-text:  #0a0a0a !important;
     --accent-text-hover: #0a0a0a !important;
-    --ok:           #3f7a3f !important;
-    --warn:         #94622c !important;
-    --error:        #96413e !important;
+    --ok:           #458545 !important;
+    --warn:         #a06a30 !important;
+    --error:        #a34844 !important;
     --accent-own:   var(--accent);
     color-scheme: dark !important;
 }
 :root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))) body {
-    --accent:       color-mix(in srgb, var(--accent-own) 25%, #4a4a4a);
-    --accent-light: color-mix(in srgb, var(--accent-own) 25%, #727272);
+    --accent:       color-mix(in srgb, var(--accent-own) 25%, #525252);
+    --accent-light: color-mix(in srgb, var(--accent-own) 25%, #7e7e7e);
 }
 
 * { box-sizing: border-box; }

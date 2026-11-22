@@ -96,6 +96,72 @@ export const DEVELOP_TRACKS = {
     blacks: DARK_LIGHT,
 };
 
+/* --- „FARBMISCHER" (22.11.2026) --------------------------------
+   „Bei Lightroom gibt es ja diese Farbkanalregler … Farbmischer nennt sich
+   das. Farbton, Sättigung, Luminanz … Kann man hier die einzelnen
+   Farbkanäle leicht verschieben." Asked against a yellow cast on white
+   caps that Temperatur and Tönung did not take out: they turn every tone
+   alike, while the cast sat in the yellows and oranges only — Gelb and
+   Orange with less Sättigung take it from the caps and leave the moss and
+   the sky as they were.
+
+   EIGHT COLOURS AT LIGHTROOM'S PLACES on the colour wheel (MIX_COLOURS,
+   degrees), each with Farbton, Sättigung and Luminanz, -100 … 100. A
+   pixel's hue lies between two of them, and its adjustment is blended
+   between those two (smoothly), so every hue belongs to exactly two and
+   all eight at the same value are one setting for the whole picture — no
+   hue falls between the chairs and none is changed twice.
+   - Farbton turns the hue up to 30 degrees towards its neighbours.
+   - Sättigung scales the colour about the pixel's luminance, as „Farbe"
+     does: -100 is the grey of the same brightness, +100 twice as strong.
+     NOT WEIGHTED BY HOW COLOURFUL A PIXEL IS: a nearly white cap with a
+     yellow breath is exactly what „Gelb −" is meant to reach, and scaling
+     a small saturation changes little where there is little.
+   - Luminanz brightens or darkens up to 1.2 stops on linear light, all
+     three channels alike, so hue and saturation stay — WEIGHTED by the
+     saturation (full from 25 per cent), or every grey whose noise happens
+     to lean yellow would flicker brighter.
+   After „Farbe" (Dynamik, Sättigung) and before the masks, which work on
+   what it has made. develop.mix = { h: { red: v, … }, s: {…}, l: {…} },
+   zeros left out; photo_develop_clean (includes/photos.php) holds the
+   same keys in PHOTO_DEVELOP_MIX. */
+export const MIX_COLOURS = [
+    { key: 'red', hue: 0, name: () => t('Rot') },
+    { key: 'orange', hue: 30, name: () => t('Orange') },
+    { key: 'yellow', hue: 60, name: () => t('Gelb') },
+    { key: 'green', hue: 120, name: () => t('Grün') },
+    { key: 'aqua', hue: 180, name: () => t('Aquamarin') },
+    { key: 'blue', hue: 240, name: () => t('Blau') },
+    { key: 'purple', hue: 270, name: () => t('Lila') },
+    { key: 'magenta', hue: 300, name: () => t('Magenta') },
+];
+export const MIX_KINDS = [
+    { key: 'h', name: () => t('Farbton') },
+    { key: 's', name: () => t('Sättigung') },
+    { key: 'l', name: () => t('Luminanz') },
+];
+/** A mixer slider's painted line: where the knob takes that colour (DEVELOP_TRACKS' idea). */
+export function mixTrack(kind, colour) {
+    const h = MIX_COLOURS.find((c) => c.key === colour)?.hue ?? 0;
+    if (kind === 'h') return `linear-gradient(90deg, hsl(${h - 30} 75% 52%), hsl(${h} 75% 52%) 50%, hsl(${h + 30} 75% 52%))`;
+    if (kind === 's') return `linear-gradient(90deg, hsl(${h} 0% 52%), hsl(${h} 85% 52%))`;
+    return `linear-gradient(90deg, hsl(${h} 70% 18%), hsl(${h} 70% 50%) 50%, hsl(${h} 70% 82%))`;
+}
+/** Whether anything of the mixer is set. */
+export function mixSet(d) {
+    const m = d?.mix;
+    return !!m && MIX_KINDS.some((k) => MIX_COLOURS.some((c) => Number(m[k.key]?.[c.key]) || 0));
+}
+/** The mixer as the shader takes it: per colour hue, saturation, luminance as -1 … 1; null where nothing is set. */
+export function mixUniform(d) {
+    if (!mixSet(d)) return null;
+    const out = new Float32Array(MIX_COLOURS.length * 3);
+    MIX_COLOURS.forEach((c, i) => MIX_KINDS.forEach((k, j) => {
+        out[i * 3 + j] = Math.max(-100, Math.min(100, Number(d.mix[k.key]?.[c.key]) || 0)) / 100;
+    }));
+    return out;
+}
+
 /**
  * A mask's own sliders — the twin of PHOTO_DEVELOP_RADIAL in includes/photos.php.
  * ALL OF THE PICTURE'S, IN ITS GROUPS (11.11.2026: first
@@ -559,7 +625,7 @@ export function fillImage(f) {
 export function developEmpty(d) {
     if (!d) return true;
     for (const g of DEVELOP_GROUPS) for (const s of g.sliders) if (Number(d[s.key]) || 0) return false;
-    if (geoSet(d) || d.wb || d.cast || (d.spots ?? []).length) return false;
+    if (geoSet(d) || d.wb || d.cast || mixSet(d) || (d.spots ?? []).length) return false;
     return !(d.radials ?? []).length && !(d.linears ?? []).length && !(d.brushes ?? []).length;
 }
 
@@ -1862,6 +1928,19 @@ export function developClean(d) {
         out.cast = { n: d.cast.n.map(([r, b]) => [castRound(Number(r) || 1), castRound(Number(b) || 1)]),
             amount: k(d.cast.amount), shadows: k(d.cast.shadows), highlights: k(d.cast.highlights) };
     }
+    // „Farbmischer": per kind the colours that are set, whole numbers.
+    if (mixSet(d)) {
+        const mix = {};
+        for (const k of MIX_KINDS) {
+            const row = {};
+            for (const c of MIX_COLOURS) {
+                const v = Math.round(Math.max(-100, Math.min(100, Number(d.mix[k.key]?.[c.key]) || 0)));
+                if (v) row[c.key] = v;
+            }
+            if (Object.keys(row).length) mix[k.key] = row;
+        }
+        out.mix = mix;
+    }
     if (geoSet(d)) {
         const g = d.geo;
         const geo = { turn: ((Number(g.turn) || 0) % 360 + 360) % 360, angle: Math.round((Number(g.angle) || 0) * 10) / 10 };
@@ -1924,6 +2003,8 @@ uniform float uSharp;
 uniform vec3 uWB;      // the white balance's gains per channel — old wb times Temperatur and Tönung (developWB)
 uniform mat3 uCast[5]; // „Farbstich entfernen": a correction per brightness range on linear light (castMatrices)
 uniform float uCastOn;
+uniform vec3 uMix[${MIX_COLOURS.length}]; // „Farbmischer": per colour hue, saturation, luminance, -1 … 1 (mixUniform)
+uniform float uMixOn;
 uniform int uN;
 uniform vec4 uRPos[${RADIALS_MAX}];    // ellipse: centre x, y and radii x, y; gradient: x1, y1, x2, y2 — in pixels
 uniform vec4 uRShape[${RADIALS_MAX}];  // angle (radians), feather 0 … 1, invert 0/1, kind (0 ellipse, 1 gradient, 2 brush)
@@ -2013,6 +2094,41 @@ vec3 castFix(vec3 c) {
     return pow(max(m * lin, 0.), vec3(1. / 2.2));
 }
 
+/* „Farbmischer" (MIX_COLOURS says what each slider does). HSV, because its
+   hue is the colour wheel the eight colours sit on. */
+vec3 rgb2hsv(vec3 c) {
+    vec4 K = vec4(0., -1. / 3., 2. / 3., -1.);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    return vec3(abs(q.z + (q.w - q.y) / (6. * d + 1e-10)), d / (q.x + 1e-10), q.x);
+}
+vec3 hsv2rgb(vec3 c) {
+    vec3 p = abs(fract(c.xxx + vec3(1., 2. / 3., 1. / 3.)) * 6. - 3.);
+    return c.z * mix(vec3(1.), clamp(p - 1., 0., 1.), c.y);
+}
+vec3 mixer(vec3 c) {
+    if (uMixOn < .5) return c;
+    vec3 hsv = rgb2hsv(clamp(c, 0., 1.));
+    float h = hsv.x * 360.;
+    vec3 a, b;
+    float t;
+${MIX_COLOURS.map((col, i) => {
+        const next = MIX_COLOURS[(i + 1) % MIX_COLOURS.length];
+        const to = i + 1 < MIX_COLOURS.length ? next.hue : 360;
+        const cond = i + 1 < MIX_COLOURS.length ? `if (h < ${to.toFixed(1)}) ` : '';
+        return `    ${i ? 'else ' : ''}${cond}{ a = uMix[${i}]; b = uMix[${(i + 1) % MIX_COLOURS.length}]; t = (h - ${col.hue.toFixed(1)}) / ${(to - col.hue).toFixed(1)}; }`;
+    }).join('\n')}
+    vec3 adj = mix(a, b, smoothstep(0., 1., t));
+    float w = smoothstep(0., .25, hsv.y);
+    hsv.x = fract(hsv.x + adj.x * 30. / 360. + 1.);
+    c = hsv2rgb(hsv);
+    // Saturation about the pixel's own luminance, as „Farbe" does it — in HSV a red taken to grey came out light grey.
+    c = max(mix(vec3(luma(c)), c, 1. + adj.y), 0.);
+    vec3 lin = pow(c, vec3(2.2)) * exp2(adj.z * 1.2 * w);
+    return pow(lin, vec3(1. / 2.2));
+}
+
 void main() {
     // Where this pixel of the view lies in the source: turned back about the crop's centre.
     vec2 q = vec2(vUv.x, 1. - vUv.y) * uOut - uOut * .5;
@@ -2052,6 +2168,7 @@ void main() {
     float h = uEnds.z;
     c = h > 0. ? (c - .12 * h) / (1. - .12 * h) : mix(c, vec3(.82), -h * .35);
     c = colour(c, uColour.z, uColour.w + max(h, 0.) * .2);
+    c = mixer(c);
 
     // The ellipses, each its own small development behind its mask — in source pixels (p, above).
     float shown = 0.;
@@ -2404,6 +2521,9 @@ export function developRenderer(canvas, { edge = EDGE_MAX } = {}) {
                 const cast = castMatrices(d);
                 gl.uniform1f(u('uCastOn'), cast ? 1 : 0);
                 if (cast) gl.uniformMatrix3fv(u('uCast'), false, cast);
+                const mixed = mixUniform(d);
+                gl.uniform1f(u('uMixOn'), mixed ? 1 : 0);
+                if (mixed) gl.uniform3fv(u('uMix'), mixed);
                 gl.uniform1i(u('uN'), masks.length);
                 const pos = new Float32Array(RADIALS_MAX * 4), shape = new Float32Array(RADIALS_MAX * 4);
                 const lightR = new Float32Array(RADIALS_MAX * 4), more = new Float32Array(RADIALS_MAX * 4), sharpR = new Float32Array(RADIALS_MAX);

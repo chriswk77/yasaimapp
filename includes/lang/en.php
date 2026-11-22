@@ -9914,6 +9914,21 @@ return [
     'Kopieren %d'
         => 'Clone %d',
     // „Farbstich entfernen" at the foot of „Farbe", 14.11.2026.
+    // „Farbmischer" under „Farbe", 22.11.2026 (Rot, Grün, Orange, Lila and Sättigung stand elsewhere already).
+    'Farbmischer'
+        => 'Colour mixer',
+    'Farbton'
+        => 'Hue',
+    'Luminanz'
+        => 'Luminance',
+    'Gelb'
+        => 'Yellow',
+    'Aquamarin'
+        => 'Aqua',
+    'Blau'
+        => 'Blue',
+    'Magenta'
+        => 'Magenta',
     'Farbstich'
         => 'Colour cast',
     'Neu messen'

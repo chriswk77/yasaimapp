@@ -428,6 +428,8 @@ const PHOTO_DEVELOP_SLIDERS = ['exposure', 'contrast', 'highlights', 'shadows', 
 const PHOTO_DEVELOP_RADIAL  = ['temp', 'tint', 'contrast', 'vibrance', 'saturation', 'exposure', 'highlights', 'shadows',
                                'whites', 'blacks', 'clarity', 'dehaze', 'sharpen'];
 const PHOTO_DEVELOP_RADIALS = 12;
+/** „Farbmischer" (22.11.2026): the eight colours — the twin of MIX_COLOURS in assets/js/develop.js. */
+const PHOTO_DEVELOP_MIX = ['red', 'orange', 'yellow', 'green', 'aqua', 'blue', 'purple', 'magenta'];
 /** The spots' caps — the twins of SPOTS_MAX and PATH_POINTS_MAX in assets/js/develop.js. The points
  *  are ONE budget for the spots and the brush strokes together. */
 const PHOTO_DEVELOP_SPOTS = 1000;
@@ -487,6 +489,22 @@ function photo_develop_clean(mixed $d): ?array
             $out['cast'] = ['n' => $n, 'amount' => $share($cast['amount'] ?? null),
                 'shadows' => $share($cast['shadows'] ?? null), 'highlights' => $share($cast['highlights'] ?? null)];
         }
+    }
+    /* „FARBMISCHER" (22.11.2026; develop.js MIX_COLOURS): per kind — h
+       Farbton, s Sättigung, l Luminanz — the colours that are set, -100 to
+       100. A kind without a set colour is left out, the whole without one
+       too. */
+    if (is_array($d['mix'] ?? null)) {
+        $mix = [];
+        foreach (['h', 's', 'l'] as $kind) {
+            $row = [];
+            foreach (PHOTO_DEVELOP_MIX as $colour) {
+                $v = $num(is_array($d['mix'][$kind] ?? null) ? ($d['mix'][$kind][$colour] ?? null) : null, -100, 100);
+                if ($v !== null && $v != 0) $row[$colour] = $v;
+            }
+            if ($row !== []) $mix[$kind] = $row;
+        }
+        if ($mix !== []) $out['mix'] = $mix;
     }
     /* THE SPOTS („Ausbessern", 10.11.2026; develop.js spotsApply): places
        mended from elsewhere in the picture, as descriptions — a path (one
@@ -2419,9 +2437,10 @@ function measure_develop_help(): array
             '4. light: exposure, highlights, shadows, whites, blacks (one gain on linear light), then contrast, then clarity',
             '5. dehaze',
             '6. colour: vibrance, saturation',
-            '7. masks: every entry of "radials", then of "linears", then of "brushes", each blending its own local adjustment in by its mask — '
+            '7. colour mixer ("mix")',
+            '8. masks: every entry of "radials", then of "linears", then of "brushes", each blending its own local adjustment in by its mask — '
                 . 'its temp and tint first, as gains per channel exactly as in step 2, on what the steps before have made; then its light, dehaze, colour and sharpen',
-            '8. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
+            '9. geometry ("geo"): mirror, then turn, then crop — all about the crop centre',
         ],
         'sliders' => 'Every global slider runs from -100 to +100, 0 = unchanged; "sharpen" runs from 0 to 100.',
         'keys' => [
@@ -2445,6 +2464,12 @@ function measure_develop_help(): array
             'vibrance'   => 'Saturation that mainly reaches weakly saturated colours.',
             'saturation' => 'Saturation of all colours; -100 = greyscale.',
             'sharpen'    => 'Unsharp mask with a small radius, 0 to 100.',
+            'mix'        => 'Colour mixer, step 7, on the display-encoded picture (gamma 2.2). Eight colours at hues (HSV, degrees) '
+                . 'red 0, orange 30, yellow 60, green 120, aqua 180, blue 240, purple 270, magenta 300; h, s and l each hold, per colour, '
+                . 'a value from -100 to +100 (absent = 0). A pixel\'s hue lies between two neighbouring colours and its adjustment is '
+                . 'blended between theirs with a smoothstep of the position. h: the hue turned by up to ±30 degrees. s: the colour '
+                . 'scaled about its luminance (Rec. 709) by 1 + s/100. l: all three channels multiplied on linear light by 2^(1.2 × l/100 × w), '
+                . 'w = smoothstep(0, 0.25, saturation).',
             'cast'       => 'Colour cast removal, step 2 before the white balance. n: five pairs [r, b] — the colour of the light '
                 . 'measured on the greyest pixels in five brightness ranges of linear light (gamma 2.2), Y 0.003–0.02, 0.02–0.06, '
                 . '0.06–0.18, 0.18–0.5, 0.5–1, as red and blue against green. Each range is corrected by a Bradford chromatic '

@@ -2907,6 +2907,11 @@
 .blend-kind.is-active { background: var(--accent); color: var(--accent-text); }
 .blend-kind:disabled { cursor: default; }
 .blend-kind:disabled:not(.is-active) { color: var(--text-quiet); }
+/* „Farbmischer" (photowindow.js, mixGroup) takes the same switch for its
+   three kinds — Farbton, Sättigung, Luminanz — and marks a kind that holds
+   a setting with a dot after its word. */
+.photo-mix-kinds { margin: .3rem 0 .7rem; }
+.photo-mix-kinds .blend-kind.is-set::after { content: " •"; }
 .blend-pick .field.question { margin: 0; border: 0; padding: 0; }
 /* The answers to „Welche Bilder zeigen dasselbe?" — what is ticked at the left. */
 .blend-chosen { display: flex; flex-direction: column; gap: .15rem; margin-left: 1.6rem; }

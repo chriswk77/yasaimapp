@@ -57,7 +57,7 @@ import { ARROW_WEIGHTS, TEXT_LEADING, TEXT_SIZES, textStep, arrowWordsGrip, arro
 import { icon, iconHtml } from './icons.js';
 import { readableDate } from './dates.js';
 import { MEDIA, mediaLabel, mediaAlphabetical } from './media.js';
-import { DEVELOP_GROUPS, DEVELOP_TRACKS, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
+import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
     castMeasure, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
     SPOTS_MAX, PATH_POINTS_MAX, spotRadiusOf, spotSizeOf, spotSourceFind, BRUSHES_MAX, brushNew, brushField, masksOf,
     spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
@@ -2504,8 +2504,9 @@ export function mountPhotoWindow(host) {
         input.dataset.key = def.key;
         input.disabled = !may;
         // The line painted with what the slider does (develop.js, DEVELOP_TRACKS).
-        if (DEVELOP_TRACKS[def.key]) {
-            input.style.setProperty('--track', DEVELOP_TRACKS[def.key]);
+        const track = def.track ?? DEVELOP_TRACKS[def.key];
+        if (track) {
+            input.style.setProperty('--track', track);
             row.classList.add('has-track');
         }
         const say = () => {
@@ -3230,11 +3231,13 @@ export function mountPhotoWindow(host) {
        machen. Einheitliches Design") — the same sign the rail beside it
        carries, so head and chosen sign say one thing. The folding heads
        keep their triangle. */
-    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', light: 'sun', details: 'details', brush: 'brush' };
+    const HEAD_SIGNS = { micro: 'microscope', color: 'palette', mix: 'colour-mix', light: 'sun', details: 'details', brush: 'brush' };
     const headSign = (key) => (HEAD_SIGNS[key] ? iconHtml(HEAD_SIGNS[key], { class: 'photo-develop-head-sign' }) : '');
     const DEVELOP_RAIL = [
         { key: 'micro', icon: 'microscope', name: () => t('Mikrofotos') },
         { key: 'color', icon: 'palette' },
+        // „Farbmischer" right under „Farbe" (22.11.2026) — the colour's finer hand (mixGroup).
+        { key: 'mix', icon: 'colour-mix', name: () => t('Farbmischer') },
         { key: 'light', icon: 'sun' },
         { key: 'details', icon: 'details' },
     ];
@@ -3475,6 +3478,74 @@ export function mountPhotoWindow(host) {
         return box;
     }
 
+    /* „FARBMISCHER" (22.11.2026; develop.js MIX_COLOURS says what the
+       sliders do). Lightroom's arrangement: the three kinds as a switch on
+       top — Farbton, Sättigung, Luminanz —, beneath it the eight colours
+       of the chosen kind, each line painted with where it takes its colour.
+       The kind is the device's (settings developMixKind), like the rail's
+       group; a kind that holds a setting carries the group's dot. */
+    function mixGroup(may, mark) {
+        const group = document.createElement('div');
+        group.className = 'photo-develop-group';
+        group.dataset.group = 'mix';
+        const head = document.createElement('h3');
+        head.className = 'list-label photo-develop-group-head is-plain';
+        head.innerHTML = headSign('mix');
+        head.append(t('Farbmischer'));
+        const kinds = document.createElement('div');
+        kinds.className = 'blend-kinds-switch photo-mix-kinds';
+        kinds.setAttribute('role', 'tablist');
+        const rows = document.createElement('div');
+        rows.className = 'photo-mix-rows';
+        const kindSet = (k) => MIX_COLOURS.some((c) => (Number(develop.mix?.[k]?.[c.key]) || 0) !== 0);
+        let chosen = MIX_KINDS.some((k) => k.key === settings.get('developMixKind')) ? settings.get('developMixKind') : 's';
+        const buttons = MIX_KINDS.map((k) => {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'blend-kind';
+            b.setAttribute('role', 'tab');
+            b.dataset.kind = k.key;
+            b.textContent = k.name();
+            b.addEventListener('click', () => {
+                if (chosen === k.key) return;
+                chosen = k.key;
+                settings.set('developMixKind', chosen);
+                draw();
+            });
+            kinds.append(b);
+            return b;
+        });
+        const marks = () => {
+            for (const b of buttons) {
+                b.classList.toggle('is-active', b.dataset.kind === chosen);
+                b.setAttribute('aria-selected', String(b.dataset.kind === chosen));
+                b.classList.toggle('is-set', kindSet(b.dataset.kind));
+            }
+        };
+        const draw = () => {
+            marks();
+            rows.textContent = '';
+            for (const c of MIX_COLOURS) {
+                const kind = chosen;
+                rows.append(beforeRow(developSlider({ key: `mix-${kind}-${c.key}`, name: c.name, track: mixTrack(kind, c.key) },
+                    develop.mix?.[kind]?.[c.key] ?? 0, (v) => {
+                        develop.mix ??= {};
+                        develop.mix[kind] ??= {};
+                        if (v) develop.mix[kind][c.key] = v; else delete develop.mix[kind][c.key];
+                        if (!Object.keys(develop.mix[kind]).length) delete develop.mix[kind];
+                        if (!Object.keys(develop.mix).length) delete develop.mix;
+                        developSoon();
+                        developQueue();
+                        marks();
+                        mark();
+                    }, may)));
+            }
+        };
+        draw();
+        group.append(head, kinds, rows);
+        return group;
+    }
+
     function castChanged() {
         developSoon();
         developQueue();
@@ -3524,6 +3595,7 @@ export function mountPhotoWindow(host) {
             for (const g of DEVELOP_GROUPS) {
                 page.mark(g.key, g.sliders.some((s) => (Number(develop[s.key]) || 0) !== 0) || (g.key === 'color' && !!develop.cast));
             }
+            page.mark('mix', mixSet(develop));
         };
         page.body.append(microGroup(may, new Set(), false));
         developGroupsDraw(page.body, develop, '', (s, v) => {
@@ -3532,6 +3604,7 @@ export function mountPhotoWindow(host) {
             developQueue();
             mark();
         }, may, false);
+        page.body.querySelector('.photo-develop-group[data-group="color"]')?.after(mixGroup(may, mark));
         page.body.querySelector('.photo-develop-group[data-group="color"]')?.append(castBlock(may));
         mark();
         show(chosen);

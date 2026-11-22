@@ -660,6 +660,12 @@ check((photo_develop_clean(['geo' => ['flip' => 'hv']])['geo'] ?? null) === ['tu
     && (photo_develop_clean(['geo' => ['turn' => 90, 'flip' => 'h']])['geo']['flip'] ?? null) === 'h'
     && photo_develop_clean(['geo' => ['flip' => 'x']]) === null,
     'a mirror alone is kept, beside a turn too; an axis that is none counts as nothing');
+$mix = photo_develop_clean(['mix' => ['s' => ['yellow' => -60, 'orange' => '-25.5', 'teal' => 40, 'red' => 0],
+    'l' => ['yellow' => 300], 'h' => ['blue' => 0], 'x' => ['red' => 10]]])['mix'] ?? null;
+check($mix === ['s' => ['orange' => -25.5, 'yellow' => -60.0], 'l' => ['yellow' => 100.0]],
+    'the colour mixer keeps its eight colours in their order and ranges, drops zeros, unknown colours and kinds');
+check(photo_develop_clean(['mix' => ['h' => ['red' => 0]]]) === null && photo_develop_clean(['mix' => 'gelb']) === null,
+    'a colour mixer with nothing set counts as nothing');
 check((photo_develop_clean(['wb' => ['r' => 1.2, 'g' => 1, 'b' => .8]])['wb'] ?? null) == ['r' => 1.2, 'g' => 1.0, 'b' => 0.8]
     && photo_develop_clean(['wb' => ['r' => 1, 'g' => 1, 'b' => 1]]) === null
     && (photo_develop_clean(['wb' => ['r' => 9, 'g' => 'x', 'b' => .1]])['wb'] ?? null) == ['r' => 4.0, 'g' => 1.0, 'b' => 0.25],

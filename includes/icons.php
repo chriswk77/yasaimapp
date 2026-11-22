@@ -1044,6 +1044,12 @@ function icon_stock_all(): array
                     . '<circle cx="15.1" cy="7.8" r="1.15" fill="currentColor"/>',
         ],
 
+        // „Bearbeiten" → Farbmischer (22.11.2026): three circles overlapping
+        // like coloured lights — the colours taken one by one.
+        'colour-mix' => [
+            'path' => '<circle cx="12" cy="8.6" r="5"/><circle cx="8.8" cy="14.2" r="5"/><circle cx="15.2" cy="14.2" r="5"/>',
+        ],
+
         // „Bearbeiten" → Masken (10.11.2026, the tabs became
         // signs, as in Lightroom): a whole circle and a dashed one over it —
         // the part of the picture that is changed, and the line around it.
