@@ -458,7 +458,10 @@ function icon_stock_all(): array
         // Hymenium: a palisade of clubs
         'subject-hymenium' => ['path' => '<path d="M3 20.5h18"/><path d="M3.8 20v-8a1.3 1.3 0 0 1 2.6 0v8M7.6 20v-10a1.3 1.3 0 0 1 2.6 0v10M11.4 20v-7a1.3 1.3 0 0 1 2.6 0v7M15.2 20v-9.5a1.3 1.3 0 0 1 2.6 0v9.5M18.6 20v-7.5a1.3 1.3 0 0 1 2.6 0v7.5"/>'],
         // Basidien: a club with four sterigmata
-        'subject-basidia' => ['path' => '<path d="M10 21v-7.5C8.2 12.6 7.5 11 7.5 9.5a4.5 4.5 0 0 1 9 0c0 1.5-.7 3.1-2.5 4V21"/><path d="M8.6 6.2 7.3 3.5M11 5.1l-.4-2.8M13 5.1l.4-2.8M15.4 6.2l1.3-2.7"/>'],
+        /* HEAD DOWN (22.11.2026: „Oberseite nach unten … sie zeigt
+           momentan nach oben und sie soll nach unten zeigen") — the same
+           drawing mirrored top to bottom, the sterigmata pointing down. */
+        'subject-basidia' => ['path' => '<path d="M10 3v7.5C8.2 11.4 7.5 13 7.5 14.5a4.5 4.5 0 0 0 9 0c0-1.5-.7-3.1-2.5-4V3"/><path d="M8.6 17.8 7.3 20.5M11 18.9l-.4 2.8M13 18.9l.4 2.8M15.4 17.8l1.3 2.7"/>'],
         // Cheilozystiden: a gill, the cystidia at its edge
         'subject-cheilocystidia' => ['path' => '<path d="M3 3.5h18"/><path d="M9 3.5 12 16l3-12.5"/><path transform="translate(12 16) rotate(180) scale(0.85)" d="M-1.7 0c0-2.3.8-3.1 1-4.5.1-.9 0-1.6.2-2.1.2-.6.8-.6 1 0 .2.5.1 1.2.2 2.1.2 1.4 1 2.2 1 4.5"/><path transform="translate(11.4 14.6) rotate(-140) scale(0.7)" d="M-1.7 0c0-2.3.8-3.1 1-4.5.1-.9 0-1.6.2-2.1.2-.6.8-.6 1 0 .2.5.1 1.2.2 2.1.2 1.4 1 2.2 1 4.5"/><path transform="translate(12.6 14.6) rotate(140) scale(0.7)" d="M-1.7 0c0-2.3.8-3.1 1-4.5.1-.9 0-1.6.2-2.1.2-.6.8-.6 1 0 .2.5.1 1.2.2 2.1.2 1.4 1 2.2 1 4.5"/>'],
         // Pleurozystiden: a gill, the cystidia on its faces
