@@ -9195,11 +9195,18 @@ export function mountPhotoWindow(host) {
         const all = layerMeasures();
         if (statsLabel === MEASURE_FREE) return all;
         const tab = statsTabs.get(statsLabel) ?? null;
-        // A cutout name's tab shows its cutouts alone; „Alles" and a part's
-        // tab show none — each name has its own tab (statsTabsSync).
+        // A cutout name's tab shows its cutouts alone, a part's tab its lines alone.
         const crop = cropOfTab(tab);
         if (crop !== null) return all.filter(m => measureCrop(m) === crop);
-        return all.filter(m => measureCrop(m) === null && measurePart(m) === (tab ?? ''));
+        /* „ALLES" SHOWS THE CUTOUTS TOO (22.11.2026: „Die Ausschnitte an
+           sich sehe ich gerade gar nicht mehr im Bildbetrachter"). Since
+           07.10.2026 a cutout showed only in its own name's tab. That held
+           while cutouts lay beside writing on „Beschriftung", where a tool
+           armed for cutting opened their tab. On the layer „Ausschnitte",
+           which holds nothing else, „Alles" was an empty picture. Part lines
+           still stay in their own tabs. */
+        if (tab === null) return all.filter(m => measurePart(m) === '');
+        return all.filter(m => measureCrop(m) === null && measurePart(m) === tab);
     }
 
     /* FLOATING OVER THE IMAGE, never in the footer — measured 28.08.2026: a
@@ -12440,6 +12447,16 @@ export function mountPhotoWindow(host) {
         statsLabel = name;
         statsLabelSelect.value = name;
         layerChosen = true;
+        /* A LAYER OF CUTOUTS ALONE OPENS ON ITS LAST NAME (22.11.2026):
+           its statistics have nothing to reckon under „Alles", its tiles
+           and the „Umbenennen" stand in a name's tab. Only on arriving, and
+           only where no tab was chosen there before — „Alles" stays one
+           click away. */
+        if (name !== MEASURE_FREE && !statsTabs.has(name)) {
+            const here = statsSources().flatMap(s => s.obj.measures ?? []).filter(m => measureLabel(m) === name);
+            const crops = cropNames(statsSources(), name);
+            if (here.length > 0 && here.every(m => m.type === 'crop') && crops.length > 0) statsTabs.set(name, cropTab(crops.at(-1)));
+        }
         // The overlay follows the layer switch; a selection on a measure
         // that just vanished from view has nothing left to hold — and the
         // cutout offer's rectangle belongs to the layer that was just left.
@@ -13344,7 +13361,12 @@ export function mountPhotoWindow(host) {
         if (rows.length === 0) {
             const p = document.createElement('p');
             p.className = 'hint-text small';
-            p.textContent = t('Unter „%s" ist noch nichts gemessen. Miss mit „Länge × Breite". Gezählt werden alle Bilder dieses Fundes.', statsLabel);
+            // A layer of cutouts measures nothing: the hint says where its cutouts stand, or how to make one.
+            p.textContent = cropNames(statsSources(), statsLabel).length > 0
+                ? t('Die Ausschnitte stehen oben in ihren eigenen Reitern, einer für jeden Namen.')
+                : statsLabel === CROP_LAYER
+                ? t('Noch kein Ausschnitt. Wähle „Bildausschnitt" und setze vier Punkte.')
+                : t('Unter „%s" ist noch nichts gemessen. Miss mit „Länge × Breite". Gezählt werden alle Bilder dieses Fundes.', statsLabel);
             box.append(p);
             return;
         }

@@ -4717,6 +4717,10 @@ return [
         => 'Label',
     'Beschriften und Ausschneiden'
         => 'Label and cut out',
+    'Die Ausschnitte stehen oben in ihren eigenen Reitern, einer für jeden Namen.'
+        => 'The cutouts stand in their own tabs above, one for each name.',
+    'Noch kein Ausschnitt. Wähle „Bildausschnitt" und setze vier Punkte.'
+        => 'No cutout yet. Choose “Picture cutout” and set four points.',
     'Ausschnitte umbenennen'
         => 'Rename cutouts',
     'Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln. Nimmst du einen Namen, den es schon gibt, stehen beide in einer Reihe.'
