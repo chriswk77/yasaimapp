@@ -13154,20 +13154,26 @@ export function mountPhotoWindow(host) {
            layer with part measures (MEASURE_PARTS) measures them with the
            plain line — the spores' germ pore, ornament and oil drop, the
            cystidia's head and neck width, the sterigmata, the excipulum's two
-           layers. Whoever gives a layer parts there gives it 'line' here. */
+           layers. Whoever gives a layer parts there gives it 'line' here.
+           THE STRAIGHT BOX BESIDE THE BENT ONE (22.11.2026: „Beim Messen
+           von Pleurozysten fehlt das Rechteck-Messwerkzeug. Ebenso … bei
+           Kaulozystiden und … Basidien … Und beim Messen von Velum fehlt
+           das Länge mal Breite gebogen Werkzeug"): a straight element is
+           measured fastest with the box, a bent one needs its bent twin —
+           so these four carry both, as the Cheilozystiden already did. */
         const table = {
             // Spores and conidia: straight and bent — the bent one for the allantoid spore (18.11.2026).
             Sporen: ['rect', 'cutout', 'line'],
             Konidien: ['rect', 'cutout'],
             Lamellen: ['sector'],
             Poren: ['box'],
-            Basidien: ['cutout', 'line'],    // the straight line for the sterigmata
+            Basidien: ['rect', 'cutout', 'line'],    // the straight line for the sterigmata
             Capillitium: ['line'],
             Cheilozystiden: ['rect', 'cutout', 'cystid', 'line'],
-            Kaulozystiden: ['cutout', 'cystid', 'line'],
+            Kaulozystiden: ['rect', 'cutout', 'cystid', 'line'],
             Pileozystiden: ['cutout', 'line'],
-            Pleurozystiden: ['cutout', 'line'],
-            Velum: ['rect'],
+            Pleurozystiden: ['rect', 'cutout', 'line'],
+            Velum: ['rect', 'cutout'],
             Asci: ['cutout'],
             Excipulum: ['line'],
             Paraphysen: ['cutout', 'cystid'],   // „Zystide in Teilen" with the method „Paraphyse": length, breadth, head
