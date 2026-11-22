@@ -321,16 +321,24 @@ function gallery_windows_render(): void
                          measuring). The statistic's button on top, because
                          the statistic stands at the top beside it. */ ?>
                     <svg class="microscope-measures" id="microscope-measures" aria-hidden="true"></svg>
+                    <?php /* THE TWO SWITCHES ON TOP — the statistic and the
+                         core area's circle (22.11.2026) both show or hide
+                         something —, then the tools, the bucket at the foot.
+                         data-needs-scale: what measures needs an objective
+                         with a scale; the circle does not, so without one
+                         the rail holds its button alone (microscope.js). */ ?>
                     <div class="microscope-measure-rail" id="microscope-measure-rail" hidden>
-                        <button type="button" class="button subtle" data-quick="stats"
+                        <button type="button" class="button subtle" data-quick="stats" data-needs-scale
                                 title="<?= h(t('Statistik zeigen')) ?>" aria-label="<?= h(t('Statistik zeigen')) ?>"><?= icon('info') ?></button>
-                        <span class="microscope-measure-rail-line" aria-hidden="true"></span>
-                        <button type="button" class="button subtle" data-quick="line"
+                        <button type="button" class="button subtle" data-quick="zone"
+                                title="<?= h(t('Kernbereich zeigen')) ?>" aria-label="<?= h(t('Kernbereich zeigen')) ?>"><?= icon('core-area') ?></button>
+                        <span class="microscope-measure-rail-line" data-needs-scale aria-hidden="true"></span>
+                        <button type="button" class="button subtle" data-quick="line" data-needs-scale
                                 title="<?= h(t('Strecke')) ?>" aria-label="<?= h(t('Strecke')) ?>"><?= icon('measure-line') ?></button>
-                        <button type="button" class="button subtle" data-quick="rect"
+                        <button type="button" class="button subtle" data-quick="rect" data-needs-scale
                                 title="<?= h(t('Länge × Breite')) ?>" aria-label="<?= h(t('Länge × Breite')) ?>"><?= icon('measure-rect') ?></button>
-                        <span class="microscope-measure-rail-line" aria-hidden="true"></span>
-                        <button type="button" class="button subtle is-clear" data-quick="clear"
+                        <span class="microscope-measure-rail-line" data-needs-scale aria-hidden="true"></span>
+                        <button type="button" class="button subtle is-clear" data-quick="clear" data-needs-scale
                                 title="<?= h(t('Messungen löschen')) ?>" aria-label="<?= h(t('Messungen löschen')) ?>"><?= icon('delete') ?></button>
                     </div>
                     <div class="microscope-measure-stats" id="microscope-measure-stats" hidden></div>

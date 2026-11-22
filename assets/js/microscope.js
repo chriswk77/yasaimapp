@@ -2413,20 +2413,25 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
      *  screen pixels make a micrometre — null where nothing may be measured. */
     function quickFrame() {
         const preset = currentPreset();
+        const f = stageFrame();
+        if (!f || !preset) return null;
+        const fieldUm = preset.um_per_px * (preset.width || session?.still?.width || f.picture.w);
+        return { x0: f.x0, y0: f.y0, pxPerUm: f.w / fieldUm };
+    }
+    /** Where the big picture stands on the stage, in the stage's pixels —
+     *  null while none stands there or something else has the stage (a
+     *  calibration, a message, the objective's question). No scale needed:
+     *  the core area's circle goes by the picture alone. */
+    function stageFrame() {
         const picture = bigPicture();
-        if (!box.open || calibrating || view !== 'microscope' || !preset || !message.hidden || !ask.hidden
+        if (!box.open || calibrating || view !== 'microscope' || !message.hidden || !ask.hidden
             || !picture || !(picture.w > 0 && picture.h > 0)) return null;
         // The scale bar's arithmetic (drawScaleBar): contained, zoomed round the middle, shifted.
         const cw = stage.clientWidth, ch = stage.clientHeight;
         const k = Math.min(cw / picture.w, ch / picture.h);
         const z = liveZoom?.state() ?? { s: 1, tx: 0, ty: 0 };
-        const shownWidth = picture.w * k * z.s, shownHeight = picture.h * k * z.s;
-        const fieldUm = preset.um_per_px * (preset.width || session?.still?.width || picture.w);
-        return {
-            x0: cw / 2 + z.tx - shownWidth / 2,
-            y0: ch / 2 + z.ty - shownHeight / 2,
-            pxPerUm: shownWidth / fieldUm,
-        };
+        const w = picture.w * k * z.s, h = picture.h * k * z.s;
+        return { x0: cw / 2 + z.tx - w / 2, y0: ch / 2 + z.ty - h / 2, w, h, picture };
     }
     function quickUm(e, f) {
         const r = stage.getBoundingClientRect();
@@ -2452,7 +2457,11 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
     function quickDraw() {
         const f = quickFrame();
         const there = f !== null;
-        quickRail.hidden = !there;
+        // The rail stands with the picture; what measures, with the scale.
+        const frame = stageFrame();
+        quickRail.hidden = frame === null;
+        for (const n of quickRail.querySelectorAll('[data-needs-scale]')) n.hidden = !there;
+        zoneDraw(frame);
         stage.classList.toggle('is-measuring', there && quickTool !== null);
         for (const name of ['line', 'rect']) quickButton(name).classList.toggle('is-active', quickTool === name);
         const stats = quickButton('stats');
@@ -2469,7 +2478,7 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         }
         quickStatsDraw(there);
         if (!there) {
-            quickSvg.innerHTML = '';
+            measureLayer.innerHTML = '';
             return;
         }
         const dress = scaleStyle();
@@ -2517,8 +2526,138 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
             const [x, y] = at(p);
             inner += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${dress.colour}" stroke="${dress.seam}" stroke-width="1.5"/>`;
         }
-        quickSvg.innerHTML = inner;
+        measureLayer.innerHTML = inner;
     }
+
+    // --- The core area: a circle one sets for oneself ------------------------
+
+    /* A RED DASHED CIRCLE OVER THE LIVE PICTURE (22.11.2026: „ich habe nur
+       einen Kernbereich, den ich benutzen kann. Der Rest hat außen extrem
+       starke chromatische Aberration … so eine kleine rot gestrichelten
+       Kreis irgendwo setzen … verschieben, in der Größe ändern, dass ich
+       für mich so sehe, okay, in diesem Bereich kann ich Sporen oder
+       Messungen vornehmen"). Camera and objective that do not suit each
+       other draw cleanly in the middle only; the circle marks that middle,
+       so a spore is brought INTO it before it is photographed or measured.
+
+       A MARK FOR THE EYE, NOTHING ELSE: it is in no photo, crops nothing,
+       and no measure asks it. It lies on the page over the picture.
+
+       IN FRACTIONS OF THE PICTURE — the centre of its width and height,
+       the radius of its width — because the fault is the optics' and sits
+       in the field: the binned preview, the still and a growing stack show
+       the same field in different pixel counts, and the zoom moves the
+       circle with the picture.
+
+       PER OBJECTIVE, WITH THE LAST ONE SET AS THE START: how far the clean
+       middle reaches differs from objective to objective. An objective
+       that has no circle of its own shows the one set last, so whoever
+       needs only one never notices; whoever moves it under another
+       objective has given that one its own. Kept by this computer, like
+       the objective: the microscope stands at it.
+
+       THE LINE MOVES IT, THE SQUARE ON IT SIZES IT — the middle stays
+       free, it is where one looks. Neither catches the pointer while a
+       measuring tool is in hand. */
+    const ZONE_COLOUR = '#ff1f1f';   // the picture's red, as free measuring's (photowindow.js)
+    const ZONE_START = { x: 0.5, y: 0.5, r: 0.25 };
+    const SVG_SPACE = 'http://www.w3.org/2000/svg';
+    const zoneLayer = document.createElementNS(SVG_SPACE, 'g');
+    zoneLayer.setAttribute('class', 'microscope-zone');
+    const measureLayer = document.createElementNS(SVG_SPACE, 'g');
+    quickSvg.append(zoneLayer, measureLayer);
+    let zoneKept = settings.get('microscopeZone', null) ?? {};
+    let zoneShown = zoneKept.on === true;
+    let zoneDrag = null;            // { kind, startX, startY, from, now } while one is dragged
+    const zoneValid = (z) => z && [z.x, z.y, z.r].every((v) => Number.isFinite(v)) && z.r > 0;
+    const zoneKey = () => String(objectiveId ?? 'none');
+    function zoneNow() {
+        const own = zoneKept.by?.[zoneKey()];
+        return zoneValid(own) ? own : zoneValid(zoneKept.last) ? zoneKept.last : ZONE_START;
+    }
+    function zoneKeep(z = null) {
+        zoneKept = {
+            on: zoneShown,
+            last: z ?? zoneKept.last ?? null,
+            by: z ? { ...(zoneKept.by ?? {}), [zoneKey()]: z } : (zoneKept.by ?? {}),
+        };
+        settings.set('microscopeZone', zoneKept);
+    }
+    function zoneDraw(frame) {
+        const button = quickButton('zone');
+        button.classList.toggle('is-active', zoneShown);
+        const word = zoneShown ? t('Kernbereich ausblenden') : t('Kernbereich zeigen');
+        button.title = word;
+        button.setAttribute('aria-label', word);
+        zoneLayer.classList.toggle('is-locked', quickTool !== null);
+        if (!frame || !zoneShown) {
+            zoneLayer.innerHTML = '';
+            return;
+        }
+        const z = zoneDrag?.now ?? zoneNow();
+        const cx = frame.x0 + z.x * frame.w, cy = frame.y0 + z.y * frame.h, r = z.r * frame.w;
+        const at = `cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r.toFixed(1)}" fill="none"`;
+        // The size grip on the lower right of the line; away while a tool is in hand.
+        const gx = cx + r * Math.SQRT1_2, gy = cy + r * Math.SQRT1_2;
+        zoneLayer.innerHTML = `<circle ${at} stroke="${ZONE_COLOUR}" stroke-width="1.6" stroke-dasharray="9 6"/>`
+            + `<circle class="microscope-zone-grab" data-zone="move" ${at} stroke="transparent" stroke-width="14"/>`
+            + (quickTool === null
+                ? `<rect class="microscope-zone-grab" data-zone="size" x="${(gx - 5.5).toFixed(1)}" y="${(gy - 5.5).toFixed(1)}"
+                    width="11" height="11" fill="${ZONE_COLOUR}" stroke="#fff" stroke-width="1.2"/>`
+                : '');
+    }
+    /* IN THE CAPTURE PHASE, like the measuring tools' clicks below: the
+       zoom on the same stage must not take the press for a pan, nor the
+       release for a tap. The drag listens on the window — the circle is
+       redrawn at every move, and the element the press landed on is gone
+       by then. */
+    stage.addEventListener('pointerdown', (e) => {
+        const kind = e.target.closest?.('[data-zone]')?.dataset.zone;
+        if (!kind || e.button !== 0 || quickTool !== null) return;
+        const frame = stageFrame();
+        if (!frame) return;
+        e.stopPropagation();
+        e.preventDefault();
+        zoneDrag = { kind, startX: e.clientX, startY: e.clientY, from: zoneNow(), now: zoneNow() };
+        const move = (ev) => {
+            const f = stageFrame();
+            if (!f || !zoneDrag) return;
+            const from = zoneDrag.from;
+            if (zoneDrag.kind === 'move') {
+                // The centre stays in the picture, so the circle cannot be lost beyond its edge.
+                zoneDrag.now = {
+                    x: Math.min(1, Math.max(0, from.x + (ev.clientX - zoneDrag.startX) / f.w)),
+                    y: Math.min(1, Math.max(0, from.y + (ev.clientY - zoneDrag.startY) / f.h)),
+                    r: from.r,
+                };
+            } else {
+                const rect = stage.getBoundingClientRect();
+                const dx = ev.clientX - rect.left - (f.x0 + from.x * f.w);
+                const dy = ev.clientY - rect.top - (f.y0 + from.y * f.h);
+                zoneDrag.now = { x: from.x, y: from.y, r: Math.min(1, Math.max(0.03, Math.hypot(dx, dy) / f.w)) };
+            }
+            zoneDraw(f);
+        };
+        const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+            window.removeEventListener('pointercancel', up);
+            const set = zoneDrag?.now;
+            zoneDrag = null;
+            if (set) zoneKeep({ x: +set.x.toFixed(4), y: +set.y.toFixed(4), r: +set.r.toFixed(4) });
+            zoneDraw(stageFrame());
+            // The click that follows the release is no tap on the picture.
+            zoneReleased = true;
+            setTimeout(() => { zoneReleased = false; }, 0);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+        window.addEventListener('pointercancel', up);
+    }, true);
+    let zoneReleased = false;
+    stage.addEventListener('click', (e) => {
+        if (zoneReleased || e.target.closest?.('[data-zone]')) e.stopPropagation();
+    }, true);
 
     /** The statistic in the upper left corner: the lines' span and mean,
      *  length × breadth as the photo window states it (valueLines). */
@@ -2571,6 +2710,10 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         if (name === 'stats') {
             quickStatsShown = !quickStatsShown;
             settings.set('microscopeQuickStats', quickStatsShown);
+            quickDraw();
+        } else if (name === 'zone') {
+            zoneShown = !zoneShown;
+            zoneKeep();
             quickDraw();
         } else if (name === 'line' || name === 'rect') {
             quickArm(name);

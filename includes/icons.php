@@ -767,6 +767,10 @@ function icon_stock_all(): array
         'measure-rect' => [
             'path' => '<rect x="4" y="7" width="16" height="10" rx="1"/>',
         ],
+        // The core area on the microscope's live picture: a dashed circle, as it is drawn there.
+        'core-area' => [
+            'path' => '<circle cx="12" cy="12" r="8.5" stroke-dasharray="3.2 2.7"/>',
+        ],
         /* Mirroring a spore's tile in the statistics
            (04.10.2026): two shapes facing each other across a dashed axis
            — left and right swapped, or top and bottom. */

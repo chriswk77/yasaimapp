@@ -4929,6 +4929,8 @@ return [
         => 'for bent things, along the midline',
     'Länge × Breite, gebogen'
         => 'Length × breadth, bent',
+    'Kernbereich zeigen' => 'Show core area',
+    'Kernbereich ausblenden' => 'Hide core area',
     'Statistik zeigen'
         => 'Show statistics',
     'Statistik ausblenden'

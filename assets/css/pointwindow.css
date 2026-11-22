@@ -1233,6 +1233,21 @@ body.detail-collapsed .detail { width: var(--grip-width); }
     z-index: 2;
     pointer-events: none;
 }
+/* THE CORE AREA'S CIRCLE (microscope.js, zone): the drawing lets every
+   click through, as the measures do; only the circle's line and its size
+   grip catch the pointer — the line in a band wider than it is drawn, so
+   it can be hit. Not while a measuring tool is in hand: a point set on
+   the line must be a point. */
+.microscope-zone-grab {
+    pointer-events: stroke;
+    cursor: move;
+    touch-action: none;
+}
+.microscope-zone-grab[data-zone="size"] {
+    pointer-events: all;
+    cursor: nwse-resize;
+}
+.microscope-zone.is-locked .microscope-zone-grab { pointer-events: none; }
 .microscope-measure-rail {
     position: absolute;
     top: .6rem;
