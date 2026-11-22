@@ -1690,11 +1690,21 @@ function photo_titles_renamed(?array $list): ?array
    name is what the file in the cloud, the rails and the plate show — a
    place kept anywhere else would be seen nowhere. Plain „Schnallen" stays
    for the mount without a place (Allgemein, Hyphen, the polypores) and
-   for every picture that already carries it. */
+   for every picture that already carries it.
+
+   AND THE VEIL (the same day, asked whether the other word standing under
+   two parts should follow: „Ja, Velum auch"): „Velum Hut" and „Velum
+   Stiel" — the remnants on the cap and the ring or the zones on the stem
+   are two mounts and two characters. MICRO ONLY: the macro list keeps its
+   one „Velum", a picture of the whole fruit body shows both at once. The
+   plain word stays in the micro list as well — it is the one name shared
+   with macro (above, 09.11.2026) and the name of every veil picture taken
+   so far — and stands under „Allgemein", like the plain clamps. */
 const PHOTO_TITLES_MICRO = [
     'Übersichtsschnitt',
     'Sporen', 'Konidien', 'Basidien', 'Cheilozystiden', 'Pleurozystiden',
     'Kaulozystiden', 'Pileozystiden', 'HDS (Hutdeckschicht)', 'Velum',
+    'Velum Hut', 'Velum Stiel',
     'Hymenium', 'Asci', 'Paraphysen', 'Randhaare', 'Excipulum', 'Schnallen',
     'Schnallen Hymenium', 'Schnallen Hut', 'Schnallen Stiel',
     'Hyphen hymenial', 'Hyphen Kontext', 'Hyphen Stiel', 'Myzel', 'Capillitium',
@@ -1725,7 +1735,9 @@ const PHOTO_TITLES_MICRO = [
    A WORD MAY STAND IN TWO GROUPS OF ONE TAB (18.11.2026: „das
    ist ja nicht schlimm, wenn wir das bei der Schnellauswahl doppelt
    haben"): the groups are where one looks, not where a word lives. Velum
-   under cap AND stem — its remnants sit on both, the ring on the stem.
+   stood under cap AND stem as one word until 22.11.2026 — its remnants
+   sit on both, the ring on the stem; since then each carries its part
+   (below).
    The hyphae stand by their place (PHOTO_TITLES_MICRO says why) — under
    „Hyphen" all of them, and each again where it sits: hymenial under
    Hymenium, Kontext under Hut, Stiel under Stiel. The polypores keep
@@ -1740,7 +1752,8 @@ const PHOTO_TITLES_MICRO = [
    (22.11.2026, PHOTO_TITLES_MICRO says why): „Schnallen Hymenium",
    „Schnallen Hut", „Schnallen Stiel" — each in its group only, so the
    click itself says the place. The groups that are no place keep the
-   plain word. */
+   plain word. The veil the same way: „Velum Hut", „Velum Stiel", and the
+   plain word under „Allgemein". */
 const PHOTO_TITLES_MICRO_GROUPS = [
     'asco' => [
         'general'   => ['Übersichtsschnitt', 'Konidien', 'Sklerotium'],
@@ -1750,11 +1763,11 @@ const PHOTO_TITLES_MICRO_GROUPS = [
         'hyphae'    => ['Hyphen Stiel', 'Myzel'],
     ],
     'basidio' => [
-        'general'   => ['Übersichtsschnitt', 'Konidien', 'Sklerotium', 'Schnallen'],
+        'general'   => ['Übersichtsschnitt', 'Konidien', 'Sklerotium', 'Schnallen', 'Velum'],
         'hymenium'  => ['Hymenium', 'Sporen', 'Basidien', 'Cheilozystiden', 'Pleurozystiden',
                         'Schnallen Hymenium', 'Hyphen hymenial'],
-        'cap'       => ['HDS (Hutdeckschicht)', 'Pileozystiden', 'Velum', 'Hyphen Kontext', 'Schnallen Hut'],
-        'stem'      => ['Kaulozystiden', 'Velum', 'Hyphen Stiel', 'Schnallen Stiel'],
+        'cap'       => ['HDS (Hutdeckschicht)', 'Pileozystiden', 'Velum Hut', 'Hyphen Kontext', 'Schnallen Hut'],
+        'stem'      => ['Kaulozystiden', 'Velum Stiel', 'Hyphen Stiel', 'Schnallen Stiel'],
         'hyphae'    => ['Hyphen hymenial', 'Hyphen Kontext', 'Hyphen Stiel', 'Myzel', 'Schnallen'],
         'polypores' => ['Hyphen hymenial', 'Hyphen Kontext', 'Schnallen'],
         'gasteroid' => ['Capillitium'],

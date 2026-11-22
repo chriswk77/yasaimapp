@@ -25,6 +25,9 @@ const SUBJECT_ICONS = {
     'schnittbild':              'subject-section',
     'stielbasis':               'subject-stem-base',
     'velum':                    'subject-velum',
+    // By its place, micro only (photos.php, PHOTO_TITLES_MICRO).
+    'velum hut':                'subject-velum',
+    'velum stiel':              'subject-velum',
     'detail':                   'magnifier',
     'makrochemie':              'subject-chemistry',
     'sporenpulver':             'subject-spore-print',

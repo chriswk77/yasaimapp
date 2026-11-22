@@ -363,7 +363,7 @@ check($read['photo_titles_macro'] === ['Belegfoto', 'Hauptmotiv', 'Eigenes Wort'
     'A list saved before the ledger gets the names added since at its end, in stock order, not the ones it dropped');
 check($read['photo_titles_micro'] === PHOTO_TITLES_MICRO, 'The untouched micro list stays the stock');
 $oldMicro = measure_style_read(json_encode(['photo_titles_micro' => ['Sporen', 'Basidien', 'Mein Wort']]));
-check($oldMicro['photo_titles_micro'] === ['Sporen', 'Basidien', 'Mein Wort', 'Übersichtsschnitt', 'Konidien', 'Velum', 'Hymenium', 'Randhaare', 'Excipulum',
+check($oldMicro['photo_titles_micro'] === ['Sporen', 'Basidien', 'Mein Wort', 'Übersichtsschnitt', 'Konidien', 'Velum', 'Velum Hut', 'Velum Stiel', 'Hymenium', 'Randhaare', 'Excipulum',
                                           'Schnallen Hymenium', 'Schnallen Hut', 'Schnallen Stiel',
                                           'Hyphen hymenial', 'Hyphen Kontext', 'Hyphen Stiel', 'Myzel', 'Capillitium', 'Sklerotium'],
     'A micro list saved before the ledger gets the names added since — the baseline is written out, not the stock');
