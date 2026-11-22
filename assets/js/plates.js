@@ -474,6 +474,40 @@ export function mountPlates(host) {
         return mini;
     }
 
+    /* A NAME OF PICTURE CUTOUTS RENAMED in the photo window (22.11.2026,
+       photowindow.js cropRename): the server has renamed the rows of every
+       plate of the find and answers with them (plates.php, crop_rename).
+       The list takes them as they are now. The plate OPEN here takes the
+       new name into what is being worked on AND into what counts as saved,
+       and the new updated_at as its version — else its next save would be
+       refused as coming from „another device", or would carry the old name
+       back. */
+    document.addEventListener('cropsrenamed', (e) => {
+        const { point, layer, from, to, plates: now } = e.detail ?? {};
+        if (point !== pointId || !Array.isArray(now)) return;
+        const rename = (node) => {
+            if (!node) return;
+            if (node.t === 'split') { (node.kids ?? []).forEach(rename); return; }
+            if (node.block?.layer === layer && node.block.crop === from) node.block.crop = to;
+            for (const item of node.items ?? []) if (item.kind === 'inset') rename(item.cell);
+        };
+        plates = now;
+        const there = plate?.id ? now.find(x => x.id === plate.id) : null;
+        if (there && layout) {
+            layout.pages.forEach(page => rename(page.root));
+            const saved = JSON.parse(savedJson);
+            (saved.pages ?? []).forEach(page => rename(page.root));
+            savedJson = JSON.stringify(saved);
+            plate = { ...plate, updated_at: there.updated_at };
+        }
+        if (win.open) {
+            pics = new Map(picturesOf(pointId).map(x => [x.key, x]));
+            stripDraw();
+            render();
+        }
+        drawRow();
+    });
+
     /* --- Opening and closing -------------------------------------------- */
 
     /**

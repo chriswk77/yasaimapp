@@ -5,6 +5,9 @@
  *   GET  plates.php?point=<find>                        the plates one may see
  *   POST plates.php {point_id, id?, since?, layout}     save (new without id)
  *   POST plates.php {action: delete, id}                the maker takes it down
+ *   POST plates.php {action: crop_rename, point_id, layer, from, to}
+ *                                                       a cutout name renamed in
+ *                                                       every plate of the find
  *   POST plates.php multipart {action: image, id, page, hash, image}
  *                                                       one drawn page into the
  *                                                       maker's cloud (plate_images.php)
@@ -76,6 +79,21 @@ if (($input['action'] ?? '') === 'image') {
         json_error(t('Die Cloud hat die Seite gerade nicht angenommen.'), 502);
     }
     json_response($answer);
+}
+
+/* A NAME OF PICTURE CUTOUTS RENAMED in the photo window (22.11.2026) —
+   every plate of the find follows (plates_crop_rename); the answer hands
+   back the plates as they are now, so an editor open on the page can take
+   their new version. */
+if (($input['action'] ?? '') === 'crop_rename') {
+    $pointId = (int) ($input['point_id'] ?? 0);
+    try {
+        $changed = plates_crop_rename($pdo, $userId, $pointId, (string) ($input['layer'] ?? ''),
+            (string) ($input['from'] ?? ''), (string) ($input['to'] ?? ''));
+    } catch (InvalidArgumentException $e) {
+        json_error($e->getMessage(), 422);
+    }
+    json_response(['changed' => $changed, 'plates' => plates_for_point($pdo, $userId, $pointId)]);
 }
 
 if (($input['action'] ?? '') === 'delete') {

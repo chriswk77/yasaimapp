@@ -11719,6 +11719,12 @@ export function mountPhotoWindow(host) {
     /** The write itself — also called directly by the sidebar's pruning,
      *  which may target a picture that is NOT the one in the window. */
     function measureSaveStore(ref) {
+        return measureSaveRequest(ref)
+            .catch(() => host.status(t('Die Messungen ließen sich nicht speichern.'), true));
+    }
+    /** The request alone, its failure left to the caller — the renaming
+     *  of cutouts must know whether every picture took it (cropRename). */
+    function measureSaveRequest(ref) {
         return (ref.kind === 'cloud'
             ? request(`cloud.php?id=${ref.pointId}&action=scale`, {
                 method: 'POST',
@@ -11730,7 +11736,7 @@ export function mountPhotoWindow(host) {
                 body: JSON.stringify({ id: ref.obj.id,
                     measures: ref.obj.measures ?? [], _methode: 'PATCH' }),
             })
-        ).catch(() => host.status(t('Die Messungen ließen sich nicht speichern.'), true));
+        );
     }
 
     /* --- The statistics sidebar (stage two, 28.08.2026) -----------
@@ -13475,7 +13481,83 @@ export function mountPhotoWindow(host) {
             ? t('Noch kein Ausschnitt mit diesem Namen. Wähle „Bildausschnitt" und setze vier Punkte.')
             : t('Diese Ausschnitte stehen auf der Tafel als eine Reihe, genau so wie hier.');
         box.append(p);
+        if (rows.length > 0 && scaleMayEdit()) {
+            const line = document.createElement('div');
+            line.className = 'button-row';
+            const rename = document.createElement('button');
+            rename.type = 'button';
+            rename.className = 'button subtle small';
+            rename.innerHTML = iconHtml('pencil');
+            rename.append(t('Umbenennen'));
+            rename.addEventListener('click', () => cropRename(name));
+            line.append(rename);
+            box.append(line);
+        }
         statsThumbs(rows, true);
+    }
+
+    /**
+     * EVERY CUTOUT OF A NAME UNDER A NEW ONE (22.11.2026: „Ausschnitte
+     * nachträglich umbenennen … auch natürlich schon vergebene Namen").
+     * One cutout could always be given another name — chosen, then a word
+     * in the line over the picture —, but a name with ten cutouts on six
+     * pictures had to be given ten times. Here the name's tab renames them
+     * all, on every picture of the find, and every plate of the find
+     * follows (plates.php, crop_rename), or its row would stand empty. A
+     * name already in use joins the two rows into one — said in the window
+     * before. Where one of the pictures is not the viewer's to change,
+     * nothing is renamed: half a row under the old name and half under the
+     * new would leave the plate's row short without a word.
+     */
+    async function cropRename(from) {
+        const layer = statsLabel;
+        const others = cropNames(statsSources(), layer).filter(n => n !== from && n !== '');
+        const answer = await prompt({
+            title: t('Ausschnitte umbenennen'),
+            text: others.length > 0
+                ? t('Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln. Nimmst du einen Namen, den es schon gibt, stehen beide in einer Reihe.')
+                : t('Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln.'),
+            value: from,
+            button: t('Umbenennen'),
+        });
+        if (answer === null || answer === undefined) return;
+        // As long as a plate keeps a cutout's name (plates.php, plate_mark).
+        const to = String(answer).trim().slice(0, 40);
+        if (to === from || layer !== statsLabel) return;
+        const may = (src) => (src.kind === 'cloud' ? src.obj.mine !== false : host.mayEditPhotos());
+        const hits = statsSources().map(src => ({ src, ms: (src.obj.measures ?? [])
+            .filter(m => m.type === 'crop' && measureLabel(m) === layer && measureCrop(m) === from) }))
+            .filter(h => h.ms.length > 0);
+        if (hits.length === 0) return;
+        if (hits.some(h => !may(h.src))) {
+            host.status(t('Einige dieser Ausschnitte liegen auf Bildern, die du nicht ändern darfst. Deshalb wurde nichts umbenannt.'), true);
+            return;
+        }
+        for (const { ms } of hits) {
+            for (const m of ms) {
+                if (to === '') delete m.name;
+                else m.name = to;
+            }
+        }
+        const pid = statsPointId();
+        try {
+            await Promise.all(hits.map(({ src }) => measureSaveRequest({ kind: src.kind, obj: src.obj, pointId: pid })));
+        } catch {
+            host.status(t('Die Messungen ließen sich nicht speichern.'), true);
+            return;
+        }
+        statsTabSet(cropTab(to));
+        if (pid == null || pid < 0) return;
+        try {
+            const done = await request('plates.php', { method: 'POST',
+                body: JSON.stringify({ action: 'crop_rename', point_id: pid, layer, from, to }) });
+            document.dispatchEvent(new CustomEvent('cropsrenamed',
+                { detail: { point: pid, layer, from, to, plates: done?.plates ?? [] } }));
+        } catch {
+            host.status(t('Die Ausschnitte heißen jetzt „%s", aber die Tafeln ließen sich nicht anpassen. Lege die Reihe dort neu an.', to), true);
+            return;
+        }
+        host.status(t('Umbenannt. Die Ausschnitte heißen jetzt „%s".', to === '' ? t('ohne Namen') : to));
     }
 
     /* THE COUNT IN THE STATISTICS (18.11.2026: „Das muss dann auch

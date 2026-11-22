@@ -625,6 +625,84 @@ function plate_save(PDO $pdo, int $userId, int $pointId, ?int $id, mixed $layout
     return plate_prepare($stmt->fetch(), $userId, true, plate_images_of($pdo, [$id])[$id] ?? []);
 }
 
+/**
+ * A NAME OF PICTURE CUTOUTS RENAMED (22.11.2026: „Ausschnitte
+ * nachträglich umbenennen … auch natürlich schon vergebene Namen"). A row
+ * of cutouts on a plate knows its cutouts by their layer and their name
+ * ({kind: 'row', layer, crop}), so when the photo window gives every cutout
+ * of a name a new one, every plate of the find has to follow — or its row
+ * would stand there empty. EVERY plate, not only the renamer's: the name is
+ * the find's data, not a maker's hand, and a co-owner's row of the same
+ * cutouts would be left empty just the same. A plate changed here counts as
+ * saved (updated_at), so a device that still holds the old version is told
+ * so rather than saving the old name back.
+ *
+ * @return int how many plates changed
+ */
+function plates_crop_rename(PDO $pdo, int $userId, int $pointId, string $layer, string $from, string $to): int
+{
+    if (!plates_ready($pdo)) {
+        return 0;
+    }
+    if (!point_in_circle($pdo, $userId, $pointId)) {
+        throw new InvalidArgumentException(t('Tafeln machen der Besitzer und die Mitbesitzer eines Funds.'));
+    }
+    $layer = plate_layer($layer);
+    $from = plate_mark($from);
+    $to = plate_mark($to);
+    if ($layer === null || $from === null || $to === null || $from === $to) {
+        return 0;
+    }
+    $stmt = $pdo->prepare('SELECT id, layout FROM map_plates WHERE point_id = ?');
+    $stmt->execute([$pointId]);
+    $changed = 0;
+    foreach ($stmt->fetchAll() as $row) {
+        /* AS OBJECTS, NOT ARRAYS: an empty {} (a cell's ink, a field's
+           labels) would come back as [] and change the stored shape. */
+        $layout = json_decode((string) $row['layout']);
+        if (!is_object($layout) || !is_array($layout->pages ?? null)) {
+            continue;
+        }
+        $hit = false;
+        foreach ($layout->pages as $page) {
+            if (is_object($page) && is_object($page->root ?? null)) {
+                $hit = plate_crop_rename_node($page->root, $layer, $from, $to) || $hit;
+            }
+        }
+        if ($hit) {
+            $pdo->prepare('UPDATE map_plates SET layout = ?, updated_at = NOW() WHERE id = ?')
+                ->execute([json_encode($layout, JSON_UNESCAPED_UNICODE), (int) $row['id']]);
+            $changed++;
+        }
+    }
+    return $changed;
+}
+
+/** One node of a page, its kids and the cells lying on it as insets — true where a row was renamed. */
+function plate_crop_rename_node(object $n, string $layer, string $from, string $to): bool
+{
+    $hit = false;
+    if (($n->t ?? '') === 'split') {
+        foreach (is_array($n->kids ?? null) ? $n->kids : [] as $kid) {
+            if (is_object($kid)) {
+                $hit = plate_crop_rename_node($kid, $layer, $from, $to) || $hit;
+            }
+        }
+        return $hit;
+    }
+    $block = $n->block ?? null;
+    if (is_object($block) && ($block->layer ?? null) === $layer && ($block->crop ?? null) === $from) {
+        $block->crop = $to;
+        $hit = true;
+    }
+    foreach (is_array($n->items ?? null) ? $n->items : [] as $item) {
+        if (is_object($item) && ($item->kind ?? '') === 'inset' && is_object($item->cell ?? null)) {
+            $hit = plate_crop_rename_node($item->cell, $layer, $from, $to) || $hit;
+        }
+    }
+    return $hit;
+}
+
 /** Only the maker deletes his plate. */
 function plate_delete(PDO $pdo, int $userId, int $id): bool
 {

@@ -4717,6 +4717,18 @@ return [
         => 'Label',
     'Beschriften und Ausschneiden'
         => 'Label and cut out',
+    'Ausschnitte umbenennen'
+        => 'Rename cutouts',
+    'Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln. Nimmst du einen Namen, den es schon gibt, stehen beide in einer Reihe.'
+        => 'What should these cutouts be called? Every cutout with this name gets the new name, on all pictures of the find and on the plates. If you pick a name that already exists, both stand in one row.',
+    'Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln.'
+        => 'What should these cutouts be called? Every cutout with this name gets the new name, on all pictures of the find and on the plates.',
+    'Einige dieser Ausschnitte liegen auf Bildern, die du nicht ändern darfst. Deshalb wurde nichts umbenannt.'
+        => 'Some of these cutouts lie on pictures you may not change. So nothing was renamed.',
+    'Die Ausschnitte heißen jetzt „%s", aber die Tafeln ließen sich nicht anpassen. Lege die Reihe dort neu an.'
+        => 'The cutouts are now called “%s”, but the plates could not be adjusted. Lay the row down there again.',
+    'Umbenannt. Die Ausschnitte heißen jetzt „%s".'
+        => 'Renamed. The cutouts are now called “%s”.',
     'Breite messen'
         => 'Measure breadth',
     'Reihenfolge'
