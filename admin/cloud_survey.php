@@ -28,6 +28,11 @@
  * spellings), reports every name byte for byte, and takes its folder away
  * again. It touches nothing it did not make itself.
  *
+ * AND `spelling` WITH run=1 (the same day: „Ja, bau Punkt 3") is the door
+ * to the job that mends what the probe explained — it renames and lays
+ * folders together, as includes/cloud_spelling.php describes. Without
+ * `run` it only lists what it would do.
+ *
  * WHO MAY CALL IT. No login — the one who reads the answer is a script on
  * the maintainer's own machine. A key comes as a header (never in the
  * address, where every access log would keep it); the file knows only the
@@ -42,6 +47,7 @@
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=tree  …/admin/cloud_survey.php
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=log   …/admin/cloud_survey.php
  *   curl -H "X-Survey-Key: …" -d user=<id> -d what=probe …/admin/cloud_survey.php
+ *   curl -H "X-Survey-Key: …" -d user=<id> -d what=spelling [-d run=1] …/admin/cloud_survey.php
  */
 
 declare(strict_types=1);
@@ -420,4 +426,40 @@ if ($what === 'probe') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | log | probe');
+/* ---------------------------------------------------------------------------
+ * spelling — the one-time job that brings this account's pCloud to one
+ * spelling of its umlauts and lays the twin folders together
+ * (includes/cloud_spelling.php tells the whole of it).
+ *
+ * WITHOUT `run` IT IS THE LIST: every step the job would take, and nothing
+ * is touched — what the maintainer was shown before anything ran („vorher
+ * bekommst du die Liste"). With run=1 the steps are done, as far as the
+ * time of one call reaches; the answer says how many are still open, and
+ * the next call lists again and goes on.
+ * ------------------------------------------------------------------------- */
+if ($what === 'spelling') {
+    require_once __DIR__ . '/../includes/cloud_spelling.php';
+    $s = cloud_storage_for($pdo, $userId, 'pcloud');
+    if ($s === null) {
+        survey_refuse(409, 'This account has no pCloud connected.');
+    }
+    $run = ($_POST['run'] ?? '') === '1';
+    try {
+        $r = cloud_spelling_account($pdo, $userId, $s, microtime(true) + 80, !$run);
+    } catch (Throwable $e) {
+        survey_refuse(502, $e->getMessage());
+    }
+    header('Content-Type: application/json; charset=utf-8');
+    ob_start('ob_gzhandler');
+    echo json_encode(['at' => date('c'), 'ran' => $run] + $r, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+    exit;
+}
+
+/* accounts — how many connections each provider has here, as a number and nothing else: whether another pCloud may hold names from before. */
+if ($what === 'accounts') {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($pdo->query('SELECT provider, COUNT(*) AS n FROM map_cloud_accounts GROUP BY provider')->fetchAll());
+    exit;
+}
+
+survey_refuse(400, 'what = tree | rows | log | probe | spelling | accounts');

@@ -388,7 +388,8 @@ function cloud_name_clean(string $raw): string
     $s = str_replace(['/', '\\'], '-', $raw);
     $s = preg_replace('/[\x00-\x1F<>:"|?*]+/u', '', $s) ?? $s;
     $s = preg_replace('/\s+/u', ' ', $s) ?? $s;
-    return trim($s, " \t.");
+    // One spelling of an umlaut leaves this server (cloud_name_key, cloud.php).
+    return cloud_name_key(trim($s, " \t."));
 }
 
 /** A name that is the wanted one — or the wanted one with „ (2)" because a foreign file held it. */
@@ -721,7 +722,7 @@ function cloud_names_group(PDO $pdo, array $s, array $point, array $items, float
             $dot  = $item['ext'] === '' ? '' : '.' . $item['ext'];
             $want = $item['stem'] . $dot;
             $here = cloud_names_listing($s, $item['to'], $listings);
-            $holder = $here[$want] ?? null;
+            $holder = $here[cloud_name_key($want)] ?? null;
             if ($holder !== null && $holder !== $item['fileid']) {
                 $other = $byFile[$holder] ?? null;
                 if ($other !== null && $other > $n) {
@@ -736,7 +737,7 @@ function cloud_names_group(PDO $pdo, array $s, array $point, array $items, float
                 } else {
                     // Somebody else's file — this picture gets the next free
                     // „ (2)", never the other's name.
-                    for ($k = 2; isset($here[$item['stem'] . ' (' . $k . ')' . $dot]); $k++) {
+                    for ($k = 2; isset($here[cloud_name_key($item['stem'] . ' (' . $k . ')' . $dot)]); $k++) {
                         // the next free number
                     }
                     $want = $item['stem'] . ' (' . $k . ')' . $dot;
@@ -863,7 +864,7 @@ function cloud_names_move(PDO $pdo, array $s, array $item, string $name, string 
         }
     }
     if (isset($listings[$folder])) {
-        $listings[$folder][$name] = $newId;
+        $listings[$folder][cloud_name_key($name)] = $newId;
     }
 
     match ($item['kind']) {
@@ -895,7 +896,7 @@ function cloud_names_move(PDO $pdo, array $s, array $item, string $name, string 
     // through the run's listings, so a folder is asked once, not per picture.
     if ($item['kind'] !== 'copy') {
         try {
-            $sideName = measure_sidecar_name($oldName);
+            $sideName = cloud_name_key(measure_sidecar_name($oldName));   // the listings' key
             if ($oldFolder !== '') {
                 $sub = cloud_names_sidecar_folder($s, (string) $oldFolder, $listings);
                 foreach ($sub === null ? [(string) $oldFolder] : [(string) $oldFolder, $sub] as $where) {
@@ -925,7 +926,7 @@ function cloud_names_move(PDO $pdo, array $s, array $item, string $name, string 
                 $moving = [];
                 foreach ($sub === null ? [] : cloud_names_listing($s, $sub, $listings) as $fileName => $fid) {
                     $patch = develop_patch_split((string) $fileName);
-                    if ($patch !== null && $patch['picture'] === $oldName) {
+                    if ($patch !== null && $patch['picture'] === cloud_name_key($oldName)) {
                         // A patch keeps its id; a layer mask („ebene", cloud.php) has only the picture's name.
                         $moving[(string) $fileName] = [$fid, $patch['kind'] === 'ebene' ? layer_mask_name($name)
                             : develop_patch_name($name, $patch['id'])];
@@ -938,7 +939,7 @@ function cloud_names_move(PDO $pdo, array $s, array $item, string $name, string 
                         $placed = storage_file_place($s, $fid, $into, $to);
                         unset($listings[$sub][$fileName]);
                         if (isset($listings[$into])) {
-                            $listings[$into][$to] = $placed;
+                            $listings[$into][cloud_name_key($to)] = $placed;
                         }
                     }
                 }
@@ -962,8 +963,20 @@ function cloud_names_move(PDO $pdo, array $s, array $item, string $name, string 
  */
 function cloud_names_listing(array $s, string $folder, array &$listings): array
 {
-    return $listings[$folder] ??= array_map(static fn(array $f): string => (string) $f['fileid'],
-        storage_folder_files($s, $folder));
+    if (!isset($listings[$folder])) {
+        /* UNDER THE COMPARISON KEY (22.11.2026, cloud_name_key): what this
+           list is asked is always „is that name taken?" and „where is the
+           file of that name?" — and a name taken in the other spelling of
+           an umlaut is taken. Asked byte for byte, a picture got the name
+           of a file lying there spelt the other way, the two stood side by
+           side looking alike, and an old sidecar or patch was not found
+           under its picture's name. */
+        $listings[$folder] = [];
+        foreach (storage_folder_files($s, $folder) as $name => $f) {
+            $listings[$folder][cloud_name_key((string) $name)] = (string) $f['fileid'];
+        }
+    }
+    return $listings[$folder];
 }
 
 /**

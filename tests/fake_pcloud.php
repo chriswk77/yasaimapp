@@ -30,6 +30,8 @@ final class FakePcloud
     public static array $thumbs = [];
     /** Files replaced by a rename — what must never happen to a picture. */
     public static array $replaced = [];
+    /** When a file was last written, by id, where a test cares (seconds; 0 otherwise). */
+    public static array $modified = [];
     public static int $next = 5000;
     private string $body = '';
     private int $at = 0;
@@ -42,6 +44,7 @@ final class FakePcloud
         self::$thumbs = [];
         self::$calls = [];
         self::$replaced = [];
+        self::$modified = [];
     }
 
     /** The name of a file by id, or null. */
@@ -202,7 +205,7 @@ final class FakePcloud
                     return ['result' => 2005, 'error' => 'Directory does not exist.'];
                 }
                 $meta = ['folderid' => $folder, 'name' => self::$folders[$folder][0],
-                         'contents' => self::contents($folder, !empty($p['nofiles']))];
+                         'contents' => self::contents($folder, !empty($p['nofiles']), !empty($p['recursive']))];
                 if (self::$folders[$folder][1] !== null) {
                     $meta['parentfolderid'] = self::$folders[$folder][1];
                 }
@@ -225,18 +228,20 @@ final class FakePcloud
         return ['result' => 2000, 'error' => 'Unknown method in the test: ' . $method];
     }
 
-    private static function contents(int $folder, bool $nofiles): array
+    /** $recursive: every folder carries its own `contents`, as pCloud's recursive=1 answers (the survey and cloud_spelling.php read the whole tree in one call). */
+    private static function contents(int $folder, bool $nofiles, bool $recursive = false): array
     {
         $out = [];
         foreach (self::$folders as $id => [$name, $parent]) {
             if ($parent === $folder) {
-                $out[] = ['isfolder' => true, 'folderid' => $id, 'name' => $name, 'parentfolderid' => $folder];
+                $out[] = ['isfolder' => true, 'folderid' => $id, 'name' => $name, 'parentfolderid' => $folder]
+                    + ($recursive ? ['contents' => self::contents($id, $nofiles, true)] : []);
             }
         }
         foreach ($nofiles ? [] : self::$files as $id => [$name, $parent]) {
             if ($parent === $folder) {
                 $out[] = ['isfolder' => false, 'fileid' => $id, 'name' => $name, 'parentfolderid' => $folder,
-                          'size' => strlen(self::$bytes[$id] ?? 'x')];
+                          'size' => strlen(self::$bytes[$id] ?? 'x'), 'modified' => self::$modified[$id] ?? 0];
             }
         }
         return $out;

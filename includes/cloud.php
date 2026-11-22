@@ -1718,6 +1718,25 @@ function cloud_files_rows(PDO $pdo, int $userId, int $pointId): array
  */
 function pcloud_folder_ensure(string $host, string $token, int $parentId, string $name): array
 {
+    /* A NAME WITH AN UMLAUT IS LOOKED FOR BEFORE IT IS MADE (22.11.2026).
+       pCloud keeps „ü" exactly as it is sent and holds its two spellings
+       (cloud_name_key) for two names — so „2026-08-29 Krün wk-00033",
+       asked for in the spelling this code sends, was created a SECOND time
+       beside the folder of that name spelt the other way, and a plate
+       saved on 20.11. lay alone in a twin of its find's folder; six such
+       pairs stood in the maintainer's cloud. The folder that is there,
+       however it is spelt, is the folder. One listing more, and only for
+       names that carry anything beyond ASCII — every other name has one
+       spelling. */
+    if (preg_match('/[\x80-\xFF]/', $name) === 1) {
+        $key = cloud_name_key($name);
+        foreach (pcloud_subfolders($host, $token, $parentId) as $has => $id) {
+            if ($id !== '' && cloud_name_key((string) $has) === $key) {
+                return ['folderid' => (int) $id, 'created' => false];
+            }
+        }
+    }
+
     $d = pcloud_call($host, 'createfolderifnotexists', [
         'access_token' => $token,
         'folderid'     => $parentId,
@@ -3524,25 +3543,31 @@ function develop_patch_split(string $fileName): ?array
 function storage_sidecars_of(array $s, string|int $pictureFolder, string $pictureName): array
 {
     require_once __DIR__ . '/photos.php';
-    $name = measure_sidecar_name($pictureName);
+    /* FOUND BY THE COMPARISON KEY (22.11.2026, cloud_name_key): the
+       picture's name as the row has it and a sidecar or patch named while
+       the provider still spelt umlauts the other way are one name here.
+       Byte for byte, a renamed picture left its patches behind — and those
+       are pixels nobody can write again. */
+    $name = cloud_name_key(measure_sidecar_name($pictureName));
+    $picture = cloud_name_key($pictureName);
     $out = [];
     $sub = storage_sidecar_folder($s, $pictureFolder, false);
     if ($sub !== null) {
-        $files = storage_folder_files($s, $sub);
-        $there = $files[$name] ?? null;
-        if ($there !== null) {
-            $out[] = ['fileid' => $there['fileid'], 'folder' => $sub, 'old' => false];
-        }
-        foreach ($files as $fileName => $f) {
+        foreach (storage_folder_files($s, $sub) as $fileName => $f) {
+            if (cloud_name_key((string) $fileName) === $name) {
+                $out[] = ['fileid' => $f['fileid'], 'folder' => $sub, 'old' => false];
+                continue;
+            }
             $patch = develop_patch_split((string) $fileName);
-            if ($patch !== null && $patch['picture'] === $pictureName) {
+            if ($patch !== null && cloud_name_key($patch['picture']) === $picture) {
                 $out[] = ['fileid' => $f['fileid'], 'folder' => $sub, 'old' => false, 'patch' => $patch['id'], 'kind' => $patch['kind']];
             }
         }
     }
-    $beside = storage_folder_files($s, $pictureFolder)[$name] ?? null;
-    if ($beside !== null) {
-        $out[] = ['fileid' => $beside['fileid'], 'folder' => $pictureFolder, 'old' => true];
+    foreach (storage_folder_files($s, $pictureFolder) as $fileName => $f) {
+        if (cloud_name_key((string) $fileName) === $name) {
+            $out[] = ['fileid' => $f['fileid'], 'folder' => $pictureFolder, 'old' => true];
+        }
     }
     return $out;
 }
@@ -4032,6 +4057,8 @@ function cloud_segment_clean(string $raw): string
     // keeps a gap nobody typed.
     $piece = preg_replace('/\s{2,}/u', ' ', $piece) ?? $piece;
     $piece = trim($piece, " \t.");
+    // One spelling leaves this server (cloud_name_key): a name pasted from a Mac's file list may carry the other.
+    $piece = cloud_name_key($piece);
 
     return ($piece === '.' || $piece === '..') ? '' : mb_substr($piece, 0, 255);
 }
