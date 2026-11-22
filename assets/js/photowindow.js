@@ -58,7 +58,7 @@ import { icon, iconHtml } from './icons.js';
 import { readableDate } from './dates.js';
 import { MEDIA, mediaLabel, mediaAlphabetical } from './media.js';
 import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, GRADE_RANGES, HUE_TRACK, gradeSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
-    castMeasure, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
+    castMeasure, castPickRead, castFromPicks, CAST_PICKS_MAX, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
     SPOTS_MAX, PATH_POINTS_MAX, spotRadiusOf, spotSizeOf, spotSourceFind, BRUSHES_MAX, brushNew, brushField, masksOf,
     spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
     aiPatchesUnstored, aiPatchPng, aiPatchStored, aiPatchesFor, spotLoopCloses, pointInPath, spotSourceMap, brushCore, brushOuter, SPOT_RADIUS_MAX,
@@ -1347,6 +1347,7 @@ export function mountPhotoWindow(host) {
         maskPlacing = null;
         // The brush's cursor belongs to „Ausbessern" alone (developPanelDraw sets it there).
         if (!developMode) photoFrame.classList.remove('is-spotting');
+        if (!developMode) castPickEnd();
         if (!developMode && cropEditing) cropEditing = false;
         // Below „fitted" only while editing — measuring starts from the whole picture again.
         if (!developMode && photoZoom.stufe() < 1) photoZoom.reset();
@@ -2475,6 +2476,7 @@ export function mountPhotoWindow(host) {
 
     photoWindow.addEventListener('close', () => {
         document.documentElement.classList.remove('is-editing-picture');
+        castPickEnd();
         developFlush();
         aiJobsLeave();
         expandLeave();
@@ -3446,11 +3448,34 @@ export function mountPhotoWindow(host) {
         const go = document.createElement('button');
         go.type = 'button';
         go.className = 'button subtle small';
-        go.textContent = develop.cast ? t('Neu messen') : t('Entfernen');
+        // Points of the pipette alone have never been measured: there the button measures beneath them for the first time.
+        const measured = develop.cast && (develop.cast.base || !develop.cast.picks?.length);
+        go.textContent = measured ? t('Neu messen') : develop.cast ? t('Messen') : t('Entfernen');
         go.title = t('Sucht die grauen Stellen im Bild und nimmt ihnen den Farbstich.');
         go.disabled = !may;
         go.addEventListener('click', () => castMeasureNow());
-        row.append(name, go);
+        /* THE PIPETTE beside it (22.11.2026; develop.js castFromPicks):
+           pressed, every click on the picture names a place that should be
+           grey or white; pressed again, or Escape, lets it go. */
+        const pick = document.createElement('button');
+        pick.type = 'button';
+        pick.className = 'button subtle small square' + (castPicking ? ' is-active' : '');
+        pick.innerHTML = iconHtml('eyedropper');
+        pick.title = t('Pipette: Klicke im Bild auf etwas, das weiß oder grau sein soll.');
+        pick.setAttribute('aria-label', pick.title);
+        pick.setAttribute('aria-pressed', String(castPicking));
+        pick.disabled = !may;
+        pick.addEventListener('click', () => {
+            const on = !castPicking;
+            wbPickEnd();
+            castPickEnd();
+            if (on) {
+                castPicking = true;
+                photoFrame.classList.add('is-cast-picking');
+            }
+            developPanelDraw();
+        });
+        row.append(name, pick, go);
         if (develop.cast) {
             const off = document.createElement('button');
             off.type = 'button';
@@ -3477,8 +3502,92 @@ export function mountPhotoWindow(host) {
                     }, may));
             }
         }
+        // The pipette's points, each with the colour it found and its brightness; the cross takes one away.
+        const picks = develop.cast?.picks ?? [];
+        if (picks.length) {
+            const list = document.createElement('div');
+            list.className = 'photo-cast-picks';
+            picks.forEach((p, i) => {
+                const chip = document.createElement('span');
+                chip.className = 'photo-cast-pick';
+                const swatch = document.createElement('span');
+                swatch.className = 'photo-cast-swatch';
+                const y = .2126 * p.r + .7152 + .0722 * p.b;
+                const enc = (v) => Math.round(255 * Math.min(1, Math.max(0, v * p.lum / y)) ** (1 / 2.2));
+                swatch.style.background = `rgb(${enc(p.r)} ${enc(1)} ${enc(p.b)})`;
+                const words = document.createElement('span');
+                words.textContent = t('Punkt %d', i + 1) + ' · ' + (p.lum < .06 ? t('dunkel') : p.lum < .3 ? t('mittel') : t('hell'));
+                const off = document.createElement('button');
+                off.type = 'button';
+                off.className = 'button subtle small square';
+                off.innerHTML = iconHtml('close');
+                off.title = t('Diesen Punkt entfernen');
+                off.setAttribute('aria-label', off.title);
+                off.disabled = !may;
+                off.addEventListener('click', () => castPickRemove(i));
+                chip.append(swatch, words, off);
+                list.append(chip);
+            });
+            box.append(list);
+        }
         return box;
     }
+
+    let castPicking = false;
+    function castPickEnd() {
+        castPicking = false;
+        photoFrame.classList.remove('is-cast-picking');
+    }
+    /** A point of the pipette taken away: the ranges worked out anew, or the measurement back, or no cast at all. */
+    function castPickRemove(i) {
+        const c = develop.cast;
+        if (!c?.picks) return;
+        c.picks.splice(i, 1);
+        if (!c.picks.length) {
+            delete c.picks;
+            if (c.base) {
+                c.n = c.base;
+                delete c.base;
+            } else {
+                delete develop.cast;
+            }
+        } else {
+            c.n = castFromPicks(c);
+        }
+        castChanged();
+    }
+    // A click on the picture while the pipette is pressed: the grey it names becomes a point.
+    photoFrame.addEventListener('pointerdown', (e) => {
+        if (!castPicking || !developMode || e.button !== 0 || e.target.closest?.('button')) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        swallowClick();
+        if (!developMay()) return;
+        const at = clientNatural(e.clientX, e.clientY);
+        const px = wbPixels();
+        if (!at?.inside || !px) return;
+        const read = castPickRead(px.data, px.w, px.h, Math.floor(at.p[0] * px.k), Math.floor(at.p[1] * px.k));
+        if (read.none === 'bright') {
+            host.status(t('Diese Stelle ist ausgebrannt. Klicke auf ein helles Grau, das noch Zeichnung hat.'), true);
+            return;
+        }
+        if (read.none === 'dark') {
+            host.status(t('Diese Stelle ist zu dunkel, um ihre Farbe zu messen.'), true);
+            return;
+        }
+        const c = develop.cast ?? { amount: 100, shadows: 100, highlights: 100 };
+        c.picks ??= [];
+        if (c.picks.length >= CAST_PICKS_MAX) {
+            host.status(t('Mehr als %d Punkte gehen nicht. Nimm erst einen weg.', CAST_PICKS_MAX), true);
+            return;
+        }
+        // A measurement made before the first point stays beneath the points (develop.js castFromPicks).
+        if (!c.picks.length && c.n && !c.base) c.base = c.n;
+        c.picks.push({ px: at.p[0] / photoImageEl.naturalWidth, py: at.p[1] / photoImageEl.naturalHeight, lum: read.lum, r: read.r, b: read.b });
+        c.n = castFromPicks(c);
+        develop.cast = c;
+        castChanged();
+    }, true);
 
     /* „FARBMISCHER" (22.11.2026; develop.js MIX_COLOURS says what the
        sliders do). Lightroom's arrangement: the three kinds as a switch on
@@ -3637,6 +3746,12 @@ export function mountPhotoWindow(host) {
         }
         const was = develop.cast ?? {};
         develop.cast = { n: found.n, amount: was.amount ?? 100, shadows: was.shadows ?? 100, highlights: was.highlights ?? 100 };
+        // The pipette's points stay, now on the new measurement (develop.js castFromPicks).
+        if (was.picks?.length) {
+            develop.cast.picks = was.picks;
+            develop.cast.base = found.n;
+            develop.cast.n = castFromPicks(develop.cast);
+        }
         castChanged();
     }
 
@@ -16532,7 +16647,12 @@ export function mountPhotoWindow(host) {
        the third of four spore points wants out of the gesture, not out of the
        picture. One step per Escape; true when there was one to take. */
     function escapeStep() {
-        // The white balance's frame tool lets go first (wbPick).
+        // The cast's pipette lets go first, like the white balance's frame (wbPick).
+        if (castPicking) {
+            castPickEnd();
+            developPanelDraw();
+            return true;
+        }
         if (wbPicking) {
             wbPickEnd();
             developPanelDraw();

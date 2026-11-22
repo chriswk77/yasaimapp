@@ -9938,6 +9938,21 @@ return [
         => 'Balance',
     'Farbstich'
         => 'Colour cast',
+    // The pipette of „Farbstich", 22.11.2026 (dunkel and hell stand already).
+    'Pipette: Klicke im Bild auf etwas, das weiß oder grau sein soll.'
+        => 'Eyedropper: click on something in the picture that should be white or grey.',
+    'Punkt %d'
+        => 'Point %d',
+    'mittel'
+        => 'medium',
+    'Diesen Punkt entfernen'
+        => 'Remove this point',
+    'Diese Stelle ist ausgebrannt. Klicke auf ein helles Grau, das noch Zeichnung hat.'
+        => 'This spot is burned out. Click on a light grey that still shows detail.',
+    'Diese Stelle ist zu dunkel, um ihre Farbe zu messen.'
+        => 'This spot is too dark to measure its colour.',
+    'Mehr als %d Punkte gehen nicht. Nimm erst einen weg.'
+        => 'No more than %d points. Remove one first.',
     'Neu messen'
         => 'Measure again',
     'Stärke'

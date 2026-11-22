@@ -672,6 +672,16 @@ check($grade === ['highlights' => ['h' => 210, 's' => 100.0, 'l' => -20.0], 'sha
     'the grading keeps its three ranges, turns the hue into 0 … 359, caps the strength, drops zeros and unknown ranges');
 check(photo_develop_clean(['grade' => ['balance' => 30]]) === null,
     'a balance without a range counts as nothing');
+$five = array_fill(0, 5, [1.1, .9]);
+$cast = photo_develop_clean(['cast' => ['n' => $five, 'base' => [[1, 1]], 'picks' => array_merge(
+    [['px' => 1.4, 'py' => .25, 'lum' => .6, 'r' => 9, 'b' => .8], ['lum' => 0, 'r' => 1, 'b' => 1], ['px' => .2, 'r' => 1]],
+    array_fill(0, 12, ['px' => .5, 'py' => .5, 'lum' => .1, 'r' => 1, 'b' => 1]))]])['cast'] ?? null;
+check(($cast['picks'][0] ?? null) === ['px' => 1.0, 'py' => 0.25, 'lum' => 0.6, 'r' => 4.0, 'b' => 0.8] && count($cast['picks']) === 8
+    && !isset($cast['base']),
+    'the pipette keeps up to eight points within their ranges, drops points without brightness or colour, and a base that is not five pairs');
+check((photo_develop_clean(['cast' => ['n' => $five, 'base' => $five]])['cast']['base'] ?? null) === array_fill(0, 5, [1.1, 0.9])
+    && photo_develop_clean(['cast' => ['picks' => [['lum' => .5, 'r' => 1, 'b' => 1]]]]) === null,
+    'a base of five pairs is kept beside n, and points without n are no cast');
 check((photo_develop_clean(['wb' => ['r' => 1.2, 'g' => 1, 'b' => .8]])['wb'] ?? null) == ['r' => 1.2, 'g' => 1.0, 'b' => 0.8]
     && photo_develop_clean(['wb' => ['r' => 1, 'g' => 1, 'b' => 1]]) === null
     && (photo_develop_clean(['wb' => ['r' => 9, 'g' => 'x', 'b' => .1]])['wb'] ?? null) == ['r' => 4.0, 'g' => 1.0, 'b' => 0.25],

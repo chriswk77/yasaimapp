@@ -429,6 +429,8 @@ const PHOTO_DEVELOP_RADIAL  = ['temp', 'tint', 'contrast', 'vibrance', 'saturati
                                'whites', 'blacks', 'clarity', 'dehaze', 'sharpen'];
 const PHOTO_DEVELOP_RADIALS = 12;
 /** „Farbmischer" (22.11.2026): the eight colours — the twin of MIX_COLOURS in assets/js/develop.js. */
+/** The pipette's points of „Farbstich" — CAST_PICKS_MAX in develop.js. */
+const PHOTO_DEVELOP_CAST_PICKS = 8;
 const PHOTO_DEVELOP_MIX = ['red', 'orange', 'yellow', 'green', 'aqua', 'blue', 'purple', 'magenta'];
 /** The spots' caps — the twins of SPOTS_MAX and PATH_POINTS_MAX in assets/js/develop.js. The points
  *  are ONE budget for the spots and the brush strokes together. */
@@ -474,21 +476,42 @@ function photo_develop_clean(mixed $d): ?array
        0.25 to 4 to four places, and three sliders 0 to 100. All five pairs
        or nothing — a range missing would leave the shader a hole. */
     $cast = is_array($d['cast'] ?? null) ? $d['cast'] : null;
-    if ($cast !== null && is_array($cast['n'] ?? null) && count($cast['n']) === 5) {
+    $pairs = static function (mixed $list): ?array {
+        if (!is_array($list) || count($list) !== 5) return null;
         $n = [];
-        foreach (array_values($cast['n']) as $pair) {
+        foreach (array_values($list) as $pair) {
             $pair = is_array($pair) ? array_values($pair) : [];
-            if (!is_numeric($pair[0] ?? null) || !is_numeric($pair[1] ?? null)) {
-                $n = null;
-                break;
-            }
+            if (!is_numeric($pair[0] ?? null) || !is_numeric($pair[1] ?? null)) return null;
             $n[] = [round(max(.25, min(4, (float) $pair[0])), 4), round(max(.25, min(4, (float) $pair[1])), 4)];
         }
-        if ($n !== null) {
-            $share = static fn($v): int => (int) round(is_numeric($v) ? max(0, min(100, (float) $v)) : 100);
-            $out['cast'] = ['n' => $n, 'amount' => $share($cast['amount'] ?? null),
-                'shadows' => $share($cast['shadows'] ?? null), 'highlights' => $share($cast['highlights'] ?? null)];
+        return $n;
+    };
+    $n = $cast !== null ? $pairs($cast['n'] ?? null) : null;
+    if ($n !== null) {
+        $share = static fn($v): int => (int) round(is_numeric($v) ? max(0, min(100, (float) $v)) : 100);
+        $out['cast'] = ['n' => $n, 'amount' => $share($cast['amount'] ?? null),
+            'shadows' => $share($cast['shadows'] ?? null), 'highlights' => $share($cast['highlights'] ?? null)];
+        /* THE PIPETTE (22.11.2026; develop.js castFromPicks): the
+           measurement beneath the points, five pairs like n, and up to
+           eight points — px, py a share of the original, lum the linear
+           brightness, r and b like a pair of n. n stays what is applied;
+           these are kept so the points can change later. */
+        $base = $pairs($cast['base'] ?? null);
+        if ($base !== null) $out['cast']['base'] = $base;
+        $picks = [];
+        foreach (is_array($cast['picks'] ?? null) ? $cast['picks'] : [] as $p) {
+            if (count($picks) >= PHOTO_DEVELOP_CAST_PICKS) break;
+            if (!is_array($p) || !is_numeric($p['lum'] ?? null) || (float) $p['lum'] <= 0
+                || !is_numeric($p['r'] ?? null) || !is_numeric($p['b'] ?? null)) continue;
+            $picks[] = [
+                'px'  => is_numeric($p['px'] ?? null) ? round(max(0, min(1, (float) $p['px'])), 4) : 0.0,
+                'py'  => is_numeric($p['py'] ?? null) ? round(max(0, min(1, (float) $p['py'])), 4) : 0.0,
+                'lum' => round(min(1, (float) $p['lum']), 5),
+                'r'   => round(max(.25, min(4, (float) $p['r'])), 4),
+                'b'   => round(max(.25, min(4, (float) $p['b'])), 4),
+            ];
         }
+        if ($picks !== []) $out['cast']['picks'] = $picks;
     }
     /* „FARBMISCHER" (22.11.2026; develop.js MIX_COLOURS): per kind — h
        Farbton, s Sättigung, l Luminanz — the colours that are set, -100 to
@@ -2506,7 +2529,10 @@ function measure_develop_help(): array
                 . 'adaptation in linear sRGB that turns the grey [r, 1, b] into a neutral grey of the same luminance; a pixel\'s '
                 . 'correction is blended linearly between the two ranges around its luminance on a log scale (range centres at the '
                 . 'geometric mean of their bounds). amount, shadows, highlights: 0 to 100 — each correction is blended from the '
-                . 'identity by amount/100 × (s × shadows + (1 − s) × highlights)/100, where s is 1, 1, 0.5, 0, 0 for the five ranges.',
+                . 'identity by amount/100 × (s × shadows + (1 − s) × highlights)/100, where s is 1, 1, 0.5, 0, 0 for the five ranges. '
+                . 'base and picks (optional) only record how n came about and need not be applied: picks are points clicked on '
+                . 'something meant to be grey — px, py their place as shares of W and H, lum their linear luma, r and b as in n —, '
+                . 'base the automatic measurement beneath them.',
             'wb'         => 'White balance of older edits: r, g, b are gains each colour channel of the original is multiplied by '
                 . '(0.25 to 4, their mean about 1), applied right after the spots, before temp and tint. A measured white balance is '
                 . 'written into temp and tint since 12.11.2026.',

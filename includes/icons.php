@@ -1050,6 +1050,13 @@ function icon_stock_all(): array
             'path' => '<circle cx="12" cy="8.6" r="5"/><circle cx="8.8" cy="14.2" r="5"/><circle cx="15.2" cy="14.2" r="5"/>',
         ],
 
+        // „Farbstich" → Pipette (22.11.2026): an eyedropper lying askew, its
+        // bulb up right, its glass tip down left where it takes the colour.
+        'eyedropper' => [
+            'path' => '<path d="M15.2 4.3a2.4 2.4 0 0 1 3.4 0l1.1 1.1a2.4 2.4 0 0 1 0 3.4l-2.3 2.3-4.5-4.5Z"/>'
+                    . '<path d="m11.8 7.5 4.7 4.7"/><path d="m13.6 9.3-7.9 7.9-.9 2.9 2.9-.9 7.9-7.9"/>',
+        ],
+
         // „Bearbeiten" → Farbkorrektur (22.11.2026): a disc cut into three —
         // the bright, the middle and the dark tones, each turned on its own.
         'colour-grade' => [

@@ -2245,6 +2245,28 @@
 .photo-cast { display: flex; flex-direction: column; gap: .55rem; margin-top: .4rem; }
 .photo-cast-row { display: flex; align-items: center; gap: .4rem; }
 .photo-cast-name { flex: 1; min-width: 0; }
+/* The pipette's points (photowindow.js, castBlock): one chip each, the
+   colour it found as a swatch — a picture's colour, so a literal one —,
+   its number and brightness, the cross at its end. */
+.photo-window-image.is-cast-picking { cursor: crosshair; }
+.photo-cast-picks { display: flex; flex-wrap: wrap; gap: .35rem; }
+.photo-cast-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding-left: .5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--text) 9%, transparent);
+    font-size: .9rem;
+}
+.photo-cast-pick .button { border: 0; background: none; }
+.photo-cast-swatch {
+    width: 1em;
+    height: 1em;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 35%, transparent);
+}
 /* THE HISTOGRAM over „Einstellungen" (photowindow.js, histogramDraw): a
    quiet fold above the group's head, then the curves on a dark plate. The
    plate is dark in every theme on purpose — it carries the picture's own

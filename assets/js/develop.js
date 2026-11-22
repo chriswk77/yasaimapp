@@ -795,6 +795,82 @@ export function castMeasure(data, w, h) {
 }
 const castRound = (v) => Math.round(Math.min(4, Math.max(.25, v)) * 10000) / 10000;
 
+/* THE PIPETTE (22.11.2026, step three against the yellow cast on white
+   caps: „Du klickst auf etwas, das weiß oder grau sein soll, und der Stich
+   wird genau für diese Helligkeit herausgenommen"). The measurement above
+   takes the least coloured pixels of each range for grey — in a forest
+   picture of brown wood and moss they are often not grey at all, and the
+   result is off. A click says it outright.
+
+   EVERY CLICK IS A POINT: where it was (px, py — shares of the
+   original's width and height), its brightness lum (linear luma) and its
+   grey's red and blue against green (r, b), as castMeasure gives them. The points make a curve over the
+   brightness — log-linear between them, flat beyond the outermost — and
+   the five ranges' corrections are read off that curve at their centres.
+   ONE POINT IS THEREFORE A WHITE BALANCE for the whole picture; a second
+   on a dark grey bends the curve so that the shadows get their own.
+   BESIDE A MEASUREMENT the points win near their own brightness and
+   leave the measurement standing far from it (a Gaussian over the log
+   brightness, one unit wide — about one range): a click on the white cap
+   mends the bright ranges and the shadows keep what was measured. The
+   measurement is kept as `base` then, so points can come and go and the
+   ranges are always worked out anew (castFromPicks); n stays what the
+   shader reads. CAST_PICKS_MAX caps the list — photo_develop_clean holds
+   the same eight. */
+export const CAST_PICKS_MAX = 8;
+
+/**
+ * The grey a click names: the mean colour in linear light of a small
+ * square around (px, py) of RGBA pixels w × h. Null with a reason where
+ * the place says nothing: burned out (any channel at 240 or more in most
+ * of it) or too dark for its colour to be more than noise.
+ * @returns {{ lum: number, r: number, b: number } | { none: 'bright' | 'dark' }}
+ */
+export function castPickRead(data, w, h, px, py, radius = 3) {
+    const lut = (v) => (v / 255) ** 2.2;
+    let sr = 0, sg = 0, sb = 0, used = 0, all = 0;
+    for (let y = Math.max(0, py - radius); y <= Math.min(h - 1, py + radius); y++) {
+        for (let x = Math.max(0, px - radius); x <= Math.min(w - 1, px + radius); x++) {
+            const i = (y * w + x) * 4;
+            if (data[i + 3] < 250) continue;
+            all++;
+            if (data[i] >= 240 || data[i + 1] >= 240 || data[i + 2] >= 240) continue;
+            sr += lut(data[i]); sg += lut(data[i + 1]); sb += lut(data[i + 2]);
+            used++;
+        }
+    }
+    if (!all || used < all / 2) return { none: 'bright' };
+    const r = sr / used, g = sg / used, b = sb / used;
+    const lum = .2126 * r + .7152 * g + .0722 * b;
+    if (lum < .003 || g <= 0) return { none: 'dark' };
+    return { lum: Math.round(lum * 100000) / 100000, r: castRound(r / g), b: castRound(b / g) };
+}
+
+/** The five ranges' greys worked out from the points and, where there is one, the measurement beneath them. */
+export function castFromPicks(cast) {
+    const picks = (cast.picks ?? []).filter((p) => p.lum > 0).map((p) => ({ t: Math.log(p.lum), r: Math.log(p.r), b: Math.log(p.b) }))
+        .sort((a, b) => a.t - b.t);
+    const base = Array.isArray(cast.base) && cast.base.length === CAST_BANDS.length ? cast.base : null;
+    if (!picks.length) return (base ?? cast.n).map(([r, b]) => [castRound(r), castRound(b)]);
+    const curve = (t) => {
+        if (t <= picks[0].t) return picks[0];
+        const last = picks[picks.length - 1];
+        if (t >= last.t) return last;
+        let i = 0;
+        while (picks[i + 1].t < t) i++;
+        const a = picks[i], z = picks[i + 1], f = (t - a.t) / Math.max(1e-6, z.t - a.t);
+        return { r: a.r + (z.r - a.r) * f, b: a.b + (z.b - a.b) * f };
+    };
+    return CAST_CENTRES.map((c, i) => {
+        const on = curve(c);
+        if (!base) return [castRound(Math.exp(on.r)), castRound(Math.exp(on.b))];
+        const near = Math.min(...picks.map((p) => Math.abs(p.t - c)));
+        const w = Math.exp(-near * near);
+        const [br, bb] = base[i];
+        return [castRound(Math.exp(Math.log(br) * (1 - w) + on.r * w)), castRound(Math.exp(Math.log(bb) * (1 - w) + on.b * w))];
+    });
+}
+
 const BRADFORD = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]];
 const RGB_XYZ = [[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]];
 const m3mul = (a, b) => a.map((row) => [0, 1, 2].map((j) => row[0] * b[0][j] + row[1] * b[1][j] + row[2] * b[2][j]));
@@ -1997,6 +2073,16 @@ export function developClean(d) {
         const k = (v) => Math.round(Math.min(100, Math.max(0, Number(v ?? 100))));
         out.cast = { n: d.cast.n.map(([r, b]) => [castRound(Number(r) || 1), castRound(Number(b) || 1)]),
             amount: k(d.cast.amount), shadows: k(d.cast.shadows), highlights: k(d.cast.highlights) };
+        // The pipette's points and the measurement beneath them (castFromPicks) — kept so the points can change later.
+        if (Array.isArray(d.cast.base) && d.cast.base.length === CAST_BANDS.length) {
+            out.cast.base = d.cast.base.map(([r, b]) => [castRound(Number(r) || 1), castRound(Number(b) || 1)]);
+        }
+        const share = (v) => Math.round(Math.min(1, Math.max(0, Number(v) || 0)) * 10000) / 10000;
+        const picks = (d.cast.picks ?? []).slice(0, CAST_PICKS_MAX).filter((p) => Number(p.lum) > 0).map((p) => ({
+            px: share(p.px), py: share(p.py), lum: Math.round(Math.min(1, Number(p.lum)) * 100000) / 100000,
+            r: castRound(Number(p.r) || 1), b: castRound(Number(p.b) || 1),
+        }));
+        if (picks.length) out.cast.picks = picks;
     }
     // „Farbmischer": per kind the colours that are set, whole numbers.
     if (mixSet(d)) {
