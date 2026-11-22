@@ -60,7 +60,7 @@ import { MEDIA, mediaLabel, mediaAlphabetical } from './media.js';
 import { DEVELOP_GROUPS, DEVELOP_TRACKS, MIX_COLOURS, MIX_KINDS, mixTrack, mixSet, GRADE_RANGES, HUE_TRACK, gradeSet, RADIAL_SLIDERS, RADIALS_MAX, radialNew, developEmpty, developClean, developRenderer,
     castMeasure, castPickRead, castFromPicks, CAST_PICKS_MAX, geoView, geoSet, geoMirrorShown, wbFromPixels, wbToSliders, developWBFold, cropFit, cropWhole, developFile, linearNew, developThumb, developThumbsRefresh,
     SPOTS_MAX, PATH_POINTS_MAX, spotRadiusOf, spotSizeOf, spotSourceFind, BRUSHES_MAX, brushNew, brushField, masksOf,
-    spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
+    spotsOf, AI_SIDE, AI_PIECES_MAX, aiPieces, aiReachShare, aiOuterRadius, aiHole, aiPieceApply, aiPatchKeep, aiPatchCut,
     aiPatchesUnstored, aiPatchPng, aiPatchStored, aiPatchesFor, spotLoopCloses, pointInPath, spotSourceMap, brushCore, brushOuter, SPOT_RADIUS_MAX,
     aiSpotSwitch, aiPatchesFetch, aiPatchUrl, aiPatchHas, aiPatchIsStored, geoSig, geoFill, cropOutside, FILL_PIECES_MAX,
     fillAreas, fillAreaMask, fillWithout, fillImage, fillKey
@@ -4045,6 +4045,20 @@ export function mountPhotoWindow(host) {
         x.radius = o.radius;
         x.feather = o.feather;
     }
+    /**
+     * A place as „Entfernen" has it: the same core and soft edge in that
+     * method's numbers, and `wide` (develop.js aiReach) — kept where the
+     * place carries fills already, else the brush's reach of a fill made now.
+     */
+    function aiAs(spot) {
+        const as = { ...spot, mode: 'ai' };
+        if (spot.mode !== 'ai') {
+            const now = toolOf(spot);
+            toolInto(as, now.core, now.soft);
+            as.wide = (spot.pieces ?? []).length ? !!spot.wide : true;
+        }
+        return as;
+    }
     /* A brush kept with more soft edge than the tools can say — a share of
        100 had no core at all, and came from „Entfernen", whose 100 means
        something else (the brush is one for all three kinds) — gets its core
@@ -4702,6 +4716,7 @@ export function mountPhotoWindow(host) {
         delete spot.pieces;
         delete spot.other;
         delete spot.strong;
+        delete spot.wide;
     }
 
     /** A source for a place, sought as for a new stroke: a like piece nearby, inside what is shown. */
@@ -5502,13 +5517,12 @@ export function mountPhotoWindow(host) {
                 before = spotsOf({ spots: all.slice(0, i) });
             }
             // The place as „Entfernen" has it: the same core and soft edge, in that method's numbers.
-            const as = { ...spot, mode: 'ai' };
-            if (spot.mode !== 'ai') {
-                const now = toolOf(spot);
-                toolInto(as, now.core, now.soft);
-            }
+            const as = aiAs(spot);
+            // A fresh fill reaches the brush's outer circle (develop.js aiReach); the strong model fills the quick one's squares and hole.
+            if (!strong) as.wide = true;
             const quick = strong ? (spot.strong ? spot.other : spot.pieces) : null;
-            const boxes = strong ? quick.map(({ box, a, b }) => ({ box, a, b })) : aiPieces(as.path, as.radius, NW, NH, as.fill);
+            // The squares are cut round the OUTER circle: the model must see all it fills, and room around it.
+            const boxes = strong ? quick.map(({ box, a, b }) => ({ box, a, b })) : aiPieces(as.path, aiOuterRadius(as), NW, NH, as.fill);
             if (!strong) {
                 const used = before.reduce((n, x) => n + (x.pieces?.length ?? 0) + (x.other?.length ?? 0), 0);
                 if (used + boxes.length > AI_PIECES_MAX) {
@@ -5562,6 +5576,7 @@ export function mountPhotoWindow(host) {
                 spot.mode = 'ai';
                 spot.radius = as.radius;
                 spot.feather = as.feather;
+                spot.wide = true;
                 spot.pieces = done;
                 delete spot.other;
                 delete spot.strong;
@@ -5660,7 +5675,7 @@ export function mountPhotoWindow(host) {
            inside the outline where a heal or clone stops being whole, outside
            it where „Entfernen" has faded out (spotSoftRadii). */
         const softLine = (s, pts, r, id) => {
-            const { full, edge } = spotSoftRadii(s.mode, r, s.feather);
+            const { full, edge } = spotSoftRadii(s.mode, r, s.feather, !!s.wide);
             const other = s.mode === 'ai' ? edge : full;
             if (Math.abs(other - r) < 2 * u || other < u) return;
             outline(pts, other, 0, 0, false, id, !!s.fill, true);
@@ -5676,8 +5691,8 @@ export function mountPhotoWindow(host) {
            cent of the full one. Until then every veil stood at one strength,
            and the pulse of a place the KI works on was a flat band without
            the fade (spotDrawOne). */
-        const veil = (path, mode, r, feather, round, id, opacity = 100) => {
-            const { full, edge } = spotSoftRadii(mode, r, feather);
+        const veil = (path, mode, r, feather, round, id, opacity = 100, wide = true) => {
+            const { full, edge } = spotSoftRadii(mode, r, feather, wide);
             const xs = path.map((p) => p[0]), ys = path.map((p) => p[1]);
             const box = { x: Math.min(...xs) - edge - 2, y: Math.min(...ys) - edge - 2,
                 width: Math.max(...xs) - Math.min(...xs) + 2 * edge + 4, height: Math.max(...ys) - Math.min(...ys) + 2 * edge + 4 };
@@ -5750,11 +5765,7 @@ export function mountPhotoWindow(host) {
                    aiFillCompute cuts its squares) and pulse out to where its
                    fill fades away: the core and half a core radius of soft
                    edge at most (spotSoftRadii). */
-                const as = { ...s, mode: 'ai' };
-                if (s.mode !== 'ai') {
-                    const now = toolOf(s);
-                    toolInto(as, now.core, now.soft);
-                }
+                const as = aiAs(s);
                 /* … and it is the place's VEIL, not a flat band: whole over the
                    core, fading over the soft edge, as strong as the place's
                    opacity (veil, above) — what will change, and how much. The
@@ -5763,7 +5774,7 @@ export function mountPhotoWindow(host) {
                 el = into(el('g', { class: 'photo-spot-reveal' }));
                 const whole = el;
                 el = into(el('g', { class: 'photo-spot-pending' }));
-                veil(pts, 'ai', (Number(as.radius) || 0) * photoImageEl.naturalWidth, as.feather, !!s.fill, `spot-busy-veil-${i}`, s.opacity);
+                veil(pts, 'ai', (Number(as.radius) || 0) * photoImageEl.naturalWidth, as.feather, !!s.fill, `spot-busy-veil-${i}`, s.opacity, !!as.wide);
                 el = whole;
                 spotSpinner(el, pts, u, !!s.fill);
                 el = back;
@@ -5826,7 +5837,7 @@ export function mountPhotoWindow(host) {
                 }
                 outline(src, r, 0, 0, true, `spot-peek-src-`, !!peek.fill);
             }
-            veil(pts, peek.mode, r, peek.feather, !!peek.fill, 'spot-peek-veil', peek.opacity);
+            veil(pts, peek.mode, r, peek.feather, !!peek.fill, 'spot-peek-veil', peek.opacity, peek.mode !== 'ai' || !!peek.wide);
             outline(pts, r, 0, 0, false, `spot-peek-dst-`, !!peek.fill);
             el = back;
         }
@@ -5929,11 +5940,13 @@ export function mountPhotoWindow(host) {
      * acts whole (`full`) and where it has faded out (`edge`) — as
      * develop.js paints it: pathMask fades a heal, a clone and the mask
      * brush over the outer `feather` per cent of the radius, aiReach lays
-     * „Entfernen"'s fade up to half a radius beyond it.
+     * „Entfernen"'s fade beyond it — as far as the brush's for a fresh
+     * stroke and a place filled since 22.11.2026 (`wide`), half a radius
+     * for one filled before.
      */
-    function spotSoftRadii(mode, r, feather) {
+    function spotSoftRadii(mode, r, feather, wide = true) {
         const f = Math.min(100, Math.max(0, Number(feather ?? 50))) / 100;
-        return mode === 'ai' ? { full: r, edge: r * (1 + .5 * f) } : { full: r * (1 - f), edge: r };
+        return mode === 'ai' ? { full: r, edge: r * (1 + aiReachShare({ wide }) * f) } : { full: r * (1 - f), edge: r };
     }
 
     /* NOT ON THE BLACK BESIDE THE PICTURE (12.11.2026: „wenn ich

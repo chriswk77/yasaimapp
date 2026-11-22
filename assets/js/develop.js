@@ -1094,7 +1094,8 @@ export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_RADIUS_MAX, M
    core gets one the moment it is touched. Where core and edge together
    would pass `max`, the outer circle stops there and the core stays.
    „Entfernen" needs neither: its radius IS its core and its feather its
-   soft edge, half a radius at the most (aiReach). */
+   soft edge — since 22.11.2026 reaching as far as the brush's (aiReach,
+   `wide`), before that half a radius at the most. */
 export const SOFT_REACH = 2;
 export function brushCore(radius, share, reach = SOFT_REACH) {
     const s = Math.min(reach / (1 + reach), Math.max(0, (Number(share) || 0) / 100));
@@ -1749,14 +1750,33 @@ export function aiPieces(path, radius, NW, NH, fill = false) {
  * into the picture around. Removing, the picture inside the painted line
  * IS the thing to go — faded into, it came back as a pale ghost of the
  * stem along both sides (measured, 11.11.2026). So what one paints goes
- * whole, and the soft edge reaches up to half the radius beyond it:
- * `feather` 100 adds half a radius, 0 nothing. The model's hole covers
- * that reach too.
+ * whole, and the soft edge reaches beyond it. The model's hole covers that
+ * reach too: it invents everything up to the outer circle, and the fade
+ * lays its invention over the picture's own pixels from the core outwards.
+ *
+ * AS FAR AS THE BRUSH'S OUTER CIRCLE (22.11.2026: „Die KI-Tools nutzen
+ * aber nur den inneren Kreis … Können wir es so machen, dass das
+ * KI-Werkzeug die volle Pinselgröße bekommt und die Pixel dann bis zum
+ * Rand hin verlaufen? … Wenn, dann aber bitte den äußeren Kreis nehmen").
+ * Until then the edge reached half a radius at the most, while the same
+ * brush under „Angleichen" and „Kopieren" fades over SOFT_REACH radii —
+ * a place switched to „Entfernen" shrank to nearly its core. A place
+ * filled since carries `wide: true` and reaches as far as the brush. The
+ * places filled before keep their half radius: their patches end there
+ * (aiPatchCut), and a fade reaching further would cut off hard at that
+ * line.
  */
+export function aiReachShare(spot) {
+    return spot?.wide ? SOFT_REACH : .5;
+}
 function aiReach(spot, r) {
     const feather = Math.min(100, Math.max(0, Number(spot.feather ?? 50)));
-    const reach = r * (1 + .5 * feather / 100);
+    const reach = r * (1 + aiReachShare(spot) * feather / 100);
     return { reach, feather: (1 - r / reach) * 100 };
+}
+/** The outer circle of an AI spot as a share of the width — where its fill has faded out. */
+export function aiOuterRadius(spot) {
+    return aiReach(spot, Number(spot.radius) || .01).reach;
 }
 
 /**
@@ -2003,6 +2023,7 @@ export function developClean(d) {
             piecesUsed += pieces.length;
             points += path.length;
             const one = { mode: 'ai', path, radius, feather, opacity, pieces };
+            if (sp.wide) one.wide = true;
             // The other model's fill, kept beside the shown one — from the same budget of pieces.
             const other = aiPiecesClean(sp.other, AI_PIECES_MAX - piecesUsed);
             piecesUsed += other.length;
@@ -2038,6 +2059,7 @@ export function developClean(d) {
             piecesUsed += other.length;
             if (other.length) one.other = other;
             if (sp.strong) one.strong = true;
+            if (sp.wide) one.wide = true;
         }
         if (sp.off) one.off = true;
         spots.push(one);

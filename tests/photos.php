@@ -682,6 +682,13 @@ check(($cast['picks'][0] ?? null) === ['px' => 1.0, 'py' => 0.25, 'lum' => 0.6, 
 check((photo_develop_clean(['cast' => ['n' => $five, 'base' => $five]])['cast']['base'] ?? null) === array_fill(0, 5, [1.1, 0.9])
     && photo_develop_clean(['cast' => ['picks' => [['lum' => .5, 'r' => 1, 'b' => 1]]]]) === null,
     'a base of five pairs is kept beside n, and points without n are no cast');
+$ai = photo_develop_clean(['spots' => [
+    ['mode' => 'ai', 'path' => [[.5, .5]], 'radius' => .02, 'feather' => 50, 'wide' => true, 'pieces' => [['id' => 'abcdefgh12', 'box' => [.4, .4, .2, .2]]]],
+    ['mode' => 'ai', 'path' => [[.3, .3]], 'radius' => .02, 'pieces' => [['id' => 'abcdefgh13', 'box' => [.2, .2, .2, .2]]]],
+    ['mode' => 'heal', 'path' => [[.6, .6]], 'radius' => .02, 'dx' => .1, 'wide' => true, 'pieces' => [['id' => 'abcdefgh14', 'box' => [.5, .5, .2, .2]]]],
+]])['spots'] ?? [];
+check(($ai[0]['wide'] ?? null) === true && !isset($ai[1]['wide']) && ($ai[2]['wide'] ?? null) === true,
+    'an AI place keeps wide (its fill reaches the brush\'s outer circle), an older one stays without, a heal keeps it beside its kept fills');
 check((photo_develop_clean(['wb' => ['r' => 1.2, 'g' => 1, 'b' => .8]])['wb'] ?? null) == ['r' => 1.2, 'g' => 1.0, 'b' => 0.8]
     && photo_develop_clean(['wb' => ['r' => 1, 'g' => 1, 'b' => 1]]) === null
     && (photo_develop_clean(['wb' => ['r' => 9, 'g' => 'x', 'b' => .1]])['wb'] ?? null) == ['r' => 4.0, 'g' => 1.0, 'b' => 0.25],

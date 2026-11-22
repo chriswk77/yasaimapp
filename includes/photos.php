@@ -613,6 +613,10 @@ function photo_develop_clean(mixed $d): ?array
             $aiPieces += count($other);
             if ($other !== []) $one['other'] = $other;
             if (!empty($sp['strong'])) $one['strong'] = true;
+            /* THE FILL REACHES THE BRUSH'S OUTER CIRCLE (22.11.2026,
+               develop.js aiReach): set on every place filled since; one
+               without it fades over half a radius, as its patches were cut. */
+            if (!empty($sp['wide'])) $one['wide'] = true;
             // Drawn round its thing (11.11.2026, develop.js aiLoopCloses): the inside goes too.
             if (!empty($sp['fill'])) $one['fill'] = true;
             /* ONE TOOL, THREE METHODS (14.11.2026, develop.js): the method
@@ -644,6 +648,7 @@ function photo_develop_clean(mixed $d): ?array
                 $aiPieces += count($other);
                 if ($other !== []) $one['other'] = $other;
                 if (!empty($sp['strong'])) $one['strong'] = true;
+                if (!empty($sp['wide'])) $one['wide'] = true;
             }
         }
         $points += count($path);
@@ -2561,7 +2566,8 @@ function measure_develop_help(): array
                 . 'of the path in their order, each with its "id" (the file), "box" [x, y, w, h] (the square of the '
                 . 'original the PNG stands for, as shares of W and H; scale the PNG onto it) and "a", "b" (the stretch '
                 . 'of the path it fills, as shares of the path\'s length). Lay each PNG in where it is not transparent, '
-                . 'within radius × (1 + feather/200) of its stretch: fully up to "radius", fading out beyond it, '
+                . 'within radius × (1 + feather/200) of its stretch — radius × (1 + feather/50) where wide: true —: '
+                . 'fully up to "radius", fading out beyond it, '
                 . 'times opacity. A later piece lies over an earlier one. With fill: true the inside is filled as '
                 . 'well and the spot has a single piece.',
             'radials'    => 'Elliptical masks, each with an adjustment of its own. x, y: the centre as shares of W and H. '
