@@ -54,6 +54,18 @@ if (($input['action'] ?? '') === 'image') {
     if (!is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
         json_error(t('Die Seite kam nicht als Bild an.'), 422);
     }
+    /* THE SESSION LETS GO BEFORE THE CLOUD WORK (22.11.2026). PHP holds
+       a session locked for the whole request, and handing a page to the
+       cloud takes seconds. Every other request of the same login waited
+       behind it — the editor's next save among them, until its twelve
+       seconds ran out (api.js, TIMEOUT). The browser then called the save
+       failed while the server, its turn come, stored it all the same, and
+       from then on every save was refused as one from „another device"
+       (the editor sent the updated_at from before). Nothing below writes
+       to the session; reading it stays possible. */
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
     try {
         $answer = plate_image_store($pdo, $userId, (int) ($input['id'] ?? 0), (int) ($input['page'] ?? 0),
             (string) ($input['hash'] ?? ''), (string) file_get_contents($file['tmp_name']));

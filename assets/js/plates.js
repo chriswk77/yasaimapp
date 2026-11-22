@@ -572,8 +572,16 @@ export function mountPlates(host) {
            Looked up here, every way into the editor starts from the last
            saved version. The close above runs first: its save is the one
            that makes the record new. */
-        open(p?.id ? (plates.find(x => x.id === p.id) ?? p) : p);
+        open(p?.id ? newestOf(p) : p);
         return true;
+    }
+    /* The newer of the record handed in and the row's — by updated_at, whose
+       „Y-m-d H:i:s" sorts as text. The row is not always the newer: a
+       reload of the row (show) asked before a save and answered after it
+       brings the older version back. */
+    function newestOf(p) {
+        const listed = plates.find(x => x.id === p.id);
+        return listed && String(listed.updated_at ?? '') >= String(p.updated_at ?? '') ? listed : p;
     }
 
     const dirty = () => editable && JSON.stringify(bare(layout)) !== savedJson;
@@ -785,6 +793,38 @@ export function mountPlates(host) {
     let autosaveTimer = null;
     let saving = null;        // the save on its way, a promise
     let failedJson = null;    // what the last failed save sent
+    /* SAVES WHOSE ANSWER NEVER CAME (22.11.2026) — what they sent. A
+       request that runs out of time (api.js, TIMEOUT) may still be carried
+       out by the server afterwards; the plate then carries a newer
+       updated_at than the editor knows, and every later save is refused as
+       one from „another device". Before the next save, unsureSettle asks
+       the server: if what stands there is what one of these sent, it was
+       our own save, and the editor takes its time over. */
+    let unsure = [];
+    // Both sides as the editor holds them; numbers to three places, because the server rounds the shares (plates.php, plate_number).
+    const canonical = (l) => {
+        const c = JSON.parse(JSON.stringify(l));
+        c.pages.forEach(page => adopt(page.root));
+        return JSON.stringify(bare(c), (k, v) => (typeof v === 'number' ? Math.round(v * 1000) / 1000 : v));
+    };
+    async function unsureSettle() {
+        const sent = unsure;
+        unsure = [];
+        let answer;
+        try {
+            answer = await host.request(`plates.php?point=${pointId}`);
+        } catch {
+            unsure = sent;   // still nobody to ask — next time
+            return;
+        }
+        const there = (answer?.plates ?? []).find(x => x.id === plate.id);
+        if (!there || there.updated_at === plate.updated_at) return;
+        const stands = canonical(there.layout);
+        if (!sent.some(json => canonical(JSON.parse(json)) === stands)) return;
+        plate = { ...plate, updated_at: there.updated_at };
+        const at = plates.findIndex(x => x.id === plate.id);
+        if (at !== -1) plates[at] = { ...plates[at], updated_at: there.updated_at };
+    }
     /* „GESPEICHERT" GOES AGAIN after a few seconds (30.10.2026:
        the line „nicht automatisch nach einer Zeit verschwindet"). It answers
        the change just made and has said so; standing on, it reads like a
@@ -817,6 +857,7 @@ export function mountPlates(host) {
         savedSay('saving');
         const mine = saving = (async () => {
             try {
+                if (unsure.length > 0 && plate.id) await unsureSettle();
                 const answer = await host.request('plates.php', {
                     method: 'POST',
                     // The version this editor began from: the same plate saved on
@@ -864,6 +905,8 @@ export function mountPlates(host) {
                 return true;
             } catch (e) {
                 failedJson = sent;
+                // No answer is no refusal: it may have landed (unsure, above). The last few are enough.
+                if (e.isNetworkError) unsure = [...unsure, sent].slice(-5);
                 savedSay('failed');
                 toast(e.message || t('Speichern ging nicht.'), 'error');
                 return false;
@@ -4579,7 +4622,7 @@ export function mountPlates(host) {
     function face(el, width, p = plates[0]) {
         el.textContent = '';
         // The newest record of it — the caller may hold one from before a save (openPlate says why).
-        if (p?.id) p = plates.find(x => x.id === p.id) ?? p;
+        if (p?.id) p = newestOf(p);
         if (!p?.layout.pages?.[0]) return false;
         const pictures = picturesOf(pointId);
         miniPage(el, p, width, new Map(pictures.map(x => [x.key, x])), host.details(pointId));
