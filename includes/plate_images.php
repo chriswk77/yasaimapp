@@ -182,6 +182,133 @@ function plate_image_store(PDO $pdo, int $userId, int $plateId, int $page, strin
 }
 
 /**
+ * THE PAGES FOLLOW THEIR FIND (22.11.2026). A page lies in the find's
+ * folder under the head the find's pictures carry — and until that day it
+ * stayed there when the find moved on. The naming worker
+ * (cloud_names_point) took the pictures, their sidecars and the find's
+ * „Dateien" folder along; the plate's page was laid afresh only at the
+ * next save of the plate. When the folders were rebuilt („Arten/",
+ * 18.11.2026) that left pages standing alone in the old tree: three in the
+ * maintainer's cloud, and with them the old top folder, which was to be
+ * gone („Wenn noch was in Fungi Pilze ist im Grundverzeichnis, dann ist
+ * das ein Fehler").
+ *
+ * WHERE THE FIND IS, THE MAKER'S PICTURES SAY. A page's row knows its
+ * folder by id, not by path — so the place it belongs is read off the
+ * rows of the maker's pictures at this find in the same cloud, which the
+ * worker has just brought in line: one folder there, and the page goes
+ * into it. No call to any cloud decides that; the cloud is opened only
+ * when a page really moves. While the pictures lie in two folders (a run
+ * cut short) the page waits for the next run.
+ *
+ * WHERE THE MAKER HAS NO PICTURE THERE (a plate made of somebody else's
+ * pictures, or of pictures still on this server) only the NAME can tell:
+ * a page whose name is no longer the wanted one is placed where the find
+ * belongs now (cloud_target_folder). A change that moves such a find
+ * without touching the name — a new find number — is not seen here, and
+ * the page follows at the next save of the plate, as before.
+ *
+ * A NAMESAKE IN THE TARGET GOES: the name is ours, and a file of that
+ * name is a page from before — plate_image_store() says „REPLACE,
+ * ALWAYS", and so does this.
+ *
+ * Called by the naming worker for every find it looks at; the folder a
+ * page left is tidied behind it (storage_prune_empty).
+ *
+ * @return array{moved: int, failed: int}
+ */
+function plate_images_follow(PDO $pdo, array $point, ?callable $open = null): array
+{
+    $out = ['moved' => 0, 'failed' => 0];
+    if (!plate_images_ready($pdo) || !table_exists($pdo, 'map_plates')) {
+        return $out;
+    }
+    $q = $pdo->prepare('SELECT i.*, p.user_id, p.layout FROM map_plate_images i JOIN map_plates p ON p.id = i.plate_id
+                         WHERE p.point_id = ? ORDER BY i.plate_id, i.page');
+    $q->execute([(int) $point['id']]);
+    $groups = [];
+    foreach ($q->fetchAll() as $row) {
+        if ((string) $row['fileid'] !== '') {
+            $groups[(int) $row['user_id'] . ':' . $row['provider']][] = $row;
+        }
+    }
+    foreach ($groups as $rows) {
+        $user = (int) $rows[0]['user_id'];
+        $provider = (string) $rows[0]['provider'];
+
+        // Where this maker's pictures of the find lie in that cloud, by their rows.
+        $folders = [];
+        $f = $pdo->prepare("SELECT DISTINCT folderid FROM map_cloud_files
+                             WHERE point_id = ? AND user_id = ? AND provider = ? AND fileid <> '' AND folderid <> ''");
+        $f->execute([(int) $point['id'], $user, $provider]);
+        foreach ($f->fetchAll(PDO::FETCH_COLUMN) as $id) {
+            $folders[(string) $id] = true;
+        }
+        if (column_exists($pdo, 'map_photos', 'cloud_folderid')) {
+            $f = $pdo->prepare("SELECT DISTINCT cloud_folderid FROM map_photos
+                                 WHERE point_id = ? AND user_id = ? AND cloud_fileid IS NOT NULL AND cloud_fileid <> ''
+                                   AND cloud_folderid IS NOT NULL AND cloud_folderid <> ''
+                                   AND COALESCE(NULLIF(cloud_provider, ''), 'pcloud') = ?");
+            $f->execute([(int) $point['id'], $user, $provider]);
+            foreach ($f->fetchAll(PDO::FETCH_COLUMN) as $id) {
+                $folders[(string) $id] = true;
+            }
+        }
+        if (count($folders) > 1) {
+            continue;   // the pictures are between two folders — the next run knows where the find is
+        }
+        $target = $folders === [] ? null : (string) array_key_first($folders);
+
+        $todo = [];
+        foreach ($rows as $row) {
+            $pages = count(json_decode((string) $row['layout'], true)['pages'] ?? []);
+            $want = plate_image_name($pdo, $point, (int) $row['page'], max(1, $pages));
+            if (cloud_name_key((string) $row['name']) !== cloud_name_key($want)
+                || ($target !== null && (string) $row['folderid'] !== $target)) {
+                $todo[] = [$row, $want];
+            }
+        }
+        if ($todo === []) {
+            continue;
+        }
+
+        try {
+            $s = $open !== null ? $open($user, $provider) : cloud_storage_for($pdo, $user, $provider);
+            if ($s === null) {
+                continue;
+            }
+            $target ??= (string) cloud_target_folder($s, cloud_home_resolve($pdo, $user, $s), $pdo, $user, $point)['folderid'];
+            $here = [];
+            foreach (storage_folder_files($s, $target) as $name => $file) {
+                $here[cloud_name_key((string) $name)] = (string) $file['fileid'];
+            }
+            $left = [];
+            foreach ($todo as [$row, $want]) {
+                $holder = $here[cloud_name_key($want)] ?? null;
+                if ($holder !== null && $holder !== (string) $row['fileid']) {
+                    storage_file_delete($s, $holder);   // a page from before
+                }
+                $id = storage_file_place($s, (string) $row['fileid'], $target, $want);
+                $pdo->prepare('UPDATE map_plate_images SET fileid = ?, folderid = ?, name = ? WHERE plate_id = ? AND page = ?')
+                    ->execute([$id, $target, mb_substr($want, 0, 255), (int) $row['plate_id'], (int) $row['page']]);
+                $here[cloud_name_key($want)] = $id;
+                if ((string) $row['folderid'] !== '' && (string) $row['folderid'] !== $target) {
+                    $left[(string) $row['folderid']] = true;
+                }
+                $out['moved']++;
+            }
+            foreach (array_keys($left) as $folder) {
+                storage_prune_empty($pdo, $user, $s, (string) $folder);
+            }
+        } catch (RuntimeException $e) {
+            error_log('plate_images_follow (' . (int) $point['id'] . '): ' . $e->getMessage());
+            $out['failed']++;
+        }
+    }
+    return $out;
+}
+
+/**
  * The pages a plate no longer has: their files, rows and previews go —
  * after a save that took pages away (plate_save), or all of them when the
  * plate itself goes ($pages = 0). Best effort: a file the cloud will not

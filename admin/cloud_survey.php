@@ -534,4 +534,16 @@ if ($what === 'accounts') {
     exit;
 }
 
-survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts');
+/* enqueue — every find with something in a cloud is marked for the naming
+   worker once more, now instead of after midnight (cloud_names_all, the
+   daily run's own step). The five-minute bundle then works through them;
+   a find whose rows are in line costs it no call to any cloud. For the
+   moment a rule changed and the stock has to follow — the trashed finds
+   and the plates' pages of 22.11.2026. */
+if ($what === 'enqueue') {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['at' => date('c'), 'marked' => cloud_names_all($pdo), 'waiting' => cloud_names_pending($pdo)]);
+    exit;
+}
+
+survey_refuse(400, 'what = tree | rows | state | log | probe | spelling | accounts | enqueue');

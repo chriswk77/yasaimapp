@@ -450,8 +450,20 @@ function cloud_names_point(PDO $pdo, int $pointId, float $deadline, ?callable $o
     require_once __DIR__ . '/point_files.php';
     $files = point_files_follow($pdo, $point, $open);
     $out['failed'] += $files['failed'];
-    if ($pictures === []) {
+    /* AND THE PLATE'S PAGES (22.11.2026, plate_images_follow): they go
+       where the maker's pictures of the find lie — so AFTER the pictures,
+       at whichever end this function leaves by. A find whose pictures are
+       all in place still asks its pages; that is how the pages left behind
+       by the rebuilding of the folders come after. */
+    $plates = static function () use ($pdo, $point, $open, &$out): array {
+        require_once __DIR__ . '/plate_images.php';
+        if ($out['done']) {
+            $out['failed'] += plate_images_follow($pdo, $point, $open)['failed'];
+        }
         return $out;
+    };
+    if ($pictures === []) {
+        return $plates();
     }
     /* IN THE GALLERY'S ORDER, AS IT IS SHOWN — grouped by subject name in
        the holder's own order of names, and within a group as dragged
@@ -532,7 +544,7 @@ function cloud_names_point(PDO $pdo, int $pointId, float $deadline, ?callable $o
             break;
         }
     }
-    return $out;
+    return $plates();
 }
 
 /**

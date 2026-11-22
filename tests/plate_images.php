@@ -100,6 +100,42 @@ try {
     $images = plate_images_of($pdo, [$plate])[$plate] ?? [];
     check(array_column($images, 'page') === [1, 2], 'the plate hands its pages\' images to the browser');
 
+    // THE PAGES FOLLOW THEIR FIND (22.11.2026): its pictures lie in another folder now.
+    $pointRow = static fn(): array => $pdo->query('SELECT * FROM map_points WHERE id = ' . $point)->fetch();
+    $pageRow = static fn(int $n): array => $pdo->query('SELECT * FROM map_plate_images WHERE plate_id = ' . $plate . ' AND page = ' . $n)->fetch();
+    $was = (int) $pageRow(1)['folderid'];
+    FakePcloud::$folders[700] = ['Neuer Ordner des Fundes', 100];
+    FakePcloud::$files[7001] = ['Bild.jpg', 700];
+    FakePcloud::$files[7002] = ['Boletus edulis 2026-08-29 DE,BAY, Krün 00 Tafel 2.jpg', 700];   // a page from before lies there
+    $pdo->prepare('INSERT INTO map_cloud_files (user_id, point_id, provider, fileid, folderid, name, original_name, path, size, sort_order, uploaded_at)
+                   VALUES (?, ?, "pcloud", "7001", "700", "Bild.jpg", "Bild.jpg", "Neu", 1, 0, NOW())')->execute([$user, $point]);
+    $r = plate_images_follow($pdo, $pointRow(), $open);
+    check($r === ['moved' => 2, 'failed' => 0] && $pageRow(1)['folderid'] === '700' && $pageRow(2)['folderid'] === '700'
+          && FakePcloud::names(700) === ['Bild.jpg', 'Boletus edulis 2026-08-29 DE,BAY, Krün 00 Tafel 1.jpg',
+                                         'Boletus edulis 2026-08-29 DE,BAY, Krün 00 Tafel 2.jpg'],
+        'the find\'s pictures lie elsewhere — both pages follow into their folder');
+    check(!isset(FakePcloud::$files[7002]) && FakePcloud::name((int) $pageRow(2)['fileid']) !== null,
+        'a page from before that held the name there goes — the row\'s own page takes it');
+    check(!isset(FakePcloud::$folders[$was]), 'and the folder the pages left, empty now, is gone');
+    $calls = count(FakePcloud::$calls);
+    check(plate_images_follow($pdo, $pointRow(), $open) === ['moved' => 0, 'failed' => 0] && count(FakePcloud::$calls) === $calls,
+        'pages that lie right cost no call to the cloud');
+    // The find renamed: the pages carry the head the pictures carry.
+    $pdo->prepare('UPDATE map_points SET title = "Boletus cf. edulis" WHERE id = ?')->execute([$point]);
+    plate_images_follow($pdo, $pointRow(), $open);
+    check(FakePcloud::name((int) $pageRow(1)['fileid']) === 'Boletus cf. edulis 2026-08-29 DE,BAY, Krün 00 Tafel 1.jpg'
+          && $pageRow(1)['name'] === 'Boletus cf. edulis 2026-08-29 DE,BAY, Krün 00 Tafel 1.jpg' && $pageRow(1)['folderid'] === '700',
+        'renamed, the find\'s pages are renamed where they lie');
+    // While the pictures lie in two folders, the pages wait.
+    FakePcloud::$folders[701] = ['Noch einer', 100];
+    $pdo->prepare('INSERT INTO map_cloud_files (user_id, point_id, provider, fileid, folderid, name, original_name, path, size, sort_order, uploaded_at)
+                   VALUES (?, ?, "pcloud", "7003", "701", "Bild2.jpg", "Bild2.jpg", "Noch", 1, 1, NOW())')->execute([$user, $point]);
+    check(plate_images_follow($pdo, $pointRow(), $open) === ['moved' => 0, 'failed' => 0] && $pageRow(1)['folderid'] === '700',
+        'while the pictures lie in two folders the pages stay where they are');
+    $pdo->prepare('DELETE FROM map_cloud_files WHERE point_id = ?')->execute([$point]);
+    $pdo->prepare('UPDATE map_points SET title = "Boletus edulis" WHERE id = ?')->execute([$point]);
+    plate_images_follow($pdo, $pointRow(), $open);   // no picture of the maker's there: the name alone tells, and the find's own folder is asked for
+
     // A save down to one page takes page 2 along — its file, row and preview.
     $p2 = (int) $pdo->query('SELECT fileid FROM map_plate_images WHERE plate_id = ' . $plate . ' AND page = 2')->fetchColumn();
     plate_images_prune($pdo, $user, $plate, 1, $open);
@@ -126,6 +162,7 @@ try {
     @rmdir(dirname(plate_image_preview_path($user, $plate, 1)));
     @rmdir(user_directory($user));
     $pdo->prepare('DELETE FROM map_plates WHERE id = ?')->execute([$plate]);
+    $pdo->prepare('DELETE FROM map_cloud_files WHERE point_id = ?')->execute([$point]);
     $pdo->prepare('DELETE FROM map_points WHERE id = ?')->execute([$point]);
     $pdo->prepare('DELETE FROM map_users WHERE id IN (?, ?)')->execute([$user, $stranger]);
 }
