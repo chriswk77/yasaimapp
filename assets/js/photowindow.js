@@ -14868,6 +14868,27 @@ export function mountPhotoWindow(host) {
                 // The mark chosen over the picture rides along (markHintSync).
                 const stamp = markStamps.get(statsLabel);
                 if (stamp && done.type === 'rect') done.mark = stamp;
+                /* A SPORE'S THIRD CLICK STANDS LEFT (23.11.2026: „der
+                   dritte Klick nach links, so messe ich momentan immer die
+                   Sporen … Diese hätte ich eben alle gerne gleich
+                   ausgerichtet … mach das nur bei den Sporenmessungen").
+                   The first two clicks stand the axis upright on the tile
+                   (measurestats.js, sporeDraw: the first on top), and the
+                   picture is only turned, never flipped — so the side of the
+                   third click was wherever the picture had it. Where it lies
+                   right of the axis, the new spore is born mirrored ('h'), as
+                   if the button on its tile had been pressed: the same flag,
+                   so that button still turns it back. SET ONCE, HERE, and
+                   only for new spores: measures from before keep their
+                   mirror, or every spore already aligned by hand would turn
+                   round again. Other layers stay as photographed — a mirrored
+                   basidium or cystidium is no matter, a row of spores is. The
+                   side: the normal (-ay, ax) is where the tile's left lands. */
+                if (done.type === 'rect' && statsLabel === 'Sporen' && done.points?.length === 4) {
+                    const [a, b, c] = done.points;
+                    const ax = b[0] - a[0], ay = b[1] - a[1];
+                    if ((c[0] - a[0]) * -ay + (c[1] - a[1]) * ax < 0) done.mirror = 'h';
+                }
                 const part = statsTabs.get(statsLabel);
                 if (part && cropOfTab(part) === null && done.type === 'line') done.part = part;
                 // A cutout takes the name of the cutout tab on view.
