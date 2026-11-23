@@ -114,6 +114,7 @@ page_header(t('Anmelden'));
     <?php /* What happens to an address typed in here — to be read BEFORE
          it is typed, so the link stands on the one page everybody sees
          first (pages/privacy.php, 20.11.2026). */ ?>
-    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a></p>
+    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
+        · <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a></p>
 </div>
 <?php page_footer(); ?>

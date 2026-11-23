@@ -178,6 +178,24 @@ function icon_stock_all(): array
             'stroke' => 2,
         ],
 
+        // THE FOURTH FAREWELL (23.11.2026): blocking a friend. The ring
+        // with the bar is the sign every phone uses for „blocked", and
+        // nothing in this library says it otherwise. It ends the friendship
+        // like the bin did and keeps the other from asking again —
+        // CLAUDE.md, „Three symbols for three farewells", names it.
+        'block' => [
+            'path'   => '<circle cx="12" cy="12" r="8"/><path d="M6.4 6.4l11.2 11.2"/>',
+            'stroke' => 2,
+        ],
+
+        // A flag on its pole: reporting a person to the administrators
+        // (23.11.2026). The flag is what one raises to call attention, and
+        // it carries no farewell — reporting ends nothing.
+        'flag' => [
+            'path'   => '<path d="M6 21V4M6 4.5h11l-2.2 4 2.2 4H6"/>',
+            'stroke' => 1.8,
+        ],
+
         // --- Lists and sorting -------------------------------------------
         //
         // The triangle that shows expanded and collapsed sections. Filled,

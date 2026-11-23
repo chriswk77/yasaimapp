@@ -24,6 +24,11 @@
  *   other's work groups and vice versa. If the membership remained, it
  *   would keep alive exactly the connection that was just ended.
  *
+ *   BLOCKING (migration 0200) is ending the friendship plus a row that
+ *   keeps the two apart: no request in either direction, not found in
+ *   the search, until the one who blocked lifts it. Reporting writes a
+ *   mail (locally into data/mail.log) and ends nothing.
+ *
  * Everything created is removed again at the end.
  */
 
@@ -174,12 +179,45 @@ try {
     group_delete($pdo, $anna, $group);
     check(groups_overview($pdo, $anna)['own'] === [], "one's own group is deleted");
 
-    echo "Blocked users:\n";
+    if (user_blocks_ready($pdo)) {
+        echo "Blocking and reporting:\n";
+        friendship_request($pdo, $anna, $ben);
+        $fId = (int) $pdo->query("SELECT id FROM map_friends WHERE from_user_id = $anna AND to_user_id = $ben")->fetchColumn();
+        check(rejected(fn() => user_block($pdo, $ben, $fId)), 'an open request is no friendship — it cannot be blocked');
+        friendship_accept($pdo, $ben, $fId);
+
+        check(rejected(fn() => friends_report($pdo, $ben, $fId, '   ')), 'a report without words is refused');
+        check(rejected(fn() => friends_report($pdo, $carla, $fId, 'Text')), 'a third party cannot report through somebody else\'s friendship');
+        $admins = (int) $pdo->query("SELECT COUNT(*) FROM map_users WHERE role = 'admin' AND locked_at IS NULL")->fetchColumn();
+        if ($admins > 0) {
+            check(!rejected(fn() => friends_report($pdo, $ben, $fId, 'PRUEF report text')), 'a friend can be reported');
+            check(friend_ids($pdo, $ben) === [$anna], 'reporting ends nothing');
+        }
+
+        check(rejected(fn() => user_block($pdo, $carla, $fId)), 'a third party cannot block through somebody else\'s friendship');
+        check(user_block($pdo, $ben, $fId) === 'PRUEF Anna', 'blocking names whom it blocked');
+        check(friend_ids($pdo, $anna) === [] && friend_ids($pdo, $ben) === [], 'blocking ends the friendship');
+        check(user_blocked_between($pdo, $anna, $ben) && user_blocked_between($pdo, $ben, $anna), 'the block is seen from both sides');
+        check(rejected(fn() => friendship_request($pdo, $anna, $ben)), 'the blocked one cannot ask again');
+        check(rejected(fn() => friendship_request($pdo, $ben, $anna)), 'nor can the one who blocked, while the block stands');
+        check(user_search($pdo, $anna, 'ruef-ben') === [] && user_search($pdo, $ben, 'ruef-anna') === [],
+            'neither finds the other in the search');
+        check(array_column(user_search($pdo, $anna, 'ruef-carla'), 'id') === [$carla], 'a third person is still found');
+        check(array_column(user_blocks($pdo, $ben), 'user_id') === [$anna] && user_blocks($pdo, $anna) === [],
+            'only the one who blocked sees the block in his list');
+        user_unblock($pdo, $anna, $ben);
+        check(user_blocked_between($pdo, $anna, $ben), 'the blocked one cannot lift the block');
+        user_unblock($pdo, $ben, $anna);
+        check(!user_blocked_between($pdo, $anna, $ben), 'the one who blocked can lift it');
+        check(!rejected(fn() => friendship_request($pdo, $anna, $ben)), 'afterwards a request is possible again');
+    }
+
+    echo "Locked accounts:\n";
     $pdo->exec("UPDATE map_users SET locked_at = NOW() WHERE id = $carla");
     check(user_search($pdo, $anna, 'ruef-carla') === [],
-        'blocked users do not show up in the search');
+        'locked accounts do not show up in the search');
     check(rejected(fn() => friendship_request($pdo, $anna, $carla)),
-        'blocked users cannot be requested — not even with a stale id');
+        'locked accounts cannot be requested — not even with a stale id');
 } finally {
     $ids = implode(',', $accounts);
     $pdo->exec("DELETE FROM map_friends WHERE from_user_id IN ($ids) OR to_user_id IN ($ids)");

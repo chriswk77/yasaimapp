@@ -91,6 +91,20 @@ function friends_process(PDO $pdo, int $userId): array
                     default     => t('Die Freundschaft mit %s ist beendet.', $name),
                 };
                 break;
+            /* BLOCKING IS ENDING THE FRIENDSHIP (23.11.2026), under the one
+               button the friend row carries — friends.php, user_block(). */
+            case 'block':
+                $name = user_block($pdo, $userId, (int) ($_POST['id'] ?? 0));
+                $state['message'] = t('%s ist blockiert. Ihr seid keine Freunde mehr und könnt euch nicht mehr anfragen.', $name);
+                break;
+            case 'unblock':
+                user_unblock($pdo, $userId, (int) ($_POST['who'] ?? 0));
+                $state['message'] = t('Die Blockierung ist aufgehoben.');
+                break;
+            case 'report':
+                friends_report($pdo, $userId, (int) ($_POST['id'] ?? 0), (string) ($_POST['text'] ?? ''));
+                $state['message'] = t('Danke. Deine Meldung ist an den Betreiber verschickt.');
+                break;
             /* NOT ONE OF THE TAB'S OWN: a module's section under the friends
                may have sent it (includes/modules.php, friends_process). The
                first module that knows the action answers with its message. */
@@ -164,23 +178,35 @@ function friends_render(PDO $pdo, int $userId, array $state): void
                                  unread marks, instead of one first going
                                  into the administration only to be sent
                                  back from there. */ ?>
-                            <?php /* WHAT IS LOST, ALL OF IT (CLAUDE.md, dangerous
-                                     buttons): until 02.10.2026 the question named only
-                                     the groups — and the chat goes too, and the
-                                     other's Freigaben, and since 02.10.2026 the
-                                     pair's direct shares (friendship_remove). */ ?>
+                            <?php /* MELDEN AND BLOCKIEREN, TWO BUTTONS FOR TWO DEEDS
+                                     (23.11.2026, for the Play review — Google wants
+                                     them apart and plainly named). The flag tells
+                                     the administrators and ends nothing; it opens
+                                     the window below, which asks what happened. */ ?>
+                            <button class="symbol-button friend-report" type="button"
+                                    data-id="<?= (int) $row['id'] ?>" data-name="<?= h($row['display_name']) ?>"
+                                    title="<?= h(t('Melden')) ?>"
+                                    aria-label="<?= h(t('%s melden', $row['display_name'])) ?>"><?= icon('flag') ?></button>
+                            <?php /* BLOCKIEREN IS THE OLD „FREUNDSCHAFT BEENDEN" (23.11.2026:
+                                     „weil beides dasselbe ist, packen wir das auch beides in
+                                     einen Knopf … nennen wir ihn einfach Blockieren"): the
+                                     friendship ends with everything it took along before,
+                                     and the two cannot ask each other again until the block
+                                     is lifted below. WHAT IS LOST, ALL OF IT (CLAUDE.md,
+                                     dangerous buttons): the chat, the groups, the other's
+                                     Freigaben, the pair's direct shares (friendship_remove). */ ?>
                             <form method="post" action="<?= h($target) ?>"
                                   data-confirm="<?= h(t('%s und du seid danach keine Freunde mehr. Euer Chat wird gelöscht. Ihr kommt aus den Arbeitsgruppen und Freigaben des anderen heraus. Was ihr euch direkt geteilt habt, seht ihr nicht mehr.', $row['display_name'])
-                                      . "\n\n" . t('Eure Funde bleiben, wo sie sind. Befreunden könnt ihr euch jederzeit neu.')) ?>"
-                                  data-confirm-title="<?= h(t('Freundschaft beenden?')) ?>"
-                                  data-confirm-button="<?= h(t('Beenden')) ?>"
+                                      . "\n\n" . t('Ihr könnt euch danach nicht mehr anfragen und findet euch in der Suche nicht mehr. Eure Funde bleiben, wo sie sind. Unter „Blockierte Personen" kannst du das wieder aufheben.')) ?>"
+                                  data-confirm-title="<?= h(t('%s blockieren?', $row['display_name'])) ?>"
+                                  data-confirm-button="<?= h(t('Blockieren')) ?>"
                                   data-confirm-danger>
                                 <?= csrf_field() ?>
                                 <input type="hidden" name="section" value="friends">
-                                <input type="hidden" name="action" value="remove">
+                                <input type="hidden" name="action" value="<?= user_blocks_ready($pdo) ? 'block' : 'remove' ?>">
                                 <input type="hidden" name="id" value="<?= (int) $row['id'] ?>">
-                                <button class="symbol-button delete" type="submit" title="<?= h(t('Freundschaft beenden')) ?>"
-                                        aria-label="<?= h(t('Freundschaft mit %s beenden', $row['display_name'])) ?>"><?= icon('delete') ?></button>
+                                <button class="symbol-button delete" type="submit" title="<?= h(t('Blockieren')) ?>"
+                                        aria-label="<?= h(t('%s blockieren', $row['display_name'])) ?>"><?= icon('block') ?></button>
                             </form>
                         </span>
                     </li>
@@ -255,6 +281,37 @@ function friends_render(PDO $pdo, int $userId, array $state): void
     </div>
 </div>
 
+<?php /* THE PEOPLE ONE BLOCKED (23.11.2026) — only when there are any, a
+     list with nothing in it would name a thing nobody has used. The cross
+     lifts the block: nothing is lost by it, the person may simply ask
+     again (CLAUDE.md, „Three symbols"). */
+$blocked = user_blocks($pdo, $userId);
+if ($blocked !== []): ?>
+<div class="column-header">
+    <h3><?= h(t('Blockierte Personen')) ?></h3>
+</div>
+<ul class="person-list">
+    <?php foreach ($blocked as $row): ?>
+        <li class="person-row">
+            <span class="person-name">
+                <?= h($row['display_name']) ?>
+                <span class="item-data"><?= h(t('blockiert am %s', date('d.m.Y', strtotime((string) $row['created_at'])))) ?></span>
+            </span>
+            <span class="person-buttons">
+                <form method="post" action="<?= h($target) ?>">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="section" value="friends">
+                    <input type="hidden" name="action" value="unblock">
+                    <input type="hidden" name="who" value="<?= (int) $row['user_id'] ?>">
+                    <button class="symbol-button" type="submit" title="<?= h(t('Blockierung aufheben')) ?>"
+                            aria-label="<?= h(t('Blockierung von %s aufheben', $row['display_name'])) ?>"><?= icon('close') ?></button>
+                </form>
+            </span>
+        </li>
+    <?php endforeach; ?>
+</ul>
+<?php endif; ?>
+
 <?php /* WHAT THE MODULES ADD UNDER THE FRIENDS (includes/modules.php, hook
      friends_render): a section each, written out here — below the two
      columns, before the request window. The tab knows none of them. */
@@ -289,6 +346,35 @@ module_each('friends_render', $pdo, $userId, $overview, $target);
 
         <div class="dialog-footer">
             <button type="button" class="button subtle" id="friend-search-cancel"><?= h(t('Schließen')) ?></button>
+        </div>
+    </form>
+</dialog>
+
+<?php /* THE REPORT WINDOW, one for every friend: the flag in a friend's row
+     fills in the id and the name (shared.js). What is written goes as a
+     mail to the administrators — friends_report() in friends.php — and
+     NOTHING of a find goes along, so the hint says to describe, not to
+     paste coordinates. */ ?>
+<dialog id="friend-report-window" class="form-window pinned-footer">
+    <form method="post" action="<?= h($target) ?>" id="friend-report-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="section" value="friends">
+        <input type="hidden" name="action" value="report">
+        <input type="hidden" name="id" id="friend-report-id" value="">
+
+        <h2 id="friend-report-title"><?= h(t('Melden')) ?></h2>
+
+        <p class="hint-text"><?= h(t('Wenn dich jemand belästigt, beleidigt oder etwas Verbotenes zeigt, sag es dem Betreiber von YASAIMAPP. Er bekommt deine Nachricht per E-Mail und kann das Konto sperren.')) ?></p>
+        <p class="hint-text"><?= h(t('Die Freundschaft bleibt dabei bestehen. Willst du mit der Person nichts mehr zu tun haben, blockiere sie zusätzlich.')) ?></p>
+
+        <div class="field">
+            <label for="friend-report-text"><?= h(t('Was ist passiert?')) ?></label>
+            <textarea id="friend-report-text" name="text" required maxlength="<?= FRIENDS_REPORT_MAX ?>" rows="4"></textarea>
+        </div>
+
+        <div class="dialog-footer">
+            <button type="button" class="button subtle" id="friend-report-cancel"><?= h(t('Abbrechen')) ?></button>
+            <button type="submit" class="button"><?= h(t('Meldung schicken')) ?></button>
         </div>
     </form>
 </dialog>

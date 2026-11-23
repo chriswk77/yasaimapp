@@ -78,6 +78,24 @@ function wireFriends() {
     });
     document.getElementById('friend-search-cancel').addEventListener('click', () => searchWindow.close());
 
+    /* THE REPORT WINDOW (23.11.2026): the flag in a friend's row says whom,
+       the window asks what happened. It stands in the same fragment as the
+       search window, so it is wired here, once with it. */
+    const reportWindow = document.getElementById('friend-report-window');
+    if (reportWindow) {
+        const reportText = document.getElementById('friend-report-text');
+        for (const button of document.querySelectorAll('.friend-report')) {
+            button.addEventListener('click', () => {
+                document.getElementById('friend-report-id').value = button.dataset.id;
+                document.getElementById('friend-report-title').textContent = t('%s melden', button.dataset.name);
+                reportText.value = '';
+                reportWindow.showModal();
+                reportText.focus();
+            });
+        }
+        document.getElementById('friend-report-cancel').addEventListener('click', () => reportWindow.close());
+    }
+
     // Enter in the search field used to submit the form — with an empty
     // who field. Submitting happens only via a suggestion.
     field.addEventListener('keydown', (e) => {

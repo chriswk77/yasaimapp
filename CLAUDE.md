@@ -214,7 +214,10 @@ you step out and it carries on without you (leave a group, leave a
 container). The CROSS (`close`) dismisses something pending (reject or
 withdraw a request) — the person stays and can be asked again tomorrow.
 The colour is a separate question: all three stay red where the step
-cannot be undone alone.
+cannot be undone alone. A FOURTH since 23.11.2026, for the Play review:
+the BLOCK sign (`block`) ends a friendship — it took the bucket's place
+in the friend row, one button for both („weil beides dasselbe ist") —
+and keeps the two from asking each other again until it is lifted.
 
 **A FIND IS A SHARED RECORD, AND A PICTURE BELONGS TO WHOEVER TOOK IT**
 (the model of 11.09.2026, built in six steps the same day and the

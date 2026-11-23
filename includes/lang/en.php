@@ -724,8 +724,6 @@ return [
         => 'Meaning',
     'Bedingung: %s'
         => 'Condition: %s',
-    'Beenden'
-        => 'End',
     'beendet'
         => 'ended',
     'bearbeitet'
@@ -1376,8 +1374,6 @@ return [
         => 'The share "%s" disappears from your overview. You only get back in if %s admits you again.',
     '%s und du seid danach keine Freunde mehr. Euer Chat wird gelöscht. Ihr kommt aus den Arbeitsgruppen und Freigaben des anderen heraus. Was ihr euch direkt geteilt habt, seht ihr nicht mehr.'
         => '%s and you are no longer friends afterwards. Your chat is deleted. You both leave each other\'s working groups and shares. What you shared directly with each other is gone for both of you.',
-    'Eure Funde bleiben, wo sie sind. Befreunden könnt ihr euch jederzeit neu.'
-        => 'Your finds stay where they are. You can become friends again at any time.',
     'Die Funde aus %d Exkursionen konnten nicht geholt werden.'
         => 'The finds from %d excursions could not be fetched.',
     'Die Funde aus „%s" konnten nicht geholt werden.'
@@ -2585,12 +2581,6 @@ return [
         => 'Admit a friend into %s',
     'Freundschaft anfragen'
         => 'Request a friendship',
-    'Freundschaft beenden'
-        => 'End friendship',
-    'Freundschaft beenden?'
-        => 'End the friendship?',
-    'Freundschaft mit %s beenden'
-        => 'End the friendship with %s',
     'Freundschaftsanfrage von %s'
         => 'Friend request from %s',
     'Friaul-Julisch Venetien'
@@ -10591,4 +10581,51 @@ return [
     'Die KI wird gestartet … (einmal je Besuch, etwa 15 Sekunden)'
         => 'The AI is starting … (once per visit, about 15 seconds)',
 
+    // Blocking, reporting and the rules (23.11.2026, migration 0200).
+    'Blockieren'
+        => 'Block',
+    '%s blockieren'
+        => 'Block %s',
+    '%s blockieren?'
+        => 'Block %s?',
+    'Ihr könnt euch danach nicht mehr anfragen und findet euch in der Suche nicht mehr. Eure Funde bleiben, wo sie sind. Unter „Blockierte Personen" kannst du das wieder aufheben.'
+        => 'Afterwards neither of you can send the other a request, and you no longer find each other in the search. Your finds stay where they are. You can undo this under "Blocked people".',
+    '%s ist blockiert. Ihr seid keine Freunde mehr und könnt euch nicht mehr anfragen.'
+        => '%s is blocked. You are no longer friends and cannot send each other requests.',
+    'Blockierte Personen'
+        => 'Blocked people',
+    'blockiert am %s'
+        => 'blocked on %s',
+    'Blockierung aufheben'
+        => 'Unblock',
+    'Blockierung von %s aufheben'
+        => 'Unblock %s',
+    'Die Blockierung ist aufgehoben.'
+        => 'The block has been lifted.',
+    'Melden'
+        => 'Report',
+    '%s melden'
+        => 'Report %s',
+    'Wenn dich jemand belästigt, beleidigt oder etwas Verbotenes zeigt, sag es dem Betreiber von YASAIMAPP. Er bekommt deine Nachricht per E-Mail und kann das Konto sperren.'
+        => 'If someone harasses or insults you, or shows something forbidden, tell the operator of YASAIMAPP. The operator gets your message by e-mail and can lock the account.',
+    'Die Freundschaft bleibt dabei bestehen. Willst du mit der Person nichts mehr zu tun haben, blockiere sie zusätzlich.'
+        => 'The friendship stays as it is. If you want nothing more to do with this person, block them as well.',
+    'Was ist passiert?'
+        => 'What happened?',
+    'Meldung schicken'
+        => 'Send report',
+    'Schreib bitte kurz, was passiert ist.'
+        => 'Please write briefly what happened.',
+    'Danke. Deine Meldung ist an den Betreiber verschickt.'
+        => 'Thank you. Your report has been sent to the operator.',
+    'Die Meldung konnte nicht verschickt werden. Bitte versuch es später noch einmal.'
+        => 'The report could not be sent. Please try again later.',
+    'Regeln'
+        => 'Rules',
+    'Der Text der Regeln fehlt auf dem Server. Bitte gib uns Bescheid.'
+        => 'The text of the rules is missing on the server. Please let us know.',
+    'Bitte lies die Regeln und hak an, dass du dich daran hältst.'
+        => 'Please read the rules and tick that you will keep to them.',
+    'Ich halte mich an die <a href="%s" target="_blank" rel="noopener">Regeln</a>.'
+        => 'I will keep to the <a href="%s" target="_blank" rel="noopener">rules</a>.',
 ];

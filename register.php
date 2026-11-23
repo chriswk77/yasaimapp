@@ -47,6 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($password !== $repeat) {
         $errors[] = t('Die beiden Passwörter stimmen nicht überein.');
     }
+    /* THE RULES ARE ACCEPTED BEFORE ANYTHING IS SHARED (23.11.2026, the Play
+       review: the acceptance „cannot be skipped"). Checked here as well as
+       by `required` on the box — the box is the browser's courtesy, this is
+       the boundary. */
+    if (($_POST['terms'] ?? '') !== '1') {
+        $errors[] = t('Bitte lies die Regeln und hak an, dass du dich daran hältst.');
+    }
 
     if ($errors === []) {
         $stmt = $pdo->prepare('SELECT 1 FROM map_users WHERE email = ? LIMIT 1');
@@ -64,6 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ], $invitation);
             session_renew();
             $_SESSION['user_id'] = $userId;
+            // When the rules were accepted (migration 0200; before it, the
+            // tick above is asked all the same and nothing is stored).
+            if (column_exists($pdo, 'map_users', 'terms_accepted_at')) {
+                $pdo->prepare('UPDATE map_users SET terms_accepted_at = NOW() WHERE id = ?')->execute([$userId]);
+            }
             // The confirmation link goes out at once (migration 0116); the
             // account is usable before it is followed. A mail that could
             // not be handed on must not cost the registration.
@@ -145,6 +157,14 @@ page_header(t('Konto anlegen'));
                    autocomplete="new-password">
         </div>
 
+        <?php /* The rules link opens beside the form, so what was typed stays. */ ?>
+        <div class="field">
+            <label class="checkbox-row">
+                <input type="checkbox" name="terms" value="1" required<?= ($_POST['terms'] ?? '') === '1' ? ' checked' : '' ?>>
+                <span><?= t('Ich halte mich an die <a href="%s" target="_blank" rel="noopener">Regeln</a>.', h(url('pages/terms.php'))) ?></span>
+            </label>
+        </div>
+
         <div class="button-row">
             <button class="button" type="submit"><?= h(t('Konto anlegen')) ?></button>
         </div>
@@ -154,6 +174,7 @@ page_header(t('Konto anlegen'));
         <?= h(t('Schon ein Konto?')) ?> <a href="<?= h(url('login.php')) ?>"><?= h(t('Anmelden')) ?></a>
     </p>
     <?php /* Beside the form that asks for a name and an address (pages/privacy.php). */ ?>
-    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a></p>
+    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
+        · <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a></p>
 </div>
 <?php page_footer(); ?>

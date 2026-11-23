@@ -83,6 +83,14 @@ function user_search(PDO $pdo, int $me, string $term, int $offset = 0, int $limi
              ON (f.from_user_id = u.id AND f.to_user_id = ?)
              OR (f.from_user_id = ? AND f.to_user_id = u.id)
           WHERE u.id <> ? AND u.locked_at IS NULL'
+        /* A BLOCK HIDES BOTH FROM EACH OTHER (23.11.2026) — whoever was
+           blocked does not find the one who blocked, and the one who
+           blocked takes him back only through the list „Blockierte
+           Personen". Interpolated ids, not placeholders: $me is an int,
+           and the placeholder list below stays as it was. */
+        . (user_blocks_ready($pdo) ? '
+            AND u.id NOT IN (SELECT blocked_user_id FROM map_user_blocks WHERE user_id = ' . $me . ')
+            AND u.id NOT IN (SELECT user_id FROM map_user_blocks WHERE blocked_user_id = ' . $me . ')' : '')
         . ($all ? '' : '
             AND (u.first_name LIKE ? OR u.last_name LIKE ?
                  OR CONCAT(u.first_name, \' \', u.last_name) LIKE ? OR u.email LIKE ?)')
@@ -135,6 +143,12 @@ function friendship_request(PDO $pdo, int $me, int $userId): array
     }
     if ((int) $person['id'] === $me) {
         throw new InvalidArgumentException(t('Das bist du selbst.'));
+    }
+    /* BLOCKED IN EITHER DIRECTION, the same words as a deleted account:
+       whoever was blocked is not told so — that would only invite him to
+       try another way. */
+    if (user_blocked_between($pdo, $me, (int) $person['id'])) {
+        throw new InvalidArgumentException(t('Diese Person gibt es nicht mehr.'));
     }
 
     // Check both directions: even if the other person has already sent a
@@ -252,6 +266,175 @@ function friendship_remove(PDO $pdo, int $me, int $friendshipId): string
         return 'ended';
     }
     return (int) $row['to_user_id'] === $me ? 'declined' : 'withdrawn';
+}
+
+// ---------------------------------------------------------------------------
+// Blocking and reporting (migration 0200, 23.11.2026)
+// ---------------------------------------------------------------------------
+
+/*
+ * WHY THIS EXISTS: the Play review wants users to block and report each
+ * other wherever they can write to one another — and friends can, in the
+ * chat. The maintainer's answer set the shape: „Weil man auch eine
+ * Freundschaft beenden kann und sagen kann, mit dem will ich nichts mehr zu
+ * tun haben, damit ist er blockiert." So there is NO block beside the
+ * friendship, no friend whose chat is muted: BLOCKING IS ENDING THE
+ * FRIENDSHIP, under ONE button that is called „Blockieren" („keine
+ * doppelten Knöpfe … nennen wir ihn einfach Blockieren"), and the row in
+ * map_user_blocks only remembers it, so the other cannot ask again.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO: reach into a THIRD person's working
+ * group or joint list where both happen to be. That group is the third
+ * person's; whoever does not want to meet somebody there leaves it.
+ */
+
+/** Does the table exist yet? Until migration 0200 the button ends a friendship as before. */
+function user_blocks_ready(PDO $pdo): bool
+{
+    return table_exists($pdo, 'map_user_blocks');
+}
+
+/** Has either of the two blocked the other? */
+function user_blocked_between(PDO $pdo, int $a, int $b): bool
+{
+    if (!user_blocks_ready($pdo)) {
+        return false;
+    }
+    $stmt = $pdo->prepare(
+        'SELECT 1 FROM map_user_blocks
+          WHERE (user_id = ? AND blocked_user_id = ?) OR (user_id = ? AND blocked_user_id = ?) LIMIT 1'
+    );
+    $stmt->execute([$a, $b, $b, $a]);
+    return (bool) $stmt->fetchColumn();
+}
+
+/**
+ * Block a friend: the friendship ends with everything friendship_remove()
+ * takes along, and the row keeps the two apart afterwards.
+ *
+ * ONLY FROM A FRIENDSHIP, on purpose: the friend row is the one place the
+ * button stands. A request that is not wanted is declined with the cross
+ * and may come again (CLAUDE.md, „Three symbols") — that stays.
+ *
+ * @return string the other person's display name, for the message
+ */
+function user_block(PDO $pdo, int $me, int $friendshipId): string
+{
+    $stmt = $pdo->prepare(
+        "SELECT u.id, " . sql_display_name() . " AS display_name
+           FROM map_friends f
+           JOIN map_users u ON u.id = IF(f.from_user_id = ?, f.to_user_id, f.from_user_id)
+          WHERE f.id = ? AND (f.from_user_id = ? OR f.to_user_id = ?) AND f.status = 'accepted' LIMIT 1"
+    );
+    $stmt->execute([$me, $friendshipId, $me, $me]);
+    $other = $stmt->fetch();
+    if ($other === false) {
+        throw new InvalidArgumentException(t('Diese Freundschaft gibt es nicht mehr.'));
+    }
+
+    friendship_remove($pdo, $me, $friendshipId);
+    if (user_blocks_ready($pdo)) {
+        $pdo->prepare('INSERT IGNORE INTO map_user_blocks (user_id, blocked_user_id, created_at) VALUES (?, ?, NOW())')
+            ->execute([$me, (int) $other['id']]);
+    }
+    return (string) $other['display_name'];
+}
+
+/** Lift a block of mine. Afterwards either may request the other again. */
+function user_unblock(PDO $pdo, int $me, int $userId): void
+{
+    if (!user_blocks_ready($pdo)) {
+        return;
+    }
+    $pdo->prepare('DELETE FROM map_user_blocks WHERE user_id = ? AND blocked_user_id = ?')
+        ->execute([$me, $userId]);
+}
+
+/** The people I blocked, by name — [{user_id, display_name, created_at}]. */
+function user_blocks(PDO $pdo, int $me): array
+{
+    if (!user_blocks_ready($pdo)) {
+        return [];
+    }
+    $stmt = $pdo->prepare(
+        'SELECT u.id AS user_id, ' . sql_display_name() . ' AS display_name, b.created_at
+           FROM map_user_blocks b
+           JOIN map_users u ON u.id = b.blocked_user_id
+          WHERE b.user_id = ?
+          ORDER BY display_name'
+    );
+    $stmt->execute([$me]);
+    return $stmt->fetchAll();
+}
+
+/** How long a report may be — a reasonableness limit like the chat's. */
+const FRIENDS_REPORT_MAX = 5000;
+
+/**
+ * Report a friend to the administrators: one mail to each of them, with
+ * both names, both addresses and the reporter's words.
+ *
+ * A MAIL AND NO TABLE (the small version agreed 23.11.2026): the answer
+ * to a report is a deed of the administrator — the lock in
+ * Benutzerverwaltung —, and a list of reports in the administration would
+ * be a second inbox beside the mail one reads anyway.
+ *
+ * NOTHING OF A FIND TRAVELS. The mail carries names and the reporter's own
+ * text — never a coordinate, a list or a picture: secret find spots stay
+ * secret, and whoever reports writes what happened in his own words.
+ *
+ * Reporting does not end the friendship; that is „Blockieren", a step of
+ * its own (Google wants the two apart).
+ *
+ * @throws InvalidArgumentException  no such friend, no text, mail not handed on
+ */
+function friends_report(PDO $pdo, int $me, int $friendshipId, string $text): void
+{
+    $text = trim(mb_substr($text, 0, FRIENDS_REPORT_MAX));
+    if ($text === '') {
+        throw new InvalidArgumentException(t('Schreib bitte kurz, was passiert ist.'));
+    }
+    $stmt = $pdo->prepare(
+        "SELECT u.id, " . sql_display_name() . " AS display_name, u.email
+           FROM map_friends f
+           JOIN map_users u ON u.id = IF(f.from_user_id = ?, f.to_user_id, f.from_user_id)
+          WHERE f.id = ? AND (f.from_user_id = ? OR f.to_user_id = ?) AND f.status = 'accepted' LIMIT 1"
+    );
+    $stmt->execute([$me, $friendshipId, $me, $me]);
+    $other = $stmt->fetch();
+    if ($other === false) {
+        throw new InvalidArgumentException(t('Diese Freundschaft gibt es nicht mehr.'));
+    }
+    $stmt = $pdo->prepare('SELECT id, ' . sql_display_name() . ' AS display_name, email FROM map_users u WHERE id = ?');
+    $stmt->execute([$me]);
+    $reporter = $stmt->fetch();
+
+    $admins = $pdo->query(
+        "SELECT email FROM map_users WHERE role = 'admin' AND locked_at IS NULL ORDER BY id"
+    )->fetchAll(PDO::FETCH_COLUMN);
+
+    require_once __DIR__ . '/mail.php';
+    /* The mail is the administrator's, so it speaks German like the rest of
+       what he reads — no t(): the reporter's language must not decide it. */
+    $subject = 'YASAIMAPP: Meldung über ' . $other['display_name'];
+    $body = "Eine Meldung aus YASAIMAPP.\n\n"
+        . 'Gemeldet von: ' . $reporter['display_name'] . ' <' . $reporter['email'] . '> (Konto ' . (int) $reporter['id'] . ")\n"
+        . 'Gemeldet wird: ' . $other['display_name'] . ' <' . $other['email'] . '> (Konto ' . (int) $other['id'] . ")\n"
+        . 'Zeit: ' . date('d.m.Y H:i') . "\n\n"
+        . "Was passiert ist, in den Worten der meldenden Person:\n\n"
+        . $text . "\n\n"
+        . "Ein Konto sperrst du in der Verwaltung unter Benutzerverwaltung:\n"
+        . absolute_url('pages/administration.php') . "#members\n"
+        . "Auf diese Mail zu antworten, schreibt der meldenden Person.\n";
+
+    $sent = false;
+    foreach ($admins as $address) {
+        $sent = mail_send((string) $address, $subject, $body, ['reply_to' => (string) $reporter['email']]) || $sent;
+    }
+    if (!$sent) {
+        error_log('friends report (' . $me . ' about ' . (int) $other['id'] . '): no mail handed on');
+        throw new InvalidArgumentException(t('Die Meldung konnte nicht verschickt werden. Bitte versuch es später noch einmal.'));
+    }
 }
 
 /**
