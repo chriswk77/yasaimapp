@@ -81,6 +81,7 @@ import { subjectGroups } from './gallerysort.js';
 import { hoverPick } from './hoverpick.js';
 import { personName } from './names.js';
 import { wordsOrSigns } from './wordsorsigns.js';
+import { vocab, vocabPhrase, vocabStored } from './vocabulary.js';
 import {
     measureLabel, measureMark, measurePart, measureRows, partRows, partLines, rowsMarked, valueLines, plotSvg, spreadText,
     sporeAir, sporeDraw, sporeOrder, lengthStraight, partValueLines, curveSvg, lineDraw, partAir, partAirKey,
@@ -2333,8 +2334,10 @@ export function mountPhotoWindow(host) {
     function exportValues(subject, style, forFile = false) {
         const point = host.point(host.pointId());
         const details = findDetails(point, true);
+        /* THE FILE KEEPS THE STORED WORD, the watermark shows the international
+           one (vocabulary.js; 23.11.2026: „Dateinamen bleiben deutsch"). */
         if (forFile) {
-            return { ...exportValues(subject, style), Datum: nameDay(point), Ort: namePlace(point) };
+            return { ...exportValues(subject, style), Datum: nameDay(point), Ort: namePlace(point), Motiv: exportMotif(subject) };
         }
         const user = host.start.user ?? {};
         return {
@@ -2344,7 +2347,7 @@ export function mountPhotoWindow(host) {
             Art: details.species ?? '',
             Datum: details.date ?? '',
             Fundnummer: details.number ?? '',
-            Motiv: exportMotif(subject),
+            Motiv: vocab(exportMotif(subject)),
             Ort: details.place ?? '',
         };
     }
@@ -10282,7 +10285,7 @@ export function mountPhotoWindow(host) {
                   fill="none" stroke="${measureStyle.line_color}" stroke-width="${overlayHair * lineWeight}"
                   stroke-dasharray="${overlayHair * 5} ${overlayHair * 4}"/>`
                 + svgSeamed('polyline', `points="${wedge.map(q => q[0] + ',' + q[1]).join(' ')}"`)
-                + (name ? svgEdgeLabel(c[0][0], c[0][1], c[1][0], c[1][1], escapeXml(name), fontSize,
+                + (name ? svgEdgeLabel(c[0][0], c[0][1], c[1][0], c[1][1], escapeXml(vocab(name)), fontSize,
                     (c[0][0] + c[1][0]) / 2 - mx, (c[0][1] + c[1][1]) / 2 - my) : '');
         }
 
@@ -10917,7 +10920,7 @@ export function mountPhotoWindow(host) {
         if (layerMeasures().length === 0) return;
         if (!await confirm({
             title: t('Messungen löschen?'),
-            text:  t('Alle Messungen der Ebene „%s" dieses Bildes werden entfernt — auch aus der Statistik. Das lässt sich nicht rückgängig machen. Einzelne wählt ein Tipp im Bild aus — das × daneben löscht sie.', statsLabel),
+            text:  t('Alle Messungen der Ebene „%s" dieses Bildes werden entfernt — auch aus der Statistik. Das lässt sich nicht rückgängig machen. Einzelne wählt ein Tipp im Bild aus — das × daneben löscht sie.', vocab(statsLabel)),
             button: t('Löschen'),
             danger: true,
         })) return;
@@ -11011,9 +11014,12 @@ export function mountPhotoWindow(host) {
         titleField.closest('.photo-topbar-scale').hidden = !mayEdit && title === '';
         (titleField.closest('.clear-shell') ?? titleField).hidden = !mayEdit;
         titleText.hidden = mayEdit;
-        titleText.textContent = title;
-        if (titleField.value !== (subject.title ?? '')) {
-            titleField.value = subject.title ?? '';
+        /* SHOWN INTERNATIONAL, KEPT GERMAN (vocabulary.js): the field and
+           the text show „Spores", the picture keeps „Sporen" — what is typed
+           goes back through vocabStored (queue below). */
+        titleText.textContent = vocab(title);
+        if (vocabStored(titleField.value) !== (subject.title ?? '').trim()) {
+            titleField.value = vocab(subject.title);
         }
         document.getElementById('photo-readonly-note').hidden = mayEdit;
         {
@@ -11369,7 +11375,7 @@ export function mountPhotoWindow(host) {
             if (withHeadings) {
                 const head = document.createElement('div');
                 head.className = 'photo-strip-head';
-                head.textContent = name ?? t('Ohne Motivnamen');
+                head.textContent = name != null ? vocab(name) : t('Ohne Motivnamen');
                 // A long name ends in an ellipsis — whole on hover.
                 head.title = head.textContent;
                 strip.append(head);
@@ -11507,7 +11513,7 @@ export function mountPhotoWindow(host) {
                 && (obj.measures ?? []).some(m => measureLabel(m) === statsLabel);
             button.classList.toggle('is-measured', has);
             if (has) {
-                button.title = t('Hier ist schon unter „%s" gemessen.', statsLabel);
+                button.title = t('Hier ist schon unter „%s" gemessen.', vocab(statsLabel));
             } else {
                 button.removeAttribute('title');
             }
@@ -11558,15 +11564,16 @@ export function mountPhotoWindow(host) {
             const typed = field.value.trim().toLowerCase();
             // Typing filters, empty shows everything: the field is mostly
             // empty, and then the whole list IS the answer.
-            const hits = words().filter(w => typed === '' || w.toLowerCase().includes(typed));
+            // Either word finds it — the shown („spo") and the stored („spor").
+            const hits = words().filter(w => typed === '' || w.toLowerCase().includes(typed) || vocab(w).toLowerCase().includes(typed));
             list.innerHTML = '';
             if (hits.length === 0) { closeList(); return; }
             for (const w of hits) {
                 const row = document.createElement('li');
-                row.textContent = w;
+                row.textContent = vocab(w);
                 row.addEventListener('pointerdown', (e) => {
                     e.preventDefault();          // the caret stays in the field
-                    field.value = w;
+                    field.value = vocab(w);
                     field.dispatchEvent(new Event('input', { bubbles: true }));
                     closeList();
                 });
@@ -11627,7 +11634,8 @@ export function mountPhotoWindow(host) {
                 clearTimeout(timer);
                 return;
             }
-            subject.title = cleaned.slice(0, 120);
+            // „Spores" typed is the stored „Sporen" (vocabulary.js).
+            subject.title = vocabStored(cleaned).slice(0, 120);
             // A micro name brings the medium's button, a macro name takes it away.
             mediumPickLabel();
             const ref = { kind: cloudInWindow !== null ? 'cloud' : 'photo',
@@ -11673,7 +11681,7 @@ export function mountPhotoWindow(host) {
             if (field.value.trim() !== '') return;
             const subject = measureSubject();
             if (!subject?.title) return;
-            field.value = subject.title;
+            field.value = vocab(subject.title);
             titlePickLabel();
         });
     }
@@ -11904,7 +11912,7 @@ export function mountPhotoWindow(host) {
         row.append(caption);
         const unmarked = rows.filter(r => !r.mark).length;
         const choices = [[null, t('Alle %d', rows.length)],
-            ...marks.map(mark => [mark, mark + ' ' + rows.filter(r => r.mark === mark).length]),
+            ...marks.map(mark => [mark, vocab(mark) + ' ' + rows.filter(r => r.mark === mark).length]),
             ...(unmarked > 0 ? [['', t('ohne Merkmal %d', unmarked)]] : [])];
         for (const [value, words] of choices) {
             const b = document.createElement('button');
@@ -12316,14 +12324,16 @@ export function mountPhotoWindow(host) {
             for (const name of list) {
                 const option = document.createElement('option');
                 option.value = name;
-                option.textContent = name;
+                // The value stays the stored word, the eye reads the international one (vocabulary.js).
+                option.textContent = vocab(name);
                 g.append(option);
             }
             statsLabelSelect.append(g);
             return g;
         };
         // Spores and conidia above, then the columns, each by the alphabet, then what stands in none.
-        const abc = (list) => [...list].sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base', numeric: true }));
+        // By the word one reads, not the one stored.
+        const abc = (list) => [...list].sort((a, b) => vocab(a).localeCompare(vocab(b), 'de', { sensitivity: 'base', numeric: true }));
         groupOf(t('Messen'), MEASURE_SHARED, null, true);
         for (const [key, head, list] of MEASURE_COLUMNS) groupOf(head(), abc(list), key);
         /* NOT A WRITING LAYER: „Beschriftung" and one's own writing layers
@@ -12777,13 +12787,15 @@ export function mountPhotoWindow(host) {
         if (!field || !pick) return;
         // Without the right to name, the name stands as text (scaleTopbarSync) — and so does no menu.
         pick.hidden = (field.closest('.clear-shell') ?? field).hidden;
-        pickSay('photo-title-pick', field.value.trim() || t('ohne'), field.value.trim(), 'label');
+        // The micro names international (vocabulary.js); the field keeps the stored word.
+        // Through the stored word and back: „spores" typed shows as the table writes it, „Spores".
+        pickSay('photo-title-pick', vocab(vocabStored(field.value)) || t('ohne'), vocabStored(field.value), 'label');
     }
     {
         const pick = document.getElementById('photo-title-pick');
         const field = document.getElementById('photo-title');
         const setTitle = (word) => {
-            field.value = word;
+            field.value = vocab(word);
             field.dispatchEvent(new Event('input', { bubbles: true }));
             photoTitleListClose();
             titlePickLabel();
@@ -12809,7 +12821,7 @@ export function mountPhotoWindow(host) {
             bin.type = 'button';
             bin.className = 'photo-pick-bin';
             bin.append(icon('delete'));
-            bin.title = t('„%s" aus deinen Motivnamen löschen', word);
+            bin.title = t('„%s" aus deinen Motivnamen löschen', vocab(word));
             bin.setAttribute('aria-label', bin.title);
             bin.addEventListener('click', async (e) => {
                 // Not the row's click: the menu would take the name for the picture.
@@ -12817,7 +12829,7 @@ export function mountPhotoWindow(host) {
                 e.stopPropagation();
                 if (!await confirm({
                     title: t('Motivnamen löschen'),
-                    text: t('„%s" steht dann nicht mehr in deinen Motivnamen. Bilder, die so heißen, behalten ihren Namen.', word),
+                    text: t('„%s" steht dann nicht mehr in deinen Motivnamen. Bilder, die so heißen, behalten ihren Namen.', vocab(word)),
                     button: t('Löschen'),
                     danger: true,
                 })) return;
@@ -12826,7 +12838,7 @@ export function mountPhotoWindow(host) {
                     for (const key of ['photo_titles', 'photo_titles_macro', 'photo_titles_micro']) {
                         if (answer.measure_style?.[key]) measureStyle[key] = answer.measure_style[key];
                     }
-                    host.status(t('„%s" ist aus deinen Motivnamen gelöscht.', word));
+                    host.status(t('„%s" ist aus deinen Motivnamen gelöscht.', vocab(word)));
                 } catch (error) {
                     host.status(error?.message || t('Der Name ließ sich nicht löschen.'), true);
                 }
@@ -12844,14 +12856,18 @@ export function mountPhotoWindow(host) {
                        gallery's groups (subjectGroups); only this menu, where
                        one looks a name up, goes by the alphabet. An account
                        from before the two lists has the one, in one column. */
-                    const abc = (words) => [...words].sort((a, b) => a.localeCompare(b, 'de', { sensitivity: 'base', numeric: true }));
+                    /* By the word one reads: the micro names international
+                       (vocabulary.js), the macro ones as stored — „Sklerotium"
+                       stands in both lists and is a German word in the one. */
+                    const abc = (words, shown) => [...words].sort((a, b) => shown(a).localeCompare(shown(b), 'de', { sensitivity: 'base', numeric: true }));
                     const macro = measureStyle.photo_titles_macro;
                     const micro = measureStyle.photo_titles_micro;
-                    const groups = macro || micro ? [[t('Makro'), macro ?? []], [t('Mikro'), micro ?? []]]
-                        : [[null, measureStyle.photo_titles ?? []]];
+                    const asIs = (w) => w;
+                    const groups = macro || micro ? [[t('Makro'), macro ?? [], asIs], [t('Mikro'), micro ?? [], vocab]]
+                        : [[null, measureStyle.photo_titles ?? [], vocab]];
                     const columns = document.createElement('span');
                     columns.className = 'photo-pick-columns';
-                    for (const [head, words] of groups) {
+                    for (const [head, words, shown] of groups) {
                         if (!words.length) continue;
                         const column = document.createElement('span');
                         column.className = 'photo-pick-column';
@@ -12860,8 +12876,8 @@ export function mountPhotoWindow(host) {
                         const rows = document.createElement('span');
                         rows.className = 'photo-pick-rows';
                         column.append(rows);
-                        for (const w of abc(words)) {
-                            const row = pickRow(rows, 'word:' + w, w);
+                        for (const w of abc(words, shown)) {
+                            const row = pickRow(rows, 'word:' + w, shown(w));
                             if (titleOwn(w)) titleBin(row, w);
                         }
                         columns.append(column);
@@ -12873,16 +12889,18 @@ export function mountPhotoWindow(host) {
                     pickRow(menu, null, '');
                     pickRow(menu, 'own', t('Eigener Name …'));
                     // The words' rows answer to the name as it stands.
-                    pick.dataset.chosen = 'word:' + field.value.trim();
+                    pick.dataset.chosen = 'word:' + vocabStored(field.value);
                 },
                 async choose(value) {
                     if (value.startsWith('word:')) return setTitle(value.slice(5));
-                    const word = (await prompt({
+                    const typed = (await prompt({
                         title: t('Motivname'),
                         text: t('Was zeigt das Bild? Zum Beispiel „Hauptmotiv", „Sporen" oder „Schnittbild".'),
-                        value: field.value.trim(),
+                        value: vocab(field.value),
                         button: t('Übernehmen'),
                     }))?.trim().slice(0, 120);
+                    // „Spores" typed is the stored „Sporen" (vocabulary.js) — one name, whichever word one knows.
+                    const word = typed === undefined ? undefined : vocabStored(typed);
                     if (word === undefined || word === '') return;
                     /* A NAME OF ONE'S OWN NAMES ITS COLUMN
                        (15.11.2026: „wer einen eigenen Namen angibt, muss
@@ -12896,7 +12914,7 @@ export function mountPhotoWindow(host) {
                     if (!listed && (measureStyle.photo_titles_macro || measureStyle.photo_titles_micro)) {
                         const kind = await choose({
                             title: t('Makro oder Mikro?'),
-                            text: t('„%s" kommt in deine Motivnamen. In welche Spalte gehört er?', word),
+                            text: t('„%s" kommt in deine Motivnamen. In welche Spalte gehört er?', vocab(word)),
                             options: [
                                 { value: 'macro', label: t('Makro'), hint: t('Ein Foto vom Pilz oder von seinen Teilen, ohne Mikroskop.') },
                                 { value: 'micro', label: t('Mikro'), hint: t('Ein Bild durch das Mikroskop.') },
@@ -13078,7 +13096,7 @@ export function mountPhotoWindow(host) {
         there.delete(MEASURE_FREE);
         there.delete('');
         const listed = [...statsLabelSelect.options].map(o => o.value).filter(v => there.has(v));
-        const rest = [...there].filter(v => !listed.includes(v)).sort((a, b) => a.localeCompare(b, 'de'));
+        const rest = [...there].filter(v => !listed.includes(v)).sort((a, b) => vocab(a).localeCompare(vocab(b), 'de'));
         return [...listed, ...rest];
     }
 
@@ -13346,7 +13364,7 @@ export function mountPhotoWindow(host) {
             const b = document.createElement('button');
             b.type = 'button';
             b.className = 'button subtle small';
-            b.textContent = name;
+            b.textContent = vocab(name);
             b.classList.toggle('is-active', name === statsLabel);
             b.setAttribute('aria-pressed', String(name === statsLabel));
             b.addEventListener('click', () => layerApply(name));
@@ -13374,7 +13392,7 @@ export function mountPhotoWindow(host) {
                 ? t('Die Ausschnitte stehen oben in ihren eigenen Reitern, einer für jeden Namen.')
                 : statsLabel === CROP_LAYER
                 ? t('Noch kein Ausschnitt. Wähle „Bildausschnitt" und setze vier Punkte.')
-                : t('Unter „%s" ist noch nichts gemessen. Miss mit „Länge × Breite". Gezählt werden alle Bilder dieses Fundes.', statsLabel);
+                : t('Unter „%s" ist noch nichts gemessen. Miss mit „Länge × Breite". Gezählt werden alle Bilder dieses Fundes.', vocab(statsLabel));
             box.append(p);
             return;
         }
@@ -13428,8 +13446,8 @@ export function mountPhotoWindow(host) {
         bar.textContent = '';
         bar.hidden = names.length === 0 && crops.length === 0;
         if (bar.hidden) return null;
-        for (const [value, words] of [[null, t('Alles')], ...names.map(n => [n, n]),
-            ...crops.map(n => [cropTab(n), n !== '' ? n : t('ohne Namen')])]) {
+        for (const [value, words] of [[null, t('Alles')], ...names.map(n => [n, vocab(n)]),
+            ...crops.map(n => [cropTab(n), n !== '' ? vocab(n) : t('ohne Namen')])]) {
             const b = document.createElement('button');
             b.type = 'button';
             b.setAttribute('role', 'tab');
@@ -13454,7 +13472,7 @@ export function mountPhotoWindow(host) {
         if (rows.length === 0) {
             const p = document.createElement('p');
             p.className = 'hint-text small';
-            p.textContent = t('Noch kein „%s" gemessen. Wähle die Strecke und klicke auf Anfang und Ende.', part);
+            p.textContent = t('Noch kein „%s" gemessen. Wähle die Strecke und klicke auf Anfang und Ende.', vocab(part));
             box.append(p);
         }
         for (const { text, quiet } of partValueLines(rows)) {
@@ -13547,12 +13565,13 @@ export function mountPhotoWindow(host) {
             text: others.length > 0
                 ? t('Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln. Nimmst du einen Namen, den es schon gibt, stehen beide in einer Reihe.')
                 : t('Wie sollen diese Ausschnitte heißen? Alle Ausschnitte mit diesem Namen bekommen den neuen Namen, auf allen Bildern des Funds und auf den Tafeln.'),
-            value: from,
+            value: vocab(from),
             button: t('Umbenennen'),
         });
         if (answer === null || answer === undefined) return;
         // As long as a plate keeps a cutout's name (plates.php, plate_mark).
-        const to = String(answer).trim().slice(0, 40);
+        // Shown international, kept as stored: „Spores" typed is „Sporen" (vocabulary.js).
+        const to = vocabStored(answer).slice(0, 40);
         if (to === from || layer !== statsLabel) return;
         const may = (src) => (src.kind === 'cloud' ? src.obj.mine !== false : host.mayEditPhotos());
         const hits = statsSources().map(src => ({ src, ms: (src.obj.measures ?? [])
@@ -13587,7 +13606,7 @@ export function mountPhotoWindow(host) {
             host.status(t('Die Ausschnitte heißen jetzt „%s", aber die Tafeln ließen sich nicht anpassen. Lege die Reihe dort neu an.', to), true);
             return;
         }
-        host.status(t('Umbenannt. Die Ausschnitte heißen jetzt „%s".', to === '' ? t('ohne Namen') : to));
+        host.status(t('Umbenannt. Die Ausschnitte heißen jetzt „%s".', to === '' ? t('ohne Namen') : vocab(to)));
     }
 
     /* THE COUNT IN THE STATISTICS (18.11.2026: „Das muss dann auch
@@ -13883,7 +13902,7 @@ export function mountPhotoWindow(host) {
         for (const { part, text } of partLines(rows)) {
             const line = document.createElement('div');
             const name = document.createElement('b');
-            name.textContent = part + ': ';
+            name.textContent = vocab(part) + ': ';
             line.append(name, text);
             box.append(line);
         }
@@ -16523,10 +16542,12 @@ export function mountPhotoWindow(host) {
         return out;
     }
 
-    /** A mark as the picture writes it: „Chryso" for „Chrysozystide" —
-     *  the layer already says it is a cystidium. */
+    /** A mark as the picture writes it: „Chryso" for „Chrysozystide"
+     *  (shown „Chrysocystidium", vocabulary.js) — the layer already says it
+     *  is a cystidium. */
     function markShort(mark) {
-        return mark.replace(/zystide$/i, '') || mark;
+        const shown = vocab(mark);
+        return shown.replace(/cystidium$/i, '') || shown;
     }
 
     function markHintSync() {
@@ -16669,7 +16690,7 @@ export function mountPhotoWindow(host) {
         // A word just typed stands among them before anything carries it.
         const options = labelOptions(kind, statsLabel);
         if (current !== '' && !options.includes(current)) options.push(current);
-        for (const [value, words] of [['', k.none()], ...options.map(o => [o, o])]) {
+        for (const [value, words] of [['', k.none()], ...options.map(o => [o, vocab(o)])]) {
             const b = document.createElement('button');
             b.type = 'button';
             b.textContent = words;
@@ -16692,7 +16713,8 @@ export function mountPhotoWindow(host) {
             field.addEventListener('keydown', (e2) => {
                 if (e2.key === 'Enter') {
                     e2.preventDefault();
-                    const word = field.value.trim();
+                    // „Chrysocystidium" typed is the stored „Chrysozystide" (vocabulary.js).
+                    const word = vocabStored(field.value);
                     if (word !== '') set(word);
                 }
             });

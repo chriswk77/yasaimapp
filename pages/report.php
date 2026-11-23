@@ -27,6 +27,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/bootstrap.php';
 require_once __DIR__ . '/../includes/data.php';
 require_once __DIR__ . '/../includes/export.php';
+require_once __DIR__ . '/../includes/vocabulary.php';
 
 $me = login_required();
 /* The layers whose bent lengths the reader reads straight, as the books
@@ -699,7 +700,8 @@ function report_photos(array $p, int $widthMm, int $viewerId): void
     $caption = static function (?string $title, ?int $by, ?string $name) use ($holder): string {
         $bits = [];
         if ($title !== null && $title !== '') {
-            $bits[] = $title;
+            // The micro names international (includes/vocabulary.php), the macro ones as stored.
+            $bits[] = vocab($title);
         }
         if ($by !== null && $by !== $holder && $name !== null && $name !== '') {
             $bits[] = t('Foto: %s', $name);
@@ -771,7 +773,7 @@ function report_measures(array $p, array $straight = []): void
            ornament, sterigma … one line each — and in a layer that holds
            nothing else (a basidium's sterigmata), they stand on their own. */
         foreach (measure_part_lines(measure_part_rows($pictures, $label)) as $part => $line) {
-            report_measure_line($label . ' · ' . $part, [$line]);
+            report_measure_line(vocab($label) . ' · ' . vocab($part), [$line]);
         }
     }
 }
@@ -791,7 +793,8 @@ function report_measure_layer(string $label, array $rows, array $lines, array $s
             ? t('Länge klassisch gemessen, gerade von Ende zu Ende')
             : t('Länge gebogen gemessen, entlang der Linie');
     }
-    report_measure_line($label, $lines);
+    // The words international, the comparisons above on the stored ones (includes/vocabulary.php).
+    report_measure_line(vocab($label), $lines);
     /* EACH MARK ITS OWN LINE under the layer's (07.10.2026) — the same
        measures again, only their kind: the photo window's „Zeigen" for
        paper. The unmarked ones get theirs only beside marked ones. */
@@ -802,10 +805,10 @@ function report_measure_layer(string $label, array $rows, array $lines, array $s
     $unmarked = array_values(array_filter($rows, static fn(array $r): bool => $r['mark'] === ''));
     foreach ($marks as $mark) {
         $own = array_values(array_filter($rows, static fn(array $r): bool => $r['mark'] === $mark));
-        report_measure_line($label . ' (' . $mark . ')', measure_summary($own));
+        report_measure_line(vocab($label) . ' (' . vocab($mark) . ')', measure_summary($own));
     }
     if ($unmarked !== []) {
-        report_measure_line($label . ' (' . t('ohne Merkmal') . ')', measure_summary($unmarked));
+        report_measure_line(vocab($label) . ' (' . t('ohne Merkmal') . ')', measure_summary($unmarked));
     }
 }
 

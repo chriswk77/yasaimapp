@@ -27,6 +27,7 @@
  */
 
 import { measureLabel } from './measurestats.js';
+import { vocab } from './vocabulary.js';
 import { TEXT_LEADING, arrowWeightOf, arrowOutline, arrowTextAt, arrowTextLook, boxLabel } from './measuredraw.js';
 
 export const NOTE_TYPES = ['text', 'arrow', 'box'];
@@ -55,11 +56,11 @@ export function noteLayers(pic) {
     return [...found.values()].sort((a, b) => a.layer.localeCompare(b.layer, 'de'));
 }
 
-/** The layers of a picture that carry measures to draw, by name, sorted. */
+/** The layers of a picture that carry measures to draw, by name, sorted — by the word one reads (vocabulary.js). */
 export function measureLayers(pic) {
     const found = new Set();
     for (const m of pic?.measures ?? []) if (MEASURE_TYPES.includes(m.type)) found.add(measureLabel(m));
-    return [...found].sort((a, b) => a.localeCompare(b, 'de'));
+    return [...found].sort((a, b) => vocab(a).localeCompare(vocab(b), 'de'));
 }
 
 /** µm for people, as the photo window writes them („84,2 µm", „1,3 mm"). */

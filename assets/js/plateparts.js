@@ -12,6 +12,7 @@
 
 import { t } from './i18n.js';
 import { mediaLabel } from './media.js';
+import { vocab, vocabLabel, vocabShortens } from './vocabulary.js';
 import { iconHtml } from './icons.js';
 import { developEmpty, developRenderer, geoSet, geoView, aiPatchesFor } from './develop.js';
 import {
@@ -469,29 +470,22 @@ export function mediaGeometry(cell, W, H, mm, label, bar) {
    Label jeweils noch eine Kurzform anbieten"). The picture name
    „HDS (Hutdeckschicht)" carries both forms so the chooser explains
    itself; on a plate it is ONE of them. A tick „abgekürzt" under the
-   label, as under the medium (cell.labelShort). Keyed by the name, lower
-   case, as the picture names are stored as typed; a name without an entry
-   stands as it is. */
-const LABEL_FORMS = {
-    'hds (hutdeckschicht)': ['Hutdeckschicht', 'HDS'],
-    cheilozystiden: ['Cheilozystiden', 'Cheilo'],
-    pleurozystiden: ['Pleurozystiden', 'Pleuro'],
-    kaulozystiden: ['Kaulozystiden', 'Kaulo'],
-    pileozystiden: ['Pileozystiden', 'Pileo'],
-};
+   label, as under the medium (cell.labelShort). SINCE 23.11.2026 THE
+   FORMS ARE THE INTERNATIONAL ONES (vocabulary.js): „Cheilocystidia" or
+   „Cheilo", and „Pileipellis" without a short form — „HDS" was the short
+   form of a German word. A name the table does not know stands as typed. */
 /** Whether a name has a short form to offer. */
-export const labelShortens = (name) => Object.hasOwn(LABEL_FORMS, String(name ?? '').trim().toLowerCase());
-/** A name as the label writes it: written out, or short where the cell asks and a short form exists. */
+export const labelShortens = (name) => vocabShortens(name);
+/** A name as the label writes it: international, short where the cell asks and a short form exists. */
 export function labelWord(name, short) {
-    const forms = LABEL_FORMS[String(name ?? '').trim().toLowerCase()];
-    return forms ? forms[short ? 1 : 0] : String(name ?? '').trim();
+    return vocabLabel(name, short);
 }
 
 export function pictureLabel(pic, cell) {
     const name = labelWord(pic?.title, cell.labelShort);
     if (!name) return '';
     const marks = pictureMarks(pic).filter(mark => (cell.labelMarks ?? []).includes(mark));
-    return marks.length ? `${name} (${marks.join(', ')})` : name;
+    return marks.length ? `${name} (${marks.map(vocab).join(', ')})` : name;
 }
 
 /** The marks the picture's measures carry, in the order they were first given. */
@@ -525,7 +519,7 @@ export function rowLabel(d, rows, cell) {
     const name = typeof d.crop === 'string' ? blockName(d) : labelWord(d.layer, cell.labelShort);
     if (!name) return '';
     const subs = rowLabelSubs(d, rows).filter(sub => (cell.labelMarks ?? []).includes(sub));
-    return subs.length ? `${name} (${subs.join(', ')})` : name;
+    return subs.length ? `${name} (${subs.map(vocab).join(', ')})` : name;
 }
 
 /**
@@ -688,10 +682,11 @@ export function cropsOf(pics, layer) {
 /** A block's or a text's name: its layer, and its part where it has one —
  *  „Sporen · Keimporus"; a row of cutouts by their own name, or „Asci ·
  *  Ausschnitte" where they have none. */
-export const blockName = (d) => (d.count === true ? `${d.layer} · ${t('Zählungen')}`
+/* SHOWN ONLY, never compared — the words international (vocabulary.js). */
+export const blockName = (d) => (d.count === true ? `${vocab(d.layer)} · ${t('Zählungen')}`
     : typeof d.crop === 'string'
-    ? (d.crop !== '' ? d.crop : `${d.layer} · ${t('Ausschnitte')}`)
-    : d.part ? `${d.layer} · ${d.part}` : d.layer);
+    ? (d.crop !== '' ? vocab(d.crop) : `${vocab(d.layer)} · ${t('Ausschnitte')}`)
+    : d.part ? `${vocab(d.layer)} · ${vocab(d.part)}` : vocab(d.layer));
 
 /** One layer's measured structures over all the find's pictures — their
  *  bent lengths read straight where `straight` says so (frameValues). */
@@ -756,7 +751,7 @@ export const PART_GAP = .5;
 
 export function valuesRows(item, rows, pics = null) {
     const name = typeof item.mark === 'string'
-        ? `${item.layer} (${item.mark === '' ? t('ohne Merkmal') : item.mark})` : item.layer;
+        ? `${vocab(item.layer)} (${item.mark === '' ? t('ohne Merkmal') : vocab(item.mark)})` : vocab(item.layer);
     const lines = valueLines(rows).filter(l => item.lines.includes(l.key));
     // Spread and outliers after the classic lines — without N, the Q line has it (spreadText).
     const spread = item.lines.includes('spread') ? spreadText(rows, false) : '';
@@ -780,8 +775,8 @@ export function valuesRows(item, rows, pics = null) {
             const line = parts.find(p => p.part === key.slice(5));
             if (!line) continue;
             const gap = out.length === 0 ? 0 : first ? 1 : PART_GAP;
-            out.push(item.name ? Object.assign(row(line.text, gap), { lead: `${line.part}: ` })
-                : row(`${line.part}: ${line.text}`, gap));
+            out.push(item.name ? Object.assign(row(line.text, gap), { lead: `${vocab(line.part)}: ` })
+                : row(`${vocab(line.part)}: ${line.text}`, gap));
             first = false;
         }
         /* THE COUNTS' NUMBERS (18.11.2026): the sectors' means and ratio,

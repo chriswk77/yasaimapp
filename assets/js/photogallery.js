@@ -37,6 +37,7 @@ import { settings } from './settings.js';
 import * as imageZoom from './imagezoom.js';
 import * as exif from './exif.js';
 import { subjectIcon } from './subjecticons.js';
+import { vocab, vocabStored } from './vocabulary.js';
 import { hoverPick } from './hoverpick.js';
 import { personName } from './names.js';
 
@@ -361,7 +362,10 @@ export function mountPhotoGallery(host) {
             if (withHeadings) {
                 const head = document.createElement('h4');
                 head.className = 'photo-group-title';
-                head.textContent = name ?? t('Ohne Motivnamen');
+                /* The stored name keys the group and its symbol; the eye reads it
+                   international (vocabulary.js) — finds.js reads the key too. */
+                head.dataset.name = name ?? t('Ohne Motivnamen');
+                head.textContent = vocab(head.dataset.name);
                 photoFields.gallery.append(head);
             }
             for (const e of items) photoFields.gallery.append(e.node);
@@ -393,7 +397,7 @@ export function mountPhotoGallery(host) {
         let name = '';
         for (const el of gallery.children) {
             if (el.classList.contains('photo-group-title')) {
-                name = el.textContent;
+                name = el.dataset.name ?? el.textContent;
                 names.push(name);
             }
             el.dataset.group = name;
@@ -407,8 +411,8 @@ export function mountPhotoGallery(host) {
             b.type = 'button';
             b.className = 'photo-group-sign';
             b.dataset.group = n;
-            b.title = n;
-            b.setAttribute('aria-label', n);
+            b.title = vocab(n);
+            b.setAttribute('aria-label', b.title);
             b.append(subjectIcon(n, n === t('Ohne Motivnamen') ? 'label' : null));
             b.addEventListener('click', () => groupShow(n));
             groupMenu.append(b);
@@ -417,7 +421,7 @@ export function mountPhotoGallery(host) {
     }
     function groupShow(name) {
         if (name !== null) photoGroup = name;
-        groupNow?.replaceChildren(...(name === null ? [] : [subjectIcon(name, name === t('Ohne Motivnamen') ? 'label' : null), name]));
+        groupNow?.replaceChildren(...(name === null ? [] : [subjectIcon(name, name === t('Ohne Motivnamen') ? 'label' : null), vocab(name)]));
         for (const el of photoFields.gallery.children) el.classList.toggle('is-off', name !== null && el.dataset.group !== name);
         for (const b of groupMenu.children) {
             b.classList.toggle('is-active', b.dataset.group === name);
@@ -973,7 +977,7 @@ export function mountPhotoGallery(host) {
         title.textContent = total > 1 ? t('Motivname für Foto %d von %d', index + 1, total) : t('Motivname');
         label.textContent = file?.name ?? '';
         label.hidden = !file?.name;
-        free.value = microscope && !listed ? remembered : '';
+        free.value = microscope && !listed ? vocab(remembered) : '';
 
         /* THE PICTURE AS THE BROWSER CAN SHOW IT — a JPEG from the phone, a
            PNG; a RAW file or a HEIC in Chrome it cannot, and then the file
@@ -1069,7 +1073,8 @@ export function mountPhotoGallery(host) {
                     button.type = 'button';
                     button.className = 'button subtle small';
                     button.classList.toggle('is-active', word === chosen);
-                    button.textContent = word;
+                    // The micro names international (vocabulary.js); the click keeps the stored word.
+                    button.textContent = vocab(word);
                     button.addEventListener('click', () => finish(word));
                     into.append(button);
                 };
@@ -1205,7 +1210,8 @@ export function mountPhotoGallery(host) {
             form.onsubmit = (e) => {
                 e.preventDefault();
                 // The typed name first; from the microscope the chosen one.
-                const name = free.value.trim() || chosen || '';
+                // „Spores" typed is the stored „Sporen" (vocabulary.js).
+                const name = vocabStored(free.value) || chosen || '';
                 // Enter in an empty field takes nothing over — as the button.
                 if (name === '') return;
                 finish(name.slice(0, 120));

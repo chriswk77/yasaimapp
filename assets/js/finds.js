@@ -50,6 +50,7 @@ import { fitRows, widthsForHeight } from './rowfit.js';
 import { findNumberFallback } from './findnumber.js';
 import { subjectGroups } from './gallerysort.js';
 import { subjectIcon } from './subjecticons.js';
+import { vocab } from './vocabulary.js';
 import { hoverPick } from './hoverpick.js';
 import { mountArchive } from './findsarchive.js';
 import { mountBlend } from './blend.js';
@@ -274,13 +275,14 @@ function blendPictures() {
         count.set(title, n);
         const row = p.kind === 'cloud' ? detail.files.find((x) => x.id === p.id) : detail.point.photos.find((x) => x.id === p.id);
         return {
-            key: keyOf(p), n, name: title ? `${title} ${n}` : t('Bild %d', n), thumb: p.thumb,
+            // The name shown international (vocabulary.js); `file` below keeps the stored word, as before.
+            key: keyOf(p), n, name: title ? `${vocab(title)} ${n}` : t('Bild %d', n), thumb: p.thumb,
             original: p.kind === 'cloud' ? `${START.baseUrl}pages/cloud_thumb.php?id=${p.id}&original=1`
                 : `${START.baseUrl}pages/photo.php?id=${p.id}`,
             w: Number(row?.width) || 0, h: Number(row?.height) || 0,
             // What the one picture made of the layers takes over (blend.js, mergeRun).
             title: title || null, scale: row?.scale ?? null, takenBy: row?.taken_by ?? null,
-            file: row?.name ?? row?.original_name ?? null,
+            file: row?.name ?? row?.original_name ?? (title ? `${title} ${n}` : null),
         };
     });
 }
@@ -1626,7 +1628,8 @@ function railGroups() {
     let name = '';
     for (const el of gallery.children) {
         if (el.classList.contains('photo-group-title')) {
-            name = el.textContent;
+            // The stored name (photogallery.js keeps it on the head); shown international below.
+            name = el.dataset.name ?? el.textContent;
             names.push(name);
         }
         el.dataset.group = name;
@@ -1643,10 +1646,10 @@ function railGroups() {
         item.type = 'button';
         item.className = 'plate-strip-menu-item';
         item.dataset.group = n;
-        item.title = n;
+        item.title = vocab(n);
         const word = document.createElement('span');
         word.className = 'plate-strip-menu-word';
-        word.textContent = n;
+        word.textContent = vocab(n);
         item.append(subjectIcon(n, n === t('Ohne Motivnamen') ? 'label' : null), word);
         item.addEventListener('click', () => railGroupShow(n));
         railMenu.append(item);
@@ -1656,7 +1659,7 @@ function railGroups() {
 
 function railGroupShow(name) {
     railGroup = name;
-    railNow.replaceChildren(...(name === null ? [] : [subjectIcon(name, name === t('Ohne Motivnamen') ? 'label' : null), name]));
+    railNow.replaceChildren(...(name === null ? [] : [subjectIcon(name, name === t('Ohne Motivnamen') ? 'label' : null), vocab(name)]));
     for (const el of gallery.children) el.classList.toggle('is-off', name !== null && el.dataset.group !== name);
     for (const item of railMenu.children) item.classList.toggle('is-active', item.dataset.group === name);
 }
@@ -1786,7 +1789,7 @@ function drawFace() {
             const tile = document.createElement('button');
             tile.type = 'button';
             tile.className = 'finds-face-tile';
-            tile.title = [p.title, t('Im Reiter Bilder öffnen')].filter(Boolean).join(' · ');
+            tile.title = [p.title ? vocab(p.title) : null, t('Im Reiter Bilder öffnen')].filter(Boolean).join(' · ');
             tile._pic = p;
             const img = document.createElement('img');
             img.alt = '';

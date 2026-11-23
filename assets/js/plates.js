@@ -58,6 +58,7 @@ import { noteLayers, measureLayers, noteShapes, noteSvg } from './plateannot.js'
 import { ARROW_WEIGHTS, arrowWeightOf, arrowWeightSet, arrowTextLook, arrowWordsGrip, textStep } from './measuredraw.js';
 import { subjectIcon } from './subjecticons.js';
 import { edgePatch } from './edgefill.js';
+import { vocab, vocabPhrase } from './vocabulary.js';
 import { hoverPick } from './hoverpick.js';
 import { personName } from './names.js';
 
@@ -3274,17 +3275,18 @@ export function mountPlates(host) {
             into.dataset.group = name;
             const head = document.createElement('h4');
             head.className = 'plate-strip-title';
-            head.textContent = name;
+            // Shown international, kept German: the group's key and its symbol go by the stored word.
+            head.textContent = vocabPhrase(name);
             into.append(head);
             list.append(into);
             const item = document.createElement('button');
             item.type = 'button';
             item.className = 'plate-strip-menu-item' + (sub ? ' is-sub' : '');
             item.dataset.group = name;
-            item.title = name;
+            item.title = vocabPhrase(name);
             const word = document.createElement('span');
             word.className = 'plate-strip-menu-word';
-            word.textContent = menuText;
+            word.textContent = vocabPhrase(menuText);
             item.append(subjectIcon(menuText, symbol), word);
             item.addEventListener('click', () => stripGroupShow(name));
             menu.append(item);
@@ -3399,10 +3401,10 @@ export function mountPlates(host) {
                own, as photographed. */
             const counts = countsOf(pics, layer);
             // A layer of picture cutouts alone has no numbers to show.
-            if (rows.length > 0 || parts.length > 0 || counts.length > 0) measureTile('values:' + layer, 'values', t('Werte: %s', layer), true);
+            if (rows.length > 0 || parts.length > 0 || counts.length > 0) measureTile('values:' + layer, 'values', t('Werte: %s', vocab(layer)), true);
             if (counts.length > 0) measureTile('count:' + layer, 'block', t('%s in Reihe (%d)', blockName({ layer, count: true }), counts.length));
-            if (rows.filter(r => r.B != null).length >= 2) measureTile('plot:' + layer, 'block', t('Verteilung: %s', layer));
-            if (rows.length > 0) measureTile('row:' + layer, 'block', t('%s in Reihe (%d)', layer, rows.length));
+            if (rows.filter(r => r.B != null).length >= 2) measureTile('plot:' + layer, 'block', t('Verteilung: %s', vocab(layer)));
+            if (rows.length > 0) measureTile('row:' + layer, 'block', t('%s in Reihe (%d)', vocab(layer), rows.length));
             /* EACH PART MEASURE ITS DISTRIBUTION AND ITS ROW
                (07.10.2026: „für die Teilmessungen haben wir ja auch eine
                Verteilungsgrafik, ebenso eine Reihe … und ausrichten schon
@@ -3520,7 +3522,7 @@ export function mountPlates(host) {
         stripGroup = name;
         const now = strip.querySelector('.plate-strip-now');
         const sign = strip.querySelector(`.plate-strip-menu-item[data-group="${CSS.escape(name ?? '')}"] > svg`);
-        now?.replaceChildren(...(name === null ? [] : [...(sign ? [sign.cloneNode(true)] : []), name]));
+        now?.replaceChildren(...(name === null ? [] : [...(sign ? [sign.cloneNode(true)] : []), vocabPhrase(name)]));
         for (const el of strip.querySelectorAll('[data-group]')) {
             const on = el.dataset.group === name;
             el.classList.toggle('is-active', on);
@@ -3825,7 +3827,7 @@ export function mountPlates(host) {
             const title = document.createElement('h3');
             title.className = 'plate-side-title';
             title.textContent = {
-                info: t('Fundangaben'), values: t('Werte: %s', d.layer),
+                info: t('Fundangaben'), values: t('Werte: %s', vocab(d.layer)),
                 keying: t('Schlüsselweg: %s', (values.keyings ?? []).find(w => w.key_id === d.key_id)?.book || d.key_id),
                 plot: t('Verteilung: %s', blockName(d)), row: t('%s in Reihe', blockName(d)),
             }[kind];
@@ -3991,7 +3993,7 @@ export function mountPlates(host) {
             if (rowsOf(pics, d.layer).length > 0 || partKeys.length > 0) ticks(t('Welche Zeilen'),
                 [['range', t('Länge × Breite, mit Bereich')], ['qn', t('Q und Anzahl')], ['mean', t('Durchschnitt')],
                  ['spread', t('Streuung und Ausreißer')],
-                 ...partKeys.map(k => [k, k.slice(5)])],
+                 ...partKeys.map(k => [k, vocab(k.slice(5))])],
                 key => d.lines.includes(key),
                 (key, on) => { d.lines = order.filter(k => (k === key ? on : d.lines.includes(k))); });
             selBox.append(switchQuestion(t('Mit dem Namen davor'), !!d.name, on => { d.name = on; }));
@@ -4030,7 +4032,7 @@ export function mountPlates(host) {
         const marks = whole && (kind === 'values' || kind === 'plot' || kind === 'row') ? marksOf(pics, d.layer) : [];
         if (marks.length > 0) {
             selBox.append(choiceLine(t('Zeigen'),
-                [['*', t('Alle')], ...marks.map(mark => [mark, mark]), ['', t('ohne Merkmal')]],
+                [['*', t('Alle')], ...marks.map(mark => [mark, vocab(mark)]), ['', t('ohne Merkmal')]],
                 typeof d.mark === 'string' ? d.mark : '*', v => { d.mark = v === '*' ? null : v; }));
         }
         if (kind === 'row') {
@@ -4119,7 +4121,7 @@ export function mountPlates(host) {
     function picturePanel(cell) {
         const title = document.createElement('h3');
         title.className = 'plate-side-title';
-        title.textContent = pics.get(cell.pic)?.title || t('Bild');
+        title.textContent = vocab(pics.get(cell.pic)?.title) || t('Bild');
         selBox.append(title, measuresControl(cell), notesControl(cell), ...cornerControls(cell), viewerButton(cell.pic));
     }
 
@@ -4166,7 +4168,7 @@ export function mountPlates(host) {
             });
             // The layer's name alone (08.10.2026) — what it holds is in the viewer.
             const words = document.createElement('span');
-            words.textContent = layer;
+            words.textContent = vocab(layer);
             l.append(tick, words);
             list.append(l);
         }
@@ -4208,7 +4210,7 @@ export function mountPlates(host) {
                 render();
             });
             const words = document.createElement('span');
-            words.textContent = layer;
+            words.textContent = vocab(layer);
             l.append(tick, words);
             list.append(l);
         }
@@ -4281,8 +4283,8 @@ export function mountPlates(host) {
                after the name (plateparts.js, pictureLabel). */
             // A row's label may stand in a line of its own, as its bar (plateparts.js, rowStrips).
             if (set.on && row) set.subs.append(ownLineTick(!!cell.labelLine, (on) => { cell.labelLine = on; }));
-            /* WRITTEN OUT OR SHORT — HDS or Hutdeckschicht, Cheilo or
-               Cheilozystiden (plateparts.js, labelWord): the medium's tick,
+            /* WRITTEN OUT OR SHORT — Cheilo or Cheilocystidia
+               (plateparts.js, labelWord): the medium's tick,
                „abgekürzt", where the name has a short form. */
             const raw = row ? (typeof cell.block?.crop === 'string' ? '' : cell.block?.layer) : pic?.title;
             if (set.on && labelShortens(raw)) {
@@ -4309,7 +4311,7 @@ export function mountPlates(host) {
                     render();
                 });
                 const words = document.createElement('span');
-                words.textContent = t('mit %s', mark);
+                words.textContent = t('mit %s', vocab(mark));
                 l.append(tick, words);
                 set.subs.append(l);
             }
