@@ -1151,11 +1151,23 @@ export function wbFromPixels(data, bright = true, step = 1) {
 export const SPOTS_MAX = 1000;
 /** All points together, the spots' and the brush strokes' — a point is about seventeen bytes. */
 export const PATH_POINTS_MAX = 20000;
-export const SPOT_RADIUS_MIN = .0005, SPOT_RADIUS_MAX = .15;
-/** The size slider (0 … 100) and the radius, logarithmic: fine at the small end, where dust is. */
-export const spotRadiusOf = (v) => SPOT_RADIUS_MIN * Math.pow(SPOT_RADIUS_MAX / SPOT_RADIUS_MIN, Math.min(100, Math.max(0, v)) / 100);
-export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_RADIUS_MAX, Math.max(SPOT_RADIUS_MIN, r)) / SPOT_RADIUS_MIN)
-    / Math.log(SPOT_RADIUS_MAX / SPOT_RADIUS_MIN) * 100);
+/* THE CORE AND THE WHOLE BRUSH HAVE A BOUND EACH (23.11.2026: „ab
+   irgendeiner Größe [wird] plötzlich nicht mehr der Pinsel größer, sondern
+   der Verlauf wird kleiner … Ich will keine festgesetzte Pinselgröße und
+   ich will niemals, dass sich der Verlaufbereich ändert durch
+   Shift-Mausrad"). Until then ONE bound, 0.15 of the width, held the core
+   AND the outer circle: the core grew to it, the outer circle stopped at
+   it, and every notch beyond ate the soft edge until none was left. Now
+   the core (the size slider, Shift with the wheel) reaches a whole
+   picture's width as its radius — from anywhere on the picture it covers
+   it all — and the outer circle what that core and the fullest soft edge
+   make together (SOFT_REACH), so it can never stop the core's edge from
+   growing along. A radius is a share of the picture's WIDTH. */
+export const SPOT_RADIUS_MIN = .0005, SPOT_CORE_MAX = 1, SPOT_RADIUS_MAX = 3;
+/** The size slider (0 … 100) and the core's radius, logarithmic: fine at the small end, where dust is. */
+export const spotRadiusOf = (v) => SPOT_RADIUS_MIN * Math.pow(SPOT_CORE_MAX / SPOT_RADIUS_MIN, Math.min(100, Math.max(0, v)) / 100);
+export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_CORE_MAX, Math.max(SPOT_RADIUS_MIN, r)) / SPOT_RADIUS_MIN)
+    / Math.log(SPOT_CORE_MAX / SPOT_RADIUS_MIN) * 100);
 
 /* THE BRUSH AS THE HAND THINKS OF IT: A SHARP CORE AND A SOFT EDGE BEYOND
    (13.11.2026: „Die Pinselgröße ist für mich der scharfe
@@ -1167,7 +1179,7 @@ export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_RADIUS_MAX, M
    What is STORED stays as it was — a heal, a clone and a painted stroke
    keep { radius: the OUTER circle, feather: the outer share of it that
    fades } (spotsApply, brushField, the sidecar, the server's clamp at
-   0.15) — so nothing kept anywhere changes its look. Only the tools speak
+   SPOT_RADIUS_MAX) — so nothing kept anywhere changes its look. Only the tools speak
    the other language, through these two:
      brushCore(radius, share)  → { core, soft }: the core's radius and the
                                  soft edge as 0 … 100,
@@ -1180,7 +1192,9 @@ export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_RADIUS_MAX, M
    A stored share above what soft 100 gives (two thirds at reach 2) reads
    as soft 100 with the core that goes with it — an old brush without any
    core gets one the moment it is touched. Where core and edge together
-   would pass `max`, the outer circle stops there and the core stays.
+   would pass `max`, the outer circle stops there and the core stays — the
+   tools pass SPOT_RADIUS_MAX, which the largest core with the fullest edge
+   never reaches.
    „Entfernen" needs neither: its radius IS its core and its feather its
    soft edge — since 22.11.2026 reaching as far as the brush's (aiReach,
    `wide`), before that half a radius at the most. */
