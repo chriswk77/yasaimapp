@@ -1158,12 +1158,14 @@ export const PATH_POINTS_MAX = 20000;
    Shift-Mausrad"). Until then ONE bound, 0.15 of the width, held the core
    AND the outer circle: the core grew to it, the outer circle stopped at
    it, and every notch beyond ate the soft edge until none was left. Now
-   the core (the size slider, Shift with the wheel) reaches a whole
-   picture's width as its radius — from anywhere on the picture it covers
-   it all — and the outer circle what that core and the fullest soft edge
-   make together (SOFT_REACH), so it can never stop the core's edge from
-   growing along. A radius is a share of the picture's WIDTH. */
-export const SPOT_RADIUS_MIN = .0005, SPOT_CORE_MAX = 1, SPOT_RADIUS_MAX = 3;
+   the core (the size slider, Shift with the wheel) reaches THREE picture
+   widths as its radius, and the outer circle what that core and the
+   fullest soft edge make together (SOFT_REACH), so it can never stop the
+   core's edge from growing along. A radius is a share of the picture's
+   WIDTH: one width (the first try the same day) covered the whole picture
+   only from its middle — from a corner the diagonal is longer than the
+   width, more so upright. Three cover any usual format from any corner. */
+export const SPOT_RADIUS_MIN = .0005, SPOT_CORE_MAX = 3, SPOT_RADIUS_MAX = 9;
 /** The size slider (0 … 100) and the core's radius, logarithmic: fine at the small end, where dust is. */
 export const spotRadiusOf = (v) => SPOT_RADIUS_MIN * Math.pow(SPOT_CORE_MAX / SPOT_RADIUS_MIN, Math.min(100, Math.max(0, v)) / 100);
 export const spotSizeOf = (r) => Math.round(Math.log(Math.min(SPOT_CORE_MAX, Math.max(SPOT_RADIUS_MIN, r)) / SPOT_RADIUS_MIN)

@@ -592,11 +592,11 @@ function photo_develop_clean(mixed $d): ?array
             $path[] = [round(max(-1, min(2, (float) $pt[0])), 4), round(max(-1, min(2, (float) $pt[1])), 4)];
         }
         if ($path === []) continue;
-        // The radius up to 3 widths: SPOT_RADIUS_MAX in develop.js — the largest core with its fullest soft edge.
+        // The radius up to 9 widths: SPOT_RADIUS_MAX in develop.js — the largest core with its fullest soft edge.
         $one = [
             'mode'    => ($sp['mode'] ?? '') === 'clone' ? 'clone' : 'heal',
             'path'    => $path,
-            'radius'  => is_numeric($sp['radius'] ?? null) ? round(max(.0005, min(3, (float) $sp['radius'])), 5) : .01,
+            'radius'  => is_numeric($sp['radius'] ?? null) ? round(max(.0005, min(9, (float) $sp['radius'])), 5) : .01,
             'feather' => (int) round($num($sp['feather'] ?? null, 0, 100) ?? 50),
             'opacity' => (int) round($num($sp['opacity'] ?? null, 0, 100) ?? 100),
         ];
@@ -750,7 +750,7 @@ function photo_develop_clean(mixed $d): ?array
             $points += count($path);
             $one = [
                 'path'    => $path,
-                'radius'  => is_numeric($st['radius'] ?? null) ? round(max(.0005, min(3, (float) $st['radius'])), 5) : .01,
+                'radius'  => is_numeric($st['radius'] ?? null) ? round(max(.0005, min(9, (float) $st['radius'])), 5) : .01,
                 'feather' => (int) round($num($st['feather'] ?? null, 0, 100) ?? 50),
                 'flow'    => (int) round($num($st['flow'] ?? null, 0, 100) ?? 100),
             ];

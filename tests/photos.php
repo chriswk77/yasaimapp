@@ -706,15 +706,15 @@ check($cast === ['n' => [[1.08, .94], [1.085, 1.097], [1.14, 1.02], [4.0, .25], 
     && photo_develop_clean(['cast' => ['n' => [[1, 1], [1, 1], [1, 'a'], [1, 1], [1, 1]]]]) === null,
     'a colour cast keeps five pairs in range and its sliders 0 … 100, or nothing at all');
 $spots = photo_develop_clean(['spots' => [
-    ['mode' => 'clone', 'path' => [[.123456, .5], [.2, 'x'], [2.5, .6]], 'radius' => 5, 'feather' => 140, 'opacity' => 30, 'dx' => .05, 'dy' => -.02, 'off' => 1],
+    ['mode' => 'clone', 'path' => [[.123456, .5], [.2, 'x'], [2.5, .6]], 'radius' => 12, 'feather' => 140, 'opacity' => 30, 'dx' => .05, 'dy' => -.02, 'off' => 1],
     ['mode' => 'other', 'path' => [[.3, .3]]],
     ['path' => []],
 ]])['spots'] ?? [];
 check(count($spots) === 2
-    && $spots[0] === ['mode' => 'clone', 'path' => [[0.1235, 0.5], [2.0, 0.6]], 'radius' => 3.0, 'feather' => 100, 'opacity' => 30,
+    && $spots[0] === ['mode' => 'clone', 'path' => [[0.1235, 0.5], [2.0, 0.6]], 'radius' => 9.0, 'feather' => 100, 'opacity' => 30,
                       'dx' => 0.05, 'dy' => -0.02, 'off' => true]
     && $spots[1]['mode'] === 'heal' && $spots[1]['feather'] === 50 && $spots[1]['opacity'] === 100 && $spots[1]['radius'] === 0.01,
-    'a spot keeps its path to four places, its radius at most 3 (a core of a whole width with its fullest soft edge); an unknown mode heals; an empty path is none');
+    'a spot keeps its path to four places, its radius at most 9 (a core of three widths with its fullest soft edge); an unknown mode heals; an empty path is none');
 $many = photo_develop_clean(['spots' => array_fill(0, 300, ['path' => array_fill(0, 90, [.5, .5]), 'dx' => .1])])['spots'] ?? [];
 $dabs = photo_develop_clean(['spots' => array_fill(0, 1500, ['path' => [[.1234, .5678]], 'dx' => .1])])['spots'] ?? [];
 $worst = strlen(json_encode(photo_develop_clean(['spots' => array_fill(0, 2000, ['path' => array_fill(0, 30, [.1234, .5678]),
