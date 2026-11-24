@@ -394,6 +394,87 @@ function page_footer(array $options = []): void
 }
 
 /**
+ * THE FOOT OF THE DOORWAY PAGES — login, „Konto anlegen", „Passwort
+ * vergessen" (24.11.2026: „nach dem gleichen Stil … etwas ruhiger, etwas
+ * übersichtlicher"). One quiet line under the card: the languages on the
+ * left, privacy and rules on the right. None of it is part of the form,
+ * so it stands outside the card; the chosen language wears the text's
+ * colour and the others are quiet — the accent once marked the language
+ * one did NOT have, and the accent is the loudest thing on such a page.
+ *
+ * THE GUEST'S LANGUAGE SWITCH: whoever is not yet anyone has no settings
+ * page — ?lang= lands in the session (includes/i18n.php) and holds until
+ * the account's own choice takes over. The names stand in THEIR OWN
+ * language on purpose: whoever needs the other one cannot read this
+ * page's. $keep are the query values the page lives on (the login's
+ * destination, the reset link's token) and ride along in the link.
+ *
+ * WHAT WAS TYPED SURVIVES THE SWITCH (24.11.2026: switching the language
+ * below an already filled form emptied address and password). The switch
+ * has to reload — every sentence comes from the server — so the typed
+ * values ride along in sessionStorage: this tab only, written on the
+ * click, read back only on the same page and removed the moment it is
+ * back. Turning the links into a POST of the form was the discarded
+ * alternative: the server would have to write the password back into the
+ * page's markup, and a page holding a password is worse than a value
+ * that lives for one reload inside the tab. Hidden fields do not ride —
+ * the CSRF token must be the fresh page's, the rest stands in $keep.
+ *
+ * The page wraps card and foot in `.auth.narrow`; the styles sit in
+ * app.css under THE DOORWAY PAGES.
+ */
+function auth_foot(array $keep = []): void
+{
+    $keep = array_filter($keep, static fn($v) => $v !== '' && $v !== null);
+    echo '<div class="auth-foot"><span class="auth-languages">';
+    foreach (LANGUAGES as $code => $name) {
+        echo $code === lang_current()
+            ? '<strong aria-current="true">' . h($name) . '</strong>'
+            : '<a class="lang-switch" lang="' . h($code) . '" href="?'
+              . h(http_build_query(['lang' => $code] + $keep)) . '">' . h($name) . '</a>';
+    }
+    echo '</span><span class="auth-legal">'
+        . '<a href="' . h(url('pages/privacy.php')) . '">' . h(t('Datenschutz')) . '</a>'
+        . '<a href="' . h(url('pages/terms.php')) . '">' . h(t('Regeln')) . '</a>'
+        . "</span></div>\n";
+    ?>
+<script type="module">
+const KEY = 'authCarry';
+const form = document.querySelector('.auth form[method="post"]');
+const typed = el => el.name && !el.readOnly && !['hidden', 'submit', 'button'].includes(el.type);
+if (form) {
+    try {
+        const kept = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+        sessionStorage.removeItem(KEY);
+        if (kept && kept.page === location.pathname) {
+            for (const [name, value] of Object.entries(kept.fields)) {
+                const el = form.elements[name];
+                if (!el || !typed(el)) continue;
+                if (el.type === 'checkbox') el.checked = !!value;
+                else if (!el.value) el.value = value;
+            }
+            [...form.elements].find(el => typed(el) && el.type !== 'checkbox' && !el.value)?.focus();
+        }
+    } catch { /* no storage, no carrying — the page works as before */ }
+    document.querySelectorAll('.lang-switch').forEach(link => link.addEventListener('click', () => {
+        const fields = {};
+        let any = false;
+        for (const el of form.elements) {
+            if (!typed(el)) continue;
+            fields[el.name] = el.type === 'checkbox' ? el.checked : el.value;
+            if (el.type !== 'checkbox' && el.value) any = true;
+        }
+        if (!any) return;
+        try {
+            sessionStorage.setItem(KEY, JSON.stringify({ page: location.pathname, fields }));
+        } catch { /* see above */ }
+    }));
+}
+</script>
+<?php
+}
+
+/**
  * Message block. $kind is 'error', 'success', 'hint' or 'warning'.
  * $messages may be a single text or a list.
  *

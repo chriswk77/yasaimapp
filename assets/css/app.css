@@ -531,13 +531,15 @@ span.button.app-tab.is-disabled:hover { background: var(--ground-3); color: var(
     margin: 3rem auto;
 }
 
-/* THE LOGIN PAGE (login.php, 24.11.2026 — the reasons stand there).
-   „Passwort vergessen?" small and quiet at the right end under its field;
-   the tick and the button share one line, the button at its right end;
-   the new account beneath a hairline; language, privacy and rules as one
-   quiet line under the card, the chosen language in the text's colour
-   and never in the accent. */
-.login-forgot {
+/* THE DOORWAY PAGES — login, „Konto anlegen", „Passwort vergessen"
+   (24.11.2026; the reasons stand in login.php and at auth_foot() in
+   includes/page.php). Small and quiet at the right end under its field:
+   „Passwort vergessen?". A tick and the concluding button share one line,
+   the button at its right end. The other way in or out — a new account,
+   back to the login — stands beneath a hairline as a quiet button.
+   Language, privacy and rules are one quiet line under the card, the
+   chosen language in the text's colour and never in the accent. */
+.auth-forgot {
     display: block;
     width: fit-content;
     margin: .4rem 0 0 auto;
@@ -545,24 +547,37 @@ span.button.app-tab.is-disabled:hover { background: var(--ground-3); color: var(
     color: var(--text-quiet);
     text-decoration: none;
 }
-.login-forgot:hover { color: var(--text); text-decoration: underline; }
-.login-go {
+.auth-forgot:hover { color: var(--text); text-decoration: underline; }
+.auth-go {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
     margin-top: 1.2rem;
 }
-.login-go .checkbox { align-items: center; }
-.login-go .checkbox input { margin: 0; }
-.login-new {
+.auth-go:has(> .button:only-child) { justify-content: flex-end; }
+.auth-go .checkbox { align-items: center; }
+/* The button keeps its words on one line; the tick's sentence beside it
+   is what wraps on a phone. */
+.auth-go > .button { flex-shrink: 0; white-space: nowrap; }
+.auth-go .checkbox input { margin: 0; }
+.auth-alt {
     display: flex;
     justify-content: flex-end;
     margin-top: 1.4rem;
     padding-top: 1.2rem;
     border-top: 1px solid var(--border);
 }
-.login-foot {
+/* Two short fields that belong together — first and last name — side by
+   side; the card is narrow enough that a name never wants more. */
+.auth-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 .8rem;
+}
+.auth-pair > .field { min-width: 0; }
+.auth-lead { margin-top: 0; }
+.auth-foot {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
@@ -571,10 +586,10 @@ span.button.app-tab.is-disabled:hover { background: var(--ground-3); color: var(
     font-size: .8rem;
     color: var(--text-quiet);
 }
-.login-languages, .login-legal { display: flex; gap: .8rem; }
-.login-foot strong { font-weight: 600; color: var(--text); }
-.login-foot a { color: var(--text-quiet); text-decoration: none; }
-.login-foot a:hover { color: var(--text); text-decoration: underline; }
+.auth-languages, .auth-legal { display: flex; gap: .8rem; }
+.auth-foot strong { font-weight: 600; color: var(--text); }
+.auth-foot a { color: var(--text-quiet); text-decoration: none; }
+.auth-foot a:hover { color: var(--text); text-decoration: underline; }
 
 .hint-text {
     /* NO WIDTH OF ITS OWN. I had capped this at 46rem, the page's old

@@ -2617,8 +2617,8 @@ return [
         => 'Flag',
     'Für alles, was oben nicht steht: Tabellen aus Excel, LibreOffice, Datenbanken und Fund-Apps. In Excel „Speichern unter" → <strong>CSV UTF-8</strong>, in LibreOffice „Speichern unter" → <strong>Text CSV</strong>. Wichtig ist nur eine Kopfzeile über den Spalten.'
         => 'For everything not listed above: tables from Excel, LibreOffice, databases and find apps. In Excel "Save As" → <strong>CSV UTF-8</strong>, in LibreOffice "Save As" → <strong>Text CSV</strong>. All that matters is a header row above the columns.',
-    'Für die Anmeldung wird ein Einladungscode gebraucht. Deine Punkte sieht ausschließlich du, solange du eine Liste nicht ausdrücklich freigibst.'
-        => 'Signing up requires an invitation code. Your points are visible to you alone as long as you do not explicitly share a list.',
+    'Du brauchst einen Einladungscode. Deine Punkte siehst nur du, bis du eine Liste teilst.'
+        => 'You need an invitation code. Only you see your points until you share a list.',
     'Für diese Aufnahme gibt es keine Vorschau — die Datei selbst liegt in der Cloud.'
         => 'There is no preview for this recording — the file itself lies in the cloud.',
     'Für diese E-Mail-Adresse gibt es bereits ein Konto.'
@@ -4043,8 +4043,6 @@ return [
         => 'Copy key',
     'Schnecke'
         => 'Snail',
-    'Schon ein Konto?'
-        => 'Already have an account?',
     'Schriftgröße der Beschriftung, in Pixeln'
         => 'Size of the lettering, in pixels',
     'Schritt %d von %d'

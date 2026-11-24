@@ -57,14 +57,12 @@ page_header(t('Anmelden'));
      chaotisch"). The card holds the one thing the page is opened for —
      address, password, go — and the way to a new account beneath a
      hairline. „Passwort vergessen?" stands small under the field it is
-     about, where the eye already is when the password fails. Language and
-     privacy and rules are no part of the form: they sit as one quiet line UNDER the
-     card. The chosen language is the one in the text's colour, the others
-     quiet — the accent once marked the language one did NOT have, and the
-     accent is the loudest thing on the page. The sentence on how long
+     about, where the eye already is when the password fails. Language,
+     privacy and rules stand outside the card (auth_foot() in
+     includes/page.php says why). The sentence on how long
      one stays signed in went: grown-ups know not to stay signed in on a
      stranger's device. */ ?>
-<div class="login narrow">
+<div class="auth narrow">
     <div class="card-block">
         <h1><?= h(t('Anmelden')) ?></h1>
 
@@ -85,11 +83,11 @@ page_header(t('Anmelden'));
                 <input type="password" id="password" name="password" required
                        autocomplete="current-password">
                 <?php if (password_reset_ready($pdo)): ?>
-                    <a class="login-forgot" href="<?= h(url('pages/password_reset.php')) ?>"><?= h(t('Passwort vergessen?')) ?></a>
+                    <a class="auth-forgot" href="<?= h(url('pages/password_reset.php')) ?>"><?= h(t('Passwort vergessen?')) ?></a>
                 <?php endif; ?>
             </div>
 
-            <div class="login-go">
+            <div class="auth-go">
                 <label class="checkbox">
                     <input type="checkbox" name="stay" value="1" checked>
                     <span><?= h(t('Angemeldet bleiben')) ?></span>
@@ -98,64 +96,11 @@ page_header(t('Anmelden'));
             </div>
         </form>
 
-        <div class="login-new">
+        <div class="auth-alt">
             <a class="button subtle" href="<?= h(url('register.php')) ?>"><?= h(t('Konto anlegen')) ?></a>
         </div>
     </div>
 
-    <div class="login-foot">
-        <?php /* The guest's language switch: whoever is not yet anyone has
-             no settings page — ?lang= lands in the session
-             (includes/i18n.php) and holds until the account's own choice
-             takes over. The names stand in THEIR OWN language on purpose:
-             whoever needs the other one cannot read this page's. */ ?>
-        <span class="login-languages">
-            <?php foreach (LANGUAGES as $code => $name): ?>
-                <?php if ($code === lang_current()): ?><strong aria-current="true"><?= h($name) ?></strong><?php
-                else: ?><a class="lang-switch" href="?<?= h(http_build_query(array_filter(['lang' => $code, 'next' => $next]))) ?>" lang="<?= h($code) ?>"><?= h($name) ?></a><?php endif; ?>
-            <?php endforeach; ?>
-        </span>
-        <?php /* What happens to an address typed in here — to be read
-             BEFORE it is typed, so the link stands on the one page
-             everybody sees first (pages/privacy.php, 20.11.2026). */ ?>
-        <span class="login-legal">
-            <a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
-            <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a>
-        </span>
-    </div>
-    <?php /* WHAT WAS TYPED SURVIVES THE SWITCH (24.11.2026: switching the
-         language below an already filled form emptied address and
-         password). The switch has to reload — every sentence comes from
-         the server — so the typed values ride along in sessionStorage:
-         this tab only, written on the click and removed the moment the
-         page is back. Turning the links into a POST of the form was the
-         discarded alternative: the server would have to write the password
-         back into the page's markup, and a page holding a password is
-         worse than a value that lives for one reload inside the tab. */ ?>
-    <script type="module">
-    const KEY = 'loginCarry';
-    const form = document.querySelector('form[method="post"]');
-    const field = name => form.elements[name];
-    try {
-        const kept = JSON.parse(sessionStorage.getItem(KEY) || 'null');
-        sessionStorage.removeItem(KEY);
-        if (kept) {
-            if (kept.email && !field('email').value) field('email').value = kept.email;
-            if (kept.password) field('password').value = kept.password;
-            field('stay').checked = !!kept.stay;
-            (kept.email ? field('password') : field('email')).focus();
-        }
-    } catch { /* no storage, no carrying — the page works as before */ }
-    document.querySelectorAll('.lang-switch').forEach(link => link.addEventListener('click', () => {
-        if (!field('email').value && !field('password').value) return;
-        try {
-            sessionStorage.setItem(KEY, JSON.stringify({
-                email: field('email').value,
-                password: field('password').value,
-                stay: field('stay').checked,
-            }));
-        } catch { /* see above */ }
-    }));
-    </script>
+    <?php auth_foot(['next' => $next]); ?>
 </div>
 <?php page_footer(); ?>

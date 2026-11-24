@@ -39,7 +39,12 @@ $account = $ready && $token !== '' ? password_reset_account($pdo, $token) : null
 
 page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen'));
 ?>
-<div class="card-block narrow">
+<?php /* IN THE STYLE OF THE LOGIN (24.11.2026): the card holds the one
+     step, a tick shares the line of its button, the way back stands
+     beneath a hairline, and language, privacy and rules under the card
+     (auth_foot() in includes/page.php). */ ?>
+<div class="auth narrow">
+<div class="card-block">
 <?php if (!$ready): ?>
     <h1><?= h(t('Passwort vergessen')) ?></h1>
     <p><?= h(t('Das Zurücksetzen ist hier noch nicht eingerichtet.')) ?></p>
@@ -48,7 +53,7 @@ page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen')
     <h1><?= h(t('Neues Passwort setzen')) ?></h1>
     <?php if ($account === null): ?>
         <p><?= h(t('Dieser Link ist abgelaufen oder wurde schon benutzt.')) ?></p>
-        <div class="button-row right">
+        <div class="auth-go">
             <a class="button" href="<?= h(url('pages/password_reset.php')) ?>"><?= h(t('Neuen Link anfordern')) ?></a>
         </div>
     <?php else: ?>
@@ -71,11 +76,11 @@ page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen')
                 <input type="password" id="reset-new2" name="new2" required minlength="10"
                        autocomplete="new-password">
             </div>
-            <label class="checkbox">
-                <input type="checkbox" name="stay" value="1" checked>
-                <span><?= h(t('Angemeldet bleiben')) ?></span>
-            </label>
-            <div class="button-row right">
+            <div class="auth-go">
+                <label class="checkbox">
+                    <input type="checkbox" name="stay" value="1" checked>
+                    <span><?= h(t('Angemeldet bleiben')) ?></span>
+                </label>
                 <button class="button" type="submit"><?= h(t('Passwort setzen')) ?></button>
             </div>
         </form>
@@ -85,7 +90,7 @@ page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen')
     <h1><?= h(t('Passwort vergessen')) ?></h1>
     <p><?= h(t('Gehört zu %s ein Konto mit bestätigter Adresse, ist der Link jetzt unterwegs. Er gilt eine Stunde.', $email)) ?></p>
     <p class="hint-text"><?= h(t('Keine Mail? Dann schau im Spam-Ordner nach. Eine Adresse, die nie bestätigt wurde, bekommt keinen Link.')) ?></p>
-    <div class="button-row right">
+    <div class="auth-go">
         <a class="button" href="<?= h(url('login.php')) ?>"><?= h(t('Zur Anmeldung')) ?></a>
     </div>
 
@@ -100,13 +105,17 @@ page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen')
             <input type="email" id="reset-email" name="email" required autofocus
                    autocomplete="email" value="<?= h($email) ?>">
         </div>
-        <div class="button-row right">
+        <div class="auth-go">
             <button class="button" type="submit"><?= h(t('Link anfordern')) ?></button>
         </div>
     </form>
-    <p class="hint-text" style="margin-top:1.4rem">
-        <a href="<?= h(url('login.php')) ?>"><?= h(t('Zurück zur Anmeldung')) ?></a>
-    </p>
 <?php endif; ?>
+<?php if ($token === '' && !$sent): ?>
+    <div class="auth-alt">
+        <a class="button subtle" href="<?= h(url('login.php')) ?>"><?= h(t('Zurück zur Anmeldung')) ?></a>
+    </div>
+<?php endif; ?>
+</div>
+<?php auth_foot(['t' => $token]); ?>
 </div>
 <?php page_footer();

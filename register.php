@@ -109,72 +109,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 page_header(t('Konto anlegen'));
 ?>
-<div class="card-block narrow">
-    <h1><?= h(t('Konto anlegen')) ?></h1>
-    <p class="hint-text">
-        <?= h(t('Für die Anmeldung wird ein Einladungscode gebraucht. Deine Punkte sieht ausschließlich du, solange du eine Liste nicht ausdrücklich freigibst.')) ?>
-    </p>
+<?php /* IN THE STYLE OF THE LOGIN (24.11.2026: „nach dem gleichen Stil …
+     etwas ruhiger, etwas übersichtlicher"): one short sentence on top,
+     the two names side by side, the rules' tick on the line of the
+     button, the way back to the login beneath a hairline, and language,
+     privacy and rules under the card (auth_foot()). The rules link opens
+     beside the form, so what was typed stays. */ ?>
+<div class="auth narrow">
+    <div class="card-block">
+        <h1><?= h(t('Konto anlegen')) ?></h1>
+        <p class="hint-text auth-lead">
+            <?= h(t('Du brauchst einen Einladungscode. Deine Punkte siehst nur du, bis du eine Liste teilst.')) ?>
+        </p>
 
-    <?php notice('error', $errors); ?>
+        <?php notice('error', $errors); ?>
 
-    <form method="post" autocomplete="off">
-        <?= csrf_field() ?>
+        <form method="post" autocomplete="off">
+            <?= csrf_field() ?>
 
-        <div class="field">
-            <label for="code"><?= h(t('Einladungscode')) ?></label>
-            <input type="text" id="code" name="code" required
-                   value="<?= h($code) ?>" <?= $code === '' ? 'autofocus' : '' ?>>
+            <div class="field">
+                <label for="code"><?= h(t('Einladungscode')) ?></label>
+                <input type="text" id="code" name="code" required
+                       value="<?= h($code) ?>" <?= $code === '' ? 'autofocus' : '' ?>>
+            </div>
+
+            <div class="auth-pair">
+                <div class="field">
+                    <label for="first-name"><?= h(t('Vorname')) ?></label>
+                    <input type="text" id="first-name" name="first_name" required
+                           autocomplete="given-name" value="<?= h($firstName) ?>">
+                </div>
+                <div class="field">
+                    <label for="last-name"><?= h(t('Nachname')) ?></label>
+                    <input type="text" id="last-name" name="last_name" required
+                           autocomplete="family-name" value="<?= h($lastName) ?>">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="email"><?= h(t('E-Mail-Adresse')) ?></label>
+                <input type="email" id="email" name="email" required
+                       autocomplete="username" value="<?= h($email) ?>">
+            </div>
+
+            <div class="field">
+                <label for="password"><?= h(t('Passwort (mindestens 10 Zeichen)')) ?></label>
+                <input type="password" id="password" name="password" required minlength="10"
+                       autocomplete="new-password">
+            </div>
+
+            <div class="field">
+                <label for="password2"><?= h(t('Passwort wiederholen')) ?></label>
+                <input type="password" id="password2" name="password2" required minlength="10"
+                       autocomplete="new-password">
+            </div>
+
+            <div class="auth-go">
+                <label class="checkbox">
+                    <input type="checkbox" name="terms" value="1" required<?= ($_POST['terms'] ?? '') === '1' ? ' checked' : '' ?>>
+                    <span><?= t('Ich halte mich an die <a href="%s" target="_blank" rel="noopener">Regeln</a>.', h(url('pages/terms.php'))) ?></span>
+                </label>
+                <button class="button" type="submit"><?= h(t('Konto anlegen')) ?></button>
+            </div>
+        </form>
+
+        <div class="auth-alt">
+            <a class="button subtle" href="<?= h(url('login.php')) ?>"><?= h(t('Anmelden')) ?></a>
         </div>
+    </div>
 
-        <div class="field">
-            <label for="first-name"><?= h(t('Vorname')) ?></label>
-            <input type="text" id="first-name" name="first_name" required
-                   autocomplete="given-name" value="<?= h($firstName) ?>">
-        </div>
-
-        <div class="field">
-            <label for="last-name"><?= h(t('Nachname')) ?></label>
-            <input type="text" id="last-name" name="last_name" required
-                   autocomplete="family-name" value="<?= h($lastName) ?>">
-        </div>
-
-
-        <div class="field">
-            <label for="email"><?= h(t('E-Mail-Adresse')) ?></label>
-            <input type="email" id="email" name="email" required
-                   autocomplete="username" value="<?= h($email) ?>">
-        </div>
-
-        <div class="field">
-            <label for="password"><?= h(t('Passwort (mindestens 10 Zeichen)')) ?></label>
-            <input type="password" id="password" name="password" required minlength="10"
-                   autocomplete="new-password">
-        </div>
-
-        <div class="field">
-            <label for="password2"><?= h(t('Passwort wiederholen')) ?></label>
-            <input type="password" id="password2" name="password2" required minlength="10"
-                   autocomplete="new-password">
-        </div>
-
-        <?php /* The rules link opens beside the form, so what was typed stays. */ ?>
-        <div class="field">
-            <label class="checkbox-row">
-                <input type="checkbox" name="terms" value="1" required<?= ($_POST['terms'] ?? '') === '1' ? ' checked' : '' ?>>
-                <span><?= t('Ich halte mich an die <a href="%s" target="_blank" rel="noopener">Regeln</a>.', h(url('pages/terms.php'))) ?></span>
-            </label>
-        </div>
-
-        <div class="button-row">
-            <button class="button" type="submit"><?= h(t('Konto anlegen')) ?></button>
-        </div>
-    </form>
-
-    <p class="hint-text" style="margin-top:1.4rem">
-        <?= h(t('Schon ein Konto?')) ?> <a href="<?= h(url('login.php')) ?>"><?= h(t('Anmelden')) ?></a>
-    </p>
-    <?php /* Beside the form that asks for a name and an address (pages/privacy.php). */ ?>
-    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
-        · <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a></p>
+    <?php auth_foot(['code' => $code]); ?>
 </div>
 <?php page_footer(); ?>
