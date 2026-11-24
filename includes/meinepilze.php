@@ -52,7 +52,7 @@ function pilze_read(string $path): array
 {
     $content = file_get_contents($path);
     if ($content === false) {
-        throw new RuntimeException('Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('Datei nicht lesbar: %s', basename($path)));
     }
 
     // The app writes Windows-1252. Should clean UTF-8 arrive after all

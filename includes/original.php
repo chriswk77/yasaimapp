@@ -263,7 +263,7 @@ function original_restore(PDO $pdo, int $userId, int $pointId, string $field): v
 
     if ($field === 'position') {
         if (!is_array($old)) {
-            throw new InvalidArgumentException('Zu diesem Anker fehlt der Ort.');
+            throw new InvalidArgumentException(t('Zu diesem Anker fehlt der Ort.'));
         }
         $data = ['lat' => (float) $old['lat'], 'lon' => (float) $old['lon']];
     } elseif (str_starts_with($field, 'extra.')) {
@@ -310,7 +310,7 @@ function original_forget(PDO $pdo, int $userId, int $pointId, string $field): vo
     $raw = $stmt->fetchColumn();
     $original = is_string($raw) ? (json_decode($raw, true) ?: []) : [];
     if (!array_key_exists($field, $original)) {
-        throw new InvalidArgumentException('Zu diesem Feld gibt es keinen Anker (mehr).');
+        throw new InvalidArgumentException(t('Zu diesem Feld gibt es keinen Anker (mehr).'));
     }
     unset($original[$field]);
 
@@ -322,14 +322,14 @@ function original_forget(PDO $pdo, int $userId, int $pointId, string $field): vo
 function original_entry(PDO $pdo, int $userId, int $pointId, string $field): array
 {
     if (!original_ready($pdo)) {
-        throw new InvalidArgumentException('Der Rettungsanker braucht die Migration 0044.');
+        throw new InvalidArgumentException(t('Der Rettungsanker braucht die Migration 0044.'));
     }
     $stmt = $pdo->prepare('SELECT original FROM map_points WHERE id = ? AND user_id = ? AND deleted_at IS NULL');
     $stmt->execute([$pointId, $userId]);
     $raw = $stmt->fetchColumn();
     $original = is_string($raw) ? (json_decode($raw, true) ?: []) : [];
     if (!isset($original[$field])) {
-        throw new InvalidArgumentException('Zu diesem Feld gibt es keinen Anker (mehr).');
+        throw new InvalidArgumentException(t('Zu diesem Feld gibt es keinen Anker (mehr).'));
     }
     return (array) $original[$field];
 }

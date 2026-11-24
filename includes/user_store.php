@@ -58,7 +58,7 @@ function user_photo_directory_create(int $userId): string
 {
     $path = user_photo_directory($userId);
     if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
-        throw new RuntimeException('Verzeichnis lässt sich nicht anlegen: ' . $path);
+        throw new RuntimeException(t('Verzeichnis lässt sich nicht anlegen: %s', $path));
     }
 
     $lock = user_root() . '/.htaccess';

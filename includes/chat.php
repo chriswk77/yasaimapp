@@ -164,14 +164,14 @@ function chat_messages(PDO $pdo, int $userId, int $containerId, int $since = 0):
 function chat_write(PDO $pdo, int $userId, int $containerId, string $text): array
 {
     if (!chat_member($pdo, $userId, $containerId)) {
-        throw new InvalidArgumentException('Du bist in dieser Freigabe nicht mehr dabei.');
+        throw new InvalidArgumentException(t('Du bist in dieser Freigabe nicht mehr dabei.'));
     }
 
     // Trimmed, then measured: a text of nothing but spaces is empty, and a
     // row of empty lines in the conversation is worse than a refusal.
     $text = trim($text);
     if ($text === '') {
-        throw new InvalidArgumentException('Die Nachricht ist leer.');
+        throw new InvalidArgumentException(t('Die Nachricht ist leer.'));
     }
     $text = mb_substr($text, 0, CHAT_MAX);
 
@@ -441,12 +441,12 @@ function friend_chat_write(PDO $pdo, int $me, int $friendUserId, string $text): 
 {
     $room = friend_chat_room($pdo, $me, $friendUserId);
     if ($room === null) {
-        throw new InvalidArgumentException('Ihr seid nicht (mehr) befreundet.');
+        throw new InvalidArgumentException(t('Ihr seid nicht (mehr) befreundet.'));
     }
 
     $text = trim($text);
     if ($text === '') {
-        throw new InvalidArgumentException('Die Nachricht ist leer.');
+        throw new InvalidArgumentException(t('Die Nachricht ist leer.'));
     }
     $text = mb_substr($text, 0, CHAT_MAX);
 

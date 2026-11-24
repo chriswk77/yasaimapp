@@ -145,6 +145,9 @@ set_exception_handler(static function (Throwable $e): void {
 
     error_log('Karte: ' . $e->getMessage());
     http_response_code(500);
+    /* The visitor's language — i18n.php comes in further down this file,
+       and an error before that line still has to say something. */
+    $say = static fn(string $text): string => function_exists('t') ? t($text) : $text;
 
     if (PHP_SAPI === 'cli') {
         fwrite(STDERR, $e . "\n");
@@ -165,8 +168,8 @@ set_exception_handler(static function (Throwable $e): void {
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode([
             'error' => $schema
-                ? 'Die Datenbank ist nicht auf dem Stand des Programms — es fehlt eine Migration.'
-                : 'Es ist ein Serverfehler aufgetreten.',
+                ? $say('Die Datenbank ist nicht auf dem Stand des Programms — es fehlt eine Migration.')
+                : $say('Es ist ein Serverfehler aufgetreten.'),
             'migration_missing' => $schema,
         ], JSON_UNESCAPED_UNICODE);
         return;
@@ -192,7 +195,7 @@ set_exception_handler(static function (Throwable $e): void {
 
     echo IS_LOCAL
         ? '<pre>' . htmlspecialchars((string) $e, ENT_QUOTES) . '</pre>'
-        : 'Es ist ein Fehler aufgetreten.';
+        : htmlspecialchars($say('Es ist ein Fehler aufgetreten.'), ENT_QUOTES);
 });
 
 // ---------------------------------------------------------------------------

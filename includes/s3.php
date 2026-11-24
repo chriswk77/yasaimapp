@@ -112,7 +112,7 @@ function s3_host_guard(string $host): void
         $name = $m[1];                       // a bare IPv6 literal
     } elseif (preg_match('~^(.+?):(\d+)$~', $host, $m) === 1) {
         if ((int) $m[2] !== 443) {
-            throw new RuntimeException('Der S3-Endpunkt muss über HTTPS auf Port 443 erreichbar sein.');
+            throw new RuntimeException(t('Der S3-Endpunkt muss über HTTPS auf Port 443 erreichbar sein.'));
         }
         $name = $m[1];
     }
@@ -127,11 +127,11 @@ function s3_host_guard(string $host): void
         }
     }
     if ($ips === []) {
-        throw new RuntimeException('Den S3-Endpunkt gibt es nicht — der Name löst sich nicht auf.');
+        throw new RuntimeException(t('Den S3-Endpunkt gibt es nicht — der Name löst sich nicht auf.'));
     }
     foreach ($ips as $ip) {
         if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
-            throw new RuntimeException('Dieser S3-Endpunkt liegt nicht im öffentlichen Internet und wird nicht angesprochen.');
+            throw new RuntimeException(t('Dieser S3-Endpunkt liegt nicht im öffentlichen Internet und wird nicht angesprochen.'));
         }
     }
 }
@@ -259,7 +259,7 @@ function s3_request(array $bundle, string $method, string $key,
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Der S3-Speicher antwortet nicht. Ist der Endpunkt richtig?');
+        throw new RuntimeException(t('Der S3-Speicher antwortet nicht. Ist der Endpunkt richtig?'));
     }
 
     $status  = 0;
@@ -295,9 +295,9 @@ function s3_fail(array $answer): never
         $code = (string) ($xml->Code ?? '');
         $text = (string) ($xml->Message ?? '');
     }
-    throw new RuntimeException(sprintf('Der S3-Speicher lehnt ab (%s): %s',
+    throw new RuntimeException(t('Der S3-Speicher lehnt ab (%s): %s',
         $code !== '' ? $code : 'HTTP ' . $answer['status'],
-        $text !== '' ? $text : 'ohne Angabe'));
+        $text !== '' ? $text : t('ohne Angabe')));
 }
 
 /**
@@ -349,7 +349,7 @@ function s3_folder_files(array $bundle, string $prefix): array
         }
         $xml = @simplexml_load_string($answer['body']);
         if ($xml === false) {
-            throw new RuntimeException('Der S3-Speicher antwortet unverständlich.');
+            throw new RuntimeException(t('Der S3-Speicher antwortet unverständlich.'));
         }
 
         foreach ($xml->Contents as $e) {
@@ -412,7 +412,7 @@ function s3_upload_bytes(array $bundle, string $prefix, string $bytes,
                          ?string $type = null): array
 {
     if ($bytes === '') {
-        throw new RuntimeException('Nichts zu übertragen: ' . $name);
+        throw new RuntimeException(t('Nichts zu übertragen: %s', $name));
     }
     // $mtime is accepted for the seam's sake and dropped: S3 lets nobody
     // write LastModified, the store stamps it itself.
@@ -437,7 +437,7 @@ function s3_upload_bytes(array $bundle, string $prefix, string $bytes,
         $head = s3_request($bundle, 'HEAD', $key);
         $stored = (int) ($head['headers']['content-length'] ?? -1);
         if ($head['status'] !== 200 || $stored !== strlen($bytes)) {
-            throw new RuntimeException(sprintf(
+            throw new RuntimeException(t(
                 'Der S3-Speicher hat %d von %d Bytes angenommen.',
                 max(0, $stored), strlen($bytes)));
         }
@@ -542,7 +542,7 @@ function s3_subprefixes(array $bundle, string $prefix): array
         }
         $xml = @simplexml_load_string($answer['body']);
         if ($xml === false) {
-            throw new RuntimeException('Der S3-Speicher antwortet unverständlich.');
+            throw new RuntimeException(t('Der S3-Speicher antwortet unverständlich.'));
         }
         foreach ($xml->CommonPrefixes as $p) {
             $sub  = (string) $p->Prefix;
@@ -634,7 +634,7 @@ function s3_free_name(array $bundle, string $prefix, string $name): string
     $tail = $dot === false || $dot === 0 ? '' : substr($name, $dot);
     $room = 500 - mb_strlen($prefix) - mb_strlen($tail);
     if ($room < 8) {
-        throw new RuntimeException('Der Ordnerpfad ist zu lang für einen S3-Schlüssel.');
+        throw new RuntimeException(t('Der Ordnerpfad ist zu lang für einen S3-Schlüssel.'));
     }
     if (mb_strlen($stem) > $room) {
         $stem = rtrim(mb_substr($stem, 0, $room));

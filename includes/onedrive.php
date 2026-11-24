@@ -65,7 +65,7 @@ function onedrive_consent_url(string $state): string
 {
     $app = cloud_app('onedrive');
     if ($app === null) {
-        throw new RuntimeException('OneDrive ist auf diesem Server nicht eingerichtet.');
+        throw new RuntimeException(t('OneDrive ist auf diesem Server nicht eingerichtet.'));
     }
 
     return ONEDRIVE_CONSENT . '?' . http_build_query([
@@ -98,15 +98,15 @@ function onedrive_token_call(array $parameters): array
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Microsoft antwortet nicht. Später noch einmal versuchen.');
+        throw new RuntimeException(t('Microsoft antwortet nicht. Später noch einmal versuchen.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('Microsoft antwortet unverständlich.');
+        throw new RuntimeException(t('Microsoft antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
-        throw new RuntimeException(sprintf('Microsoft lehnt ab (%s): %s',
-            (string) $d['error'], (string) ($d['error_description'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('Microsoft lehnt ab (%s): %s',
+            (string) $d['error'], (string) ($d['error_description'] ?? t('ohne Angabe'))));
     }
     return $d;
 }
@@ -120,7 +120,7 @@ function onedrive_token_get(string $code): array
 {
     $app = cloud_app('onedrive');
     if ($app === null) {
-        throw new RuntimeException('OneDrive ist auf diesem Server nicht eingerichtet.');
+        throw new RuntimeException(t('OneDrive ist auf diesem Server nicht eingerichtet.'));
     }
 
     $d = onedrive_token_call([
@@ -135,14 +135,13 @@ function onedrive_token_get(string $code): array
     $access  = (string) ($d['access_token'] ?? '');
     $refresh = (string) ($d['refresh_token'] ?? '');
     if ($access === '') {
-        throw new RuntimeException('Microsoft nennt kein Zugriffstoken.');
+        throw new RuntimeException(t('Microsoft nennt kein Zugriffstoken.'));
     }
     // Without offline_access in the consent no refresh token comes — an
     // hour of connection that looks healthy until three in the morning.
     // Same reasoning as at Google, same place to fail: here, loudly.
     if ($refresh === '') {
-        throw new RuntimeException('Microsoft hat kein Dauer-Token ausgestellt.'
-            . ' Bitte noch einmal verbinden und der Abfrage erneut zustimmen.');
+        throw new RuntimeException(t('Microsoft hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'));
     }
 
     return [
@@ -234,16 +233,16 @@ function onedrive_call(string $access, string $method, string $url, ?array $body
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('OneDrive antwortet nicht. Später noch einmal versuchen.');
+        throw new RuntimeException(t('OneDrive antwortet nicht. Später noch einmal versuchen.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('OneDrive antwortet unverständlich.');
+        throw new RuntimeException(t('OneDrive antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(sprintf('OneDrive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('OneDrive lehnt ab (%s): %s',
+            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
     }
     return $d;
 }
@@ -307,8 +306,7 @@ function onedrive_folder_ensure(string $access, string $parentId, string $name):
         }
         // The name exists and is a FILE. Creating a folder beside it would
         // rename one of the two behind the user's back — better to say so.
-        throw new RuntimeException('In OneDrive liegt schon eine Datei namens „' . $name . '",'
-            . ' wo ein Ordner gebraucht wird.');
+        throw new RuntimeException(t('In OneDrive liegt schon eine Datei namens „%s", wo ein Ordner gebraucht wird.', $name));
     } catch (RuntimeException $e) {
         if (!str_contains($e->getMessage(), 'itemNotFound')) {
             throw $e;
@@ -334,7 +332,7 @@ function onedrive_folder_ensure(string $access, string $parentId, string $name):
 
     $id = (string) ($made['id'] ?? '');
     if ($id === '') {
-        throw new RuntimeException('OneDrive nennt für „' . $name . '" keine Ordnerkennung.');
+        throw new RuntimeException(t('OneDrive nennt für „%s" keine Ordnerkennung.', $name));
     }
     return ['folderid' => $id, 'created' => true];
 }
@@ -398,7 +396,7 @@ function onedrive_upload_bytes(
     bool $replace = false
 ): array {
     if ($bytes === '') {
-        throw new RuntimeException('Nichts zu übertragen: ' . $name);
+        throw new RuntimeException(t('Nichts zu übertragen: %s', $name));
     }
 
     $url = ONEDRIVE_API . onedrive_item($folderId) . ':/' . rawurlencode($name)
@@ -416,25 +414,25 @@ function onedrive_upload_bytes(
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('OneDrive nimmt die Datei gerade nicht an.');
+        throw new RuntimeException(t('OneDrive nimmt die Datei gerade nicht an.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('OneDrive antwortet unverständlich.');
+        throw new RuntimeException(t('OneDrive antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(sprintf('OneDrive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('OneDrive lehnt ab (%s): %s',
+            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
     }
 
     $fileid = (string) ($d['id'] ?? '');
     if ($fileid === '') {
-        throw new RuntimeException('OneDrive nennt keine Dateikennung.');
+        throw new RuntimeException(t('OneDrive nennt keine Dateikennung.'));
     }
     $size = (int) ($d['size'] ?? 0);
     if ($size !== strlen($bytes)) {
-        throw new RuntimeException(sprintf(
+        throw new RuntimeException(t(
             'OneDrive hat %d von %d Bytes angenommen.', $size, strlen($bytes)));
     }
 
@@ -479,7 +477,7 @@ function onedrive_send(string $access, string $method, string $url): array
         ],
     ]));
     if ($body === false) {
-        throw new RuntimeException('OneDrive antwortet nicht. Später noch einmal versuchen.');
+        throw new RuntimeException(t('OneDrive antwortet nicht. Später noch einmal versuchen.'));
     }
     $status = 0;
     foreach ($http_response_header ?? [] as $line) {
@@ -559,7 +557,7 @@ function onedrive_file_delete(string $access, string $itemId): void
 {
     $answer = onedrive_send($access, 'DELETE', ONEDRIVE_API . onedrive_item($itemId));
     if (!in_array($answer['status'], [200, 204, 404], true)) {
-        throw new RuntimeException(sprintf('OneDrive lehnt das Löschen ab (HTTP %d).', $answer['status']));
+        throw new RuntimeException(t('OneDrive lehnt das Löschen ab (HTTP %d).', $answer['status']));
     }
 }
 
@@ -572,7 +570,7 @@ function onedrive_folder_id(string $access, string $folderId): string
     $d = onedrive_call($access, 'GET', ONEDRIVE_API . '/me/drive/special/approot?$select=id');
     $id = (string) ($d['id'] ?? '');
     if ($id === '') {
-        throw new RuntimeException('OneDrive nennt keine Kennung für den App-Ordner.');
+        throw new RuntimeException(t('OneDrive nennt keine Kennung für den App-Ordner.'));
     }
     return $id;
 }
@@ -684,7 +682,7 @@ function onedrive_upload_session(string $access, string $folderId, string $name,
         . ':/createUploadSession', ['item' => $item]);
     $url = (string) ($d['uploadUrl'] ?? '');
     if ($url === '') {
-        throw new RuntimeException('OneDrive öffnet keine Hochlade-Sitzung.');
+        throw new RuntimeException(t('OneDrive öffnet keine Hochlade-Sitzung.'));
     }
     return $url;
 }

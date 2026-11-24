@@ -64,12 +64,12 @@ function geojson_read(string $path): array
 {
     $content = file_get_contents($path);
     if ($content === false) {
-        throw new RuntimeException('Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('Datei nicht lesbar: %s', basename($path)));
     }
 
     $json = json_decode($content, true);
     if (!is_array($json) || !isset($json['type'])) {
-        throw new RuntimeException('Das sieht nicht nach einer GeoJSON-Datei aus.');
+        throw new RuntimeException(t('Das sieht nicht nach einer GeoJSON-Datei aus.'));
     }
 
     // Bring all three permitted top-level shapes onto one feature list:

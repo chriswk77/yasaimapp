@@ -43,7 +43,7 @@ function takeout_read(string $zipPath): array
 {
     $zip = new ZipArchive();
     if ($zip->open($zipPath) !== true) {
-        throw new RuntimeException('ZIP-Datei nicht lesbar: ' . basename($zipPath));
+        throw new RuntimeException(t('ZIP-Datei nicht lesbar: %s', basename($zipPath)));
     }
 
     $lists = [];

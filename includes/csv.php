@@ -84,7 +84,7 @@ function csv_read(string $path): array
 {
     $content = file_get_contents($path);
     if ($content === false) {
-        throw new RuntimeException('Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('Datei nicht lesbar: %s', basename($path)));
     }
     $content = (string) preg_replace('~^\xEF\xBB\xBF~', '', $content);   // BOM
 
@@ -122,7 +122,7 @@ function csv_read(string $path): array
     fclose($handle);
 
     if (count($rows) < 2) {
-        throw new RuntimeException('Die Tabelle hat keine Datenzeilen.');
+        throw new RuntimeException(t('Die Tabelle hat keine Datenzeilen.'));
     }
 
     // Header row: the first row, unless it consists only of numbers — then

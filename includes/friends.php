@@ -542,14 +542,14 @@ function group_create(PDO $pdo, int $me, string $name): int
 {
     $name = mb_substr(trim($name), 0, 100);
     if ($name === '') {
-        throw new InvalidArgumentException('Die Gruppe braucht einen Namen.');
+        throw new InvalidArgumentException(t('Die Gruppe braucht einen Namen.'));
     }
     try {
         $pdo->prepare('INSERT INTO map_groups (owner_user_id, name) VALUES (?, ?)')
             ->execute([$me, $name]);
     } catch (PDOException $e) {
         if ($e->getCode() === '23000') {
-            throw new InvalidArgumentException('Du hast schon eine Gruppe mit diesem Namen.');
+            throw new InvalidArgumentException(t('Du hast schon eine Gruppe mit diesem Namen.'));
         }
         throw $e;
     }
@@ -561,7 +561,7 @@ function group_delete(PDO $pdo, int $me, int $groupId): void
     $stmt = $pdo->prepare('DELETE FROM map_groups WHERE id = ? AND owner_user_id = ?');
     $stmt->execute([$groupId, $me]);
     if ($stmt->rowCount() === 0) {
-        throw new InvalidArgumentException('Diese Gruppe gibt es nicht mehr.');
+        throw new InvalidArgumentException(t('Diese Gruppe gibt es nicht mehr.'));
     }
     $pdo->prepare('DELETE FROM map_group_members WHERE group_id = ?')->execute([$groupId]);
 
@@ -581,10 +581,10 @@ function group_add(PDO $pdo, int $me, int $groupId, int $userId): void
     $stmt = $pdo->prepare('SELECT 1 FROM map_groups WHERE id = ? AND owner_user_id = ?');
     $stmt->execute([$groupId, $me]);
     if ($stmt->fetchColumn() === false) {
-        throw new InvalidArgumentException('Diese Gruppe gibt es nicht mehr.');
+        throw new InvalidArgumentException(t('Diese Gruppe gibt es nicht mehr.'));
     }
     if (!in_array($userId, friend_ids($pdo, $me), true)) {
-        throw new InvalidArgumentException('In eine Gruppe kannst du nur Freunde aufnehmen.');
+        throw new InvalidArgumentException(t('In eine Gruppe kannst du nur Freunde aufnehmen.'));
     }
     // Adding twice is not an error, just a double click.
     $pdo->prepare('INSERT IGNORE INTO map_group_members (group_id, user_id) VALUES (?, ?)')
@@ -616,7 +616,7 @@ function group_remove(PDO $pdo, int $me, int $groupId, int $userId): void
     $stmt->execute([$groupId]);
     $owner = $stmt->fetchColumn();
     if ($owner === false || ((int) $owner !== $me && $userId !== $me)) {
-        throw new InvalidArgumentException('Das darfst nur du selbst oder der Besitzer der Gruppe.');
+        throw new InvalidArgumentException(t('Das darfst nur du selbst oder der Besitzer der Gruppe.'));
     }
     $pdo->prepare('DELETE FROM map_group_members WHERE group_id = ? AND user_id = ?')
         ->execute([$groupId, $userId]);

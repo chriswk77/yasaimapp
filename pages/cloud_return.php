@@ -38,6 +38,14 @@ function cloud_return(string $kind, string $text, string $target): never
     redirect_to($target);
 }
 
+/** „Google Drive ist verbunden — als …" in ONE sentence, so it translates whole. */
+function connected_said(string $provider, string $account): string
+{
+    return $account !== ''
+        ? t('%s ist verbunden — als %s.', $provider, $account)
+        : t('%s ist verbunden.', $provider);
+}
+
 /**
  * Connected — and when this connection is the one a MOVE waited for, the
  * switch happens here (includes/cloud_moves.php): from this moment the new
@@ -94,20 +102,18 @@ unset($_SESSION['cloud_move']);
 $state = (string) ($_GET['state'] ?? '');
 
 if ($expected === '' || $state === '' || !hash_equals($expected, $state)) {
-    cloud_return('error', 'Der Rücksprung passt nicht zu dieser Sitzung.'
-        . ' Bitte noch einmal auf „Verbinden" drücken.', $target);
+    cloud_return('error', t('Der Rücksprung passt nicht zu dieser Sitzung. Bitte noch einmal auf „Verbinden" drücken.'), $target);
 }
 
 // The user pressed cancel at the provider: pCloud comes back without a code.
 // That is not an error, it is an answer.
 $code = trim((string) ($_GET['code'] ?? ''));
 if ($code === '') {
-    cloud_return('hint', 'Abgebrochen — es wurde nichts verbunden.', $target);
+    cloud_return('hint', t('Abgebrochen — es wurde nichts verbunden.'), $target);
 }
 
 if (!cloud_ready($pdo)) {
-    cloud_return('error', 'Die Tabelle für die Zugänge fehlt noch —'
-        . ' Migration 0053 einspielen.', $target);
+    cloud_return('error', t('Die Tabelle für die Zugänge fehlt noch — Migration 0053 einspielen.'), $target);
 }
 
 try {
@@ -126,8 +132,7 @@ try {
             'folder'     => (string) (cloud_connections($pdo, $userId)['gdrive']['folder'] ?? ''),
         ]);
 
-        cloud_return_connected($pdo, $userId, 'gdrive', 'Google Drive ist verbunden'
-            . ($who['email'] !== '' ? ' — als ' . $who['email'] : '') . '.', $move, $target);
+        cloud_return_connected($pdo, $userId, 'gdrive', connected_said('Google Drive', $who['email']), $move, $target);
     }
 
     if ($provider === 'onedrive') {
@@ -145,8 +150,7 @@ try {
             'folder'     => (string) (cloud_connections($pdo, $userId)['onedrive']['folder'] ?? ''),
         ]);
 
-        cloud_return_connected($pdo, $userId, 'onedrive', 'OneDrive ist verbunden'
-            . ($who['email'] !== '' ? ' — als ' . $who['email'] : '') . '.', $move, $target);
+        cloud_return_connected($pdo, $userId, 'onedrive', connected_said('OneDrive', $who['email']), $move, $target);
     }
 
     // Which data centre — see PCLOUD_HOSTS: recognised, not trusted.
@@ -168,8 +172,7 @@ try {
         'folder'    => (string) (cloud_connections($pdo, $userId)['pcloud']['folder'] ?? ''),
     ]);
 
-    cloud_return_connected($pdo, $userId, 'pcloud', 'pCloud ist verbunden'
-        . ($who['email'] !== '' ? ' — als ' . $who['email'] : '') . '.', $move, $target);
+    cloud_return_connected($pdo, $userId, 'pcloud', connected_said('pCloud', $who['email']), $move, $target);
 
 } catch (Throwable $e) {
     cloud_return('error', $e->getMessage(), $target);

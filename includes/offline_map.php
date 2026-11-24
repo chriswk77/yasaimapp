@@ -84,7 +84,7 @@ function offline_map_file_url(string $link, bool $renew = false): string
 {
     $publink = offline_map_publink($link);
     if ($publink === null) {
-        throw new RuntimeException('Der Freigabe-Link ist kein pCloud-Link.');
+        throw new RuntimeException(t('Der Freigabe-Link ist kein pCloud-Link.'));
     }
     $memo = sys_get_temp_dir() . '/yasaimapp-offline-' . md5($publink['code']) . '.json';
     if (!$renew && is_file($memo)) {
@@ -97,8 +97,8 @@ function offline_map_file_url(string $link, bool $renew = false): string
     [$status, $body] = offline_map_http('https://' . $publink['api'] . '/getpublinkdownload?code=' . rawurlencode($publink['code']));
     $d = json_decode($body, true);
     if ($status !== 200 || !is_array($d) || ($d['result'] ?? -1) !== 0 || empty($d['hosts'])) {
-        throw new RuntimeException('pCloud gibt die Datei nicht heraus: '
-            . (is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
+        throw new RuntimeException(t('pCloud gibt die Datei nicht heraus: %s',
+            is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
     }
     $url = 'https://' . $d['hosts'][0] . $d['path'];
     $until = strtotime((string) ($d['expires'] ?? '')) ?: time() + 3600;
@@ -118,7 +118,7 @@ function offline_map_range(string $url, int $offset, int $length): string
         return substr($body, 0, $length);
     }
     if ($status !== 206) {
-        throw new RuntimeException("Stück nicht lesbar: HTTP $status");
+        throw new RuntimeException(t('Stück nicht lesbar: HTTP %d', $status));
     }
     return $body;
 }
@@ -132,7 +132,7 @@ function offline_map_piece(string $file, int $offset, int $length): string
 {
     $link = offline_map_share($file);
     if ($link === null) {
-        throw new DomainException('Diese Offline-Datei gibt es hier nicht.');
+        throw new DomainException(t('Diese Offline-Datei gibt es hier nicht.'));
     }
     try {
         return offline_map_range(offline_map_file_url($link), $offset, $length);
@@ -162,7 +162,7 @@ function offline_map_http(string $url, ?string $range = null): array
     $status = (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE);
     curl_close($curl);
     if ($body === false) {
-        throw new RuntimeException('Keine Verbindung zu ' . parse_url($url, PHP_URL_HOST));
+        throw new RuntimeException(t('Keine Verbindung zu %s', (string) parse_url($url, PHP_URL_HOST)));
     }
     return [$status, (string) $body];
 }

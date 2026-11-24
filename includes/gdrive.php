@@ -75,7 +75,7 @@ function gdrive_consent_url(string $state): string
 {
     $app = cloud_app('gdrive');
     if ($app === null) {
-        throw new RuntimeException('Google Drive ist auf diesem Server nicht eingerichtet.');
+        throw new RuntimeException(t('Google Drive ist auf diesem Server nicht eingerichtet.'));
     }
 
     return GDRIVE_CONSENT . '?' . http_build_query([
@@ -110,15 +110,15 @@ function gdrive_token_call(array $parameters): array
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Google antwortet nicht. Später noch einmal versuchen.');
+        throw new RuntimeException(t('Google antwortet nicht. Später noch einmal versuchen.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('Google antwortet unverständlich.');
+        throw new RuntimeException(t('Google antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
-        throw new RuntimeException(sprintf('Google lehnt ab (%s): %s',
-            (string) $d['error'], (string) ($d['error_description'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('Google lehnt ab (%s): %s',
+            (string) $d['error'], (string) ($d['error_description'] ?? t('ohne Angabe'))));
     }
     return $d;
 }
@@ -132,7 +132,7 @@ function gdrive_token_get(string $code): array
 {
     $app = cloud_app('gdrive');
     if ($app === null) {
-        throw new RuntimeException('Google Drive ist auf diesem Server nicht eingerichtet.');
+        throw new RuntimeException(t('Google Drive ist auf diesem Server nicht eingerichtet.'));
     }
 
     $d = gdrive_token_call([
@@ -146,7 +146,7 @@ function gdrive_token_get(string $code): array
     $access  = (string) ($d['access_token'] ?? '');
     $refresh = (string) ($d['refresh_token'] ?? '');
     if ($access === '') {
-        throw new RuntimeException('Google nennt kein Zugriffstoken.');
+        throw new RuntimeException(t('Google nennt kein Zugriffstoken.'));
     }
     /* NO REFRESH TOKEN IS A REFUSAL, not a detail. It happens when the
        consent ran without prompt=consent (an old link, a modified URL) —
@@ -154,8 +154,7 @@ function gdrive_token_get(string $code): array
        where reconnecting is one click, than at three in the morning in
        the backup. */
     if ($refresh === '') {
-        throw new RuntimeException('Google hat kein Dauer-Token ausgestellt.'
-            . ' Bitte noch einmal verbinden und der Abfrage erneut zustimmen.');
+        throw new RuntimeException(t('Google hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'));
     }
 
     return [
@@ -260,16 +259,16 @@ function gdrive_call(string $access, string $method, string $url, ?array $body =
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Google Drive antwortet nicht. Später noch einmal versuchen.');
+        throw new RuntimeException(t('Google Drive antwortet nicht. Später noch einmal versuchen.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('Google Drive antwortet unverständlich.');
+        throw new RuntimeException(t('Google Drive antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(sprintf('Google Drive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('Google Drive lehnt ab (%s): %s',
+            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
     }
     return $d;
 }
@@ -339,7 +338,7 @@ function gdrive_folder_ensure(string $access, string $parentId, string $name): a
     ]);
     $id = (string) ($made['id'] ?? '');
     if ($id === '') {
-        throw new RuntimeException('Google Drive nennt für „' . $name . '" keine Ordnerkennung.');
+        throw new RuntimeException(t('Google Drive nennt für „%s" keine Ordnerkennung.', $name));
     }
     return ['folderid' => $id, 'created' => true];
 }
@@ -447,7 +446,7 @@ function gdrive_upload_bytes(
     ?string $type = null
 ): array {
     if ($bytes === '') {
-        throw new RuntimeException('Nichts zu übertragen: ' . $name);
+        throw new RuntimeException(t('Nichts zu übertragen: %s', $name));
     }
 
     $existing = '';
@@ -501,25 +500,25 @@ function gdrive_upload_bytes(
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Google Drive nimmt die Datei gerade nicht an.');
+        throw new RuntimeException(t('Google Drive nimmt die Datei gerade nicht an.'));
     }
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('Google Drive antwortet unverständlich.');
+        throw new RuntimeException(t('Google Drive antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(sprintf('Google Drive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? 'ohne Angabe')));
+        throw new RuntimeException(t('Google Drive lehnt ab (%s): %s',
+            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
     }
 
     $fileid = (string) ($d['id'] ?? '');
     if ($fileid === '') {
-        throw new RuntimeException('Google Drive nennt keine Dateikennung.');
+        throw new RuntimeException(t('Google Drive nennt keine Dateikennung.'));
     }
     $size = (int) ($d['size'] ?? 0);
     if ($size !== strlen($bytes)) {
-        throw new RuntimeException(sprintf(
+        throw new RuntimeException(t(
             'Google Drive hat %d von %d Bytes angenommen.', $size, strlen($bytes)));
     }
 
@@ -779,8 +778,8 @@ function gdrive_upload_session(string $access, string $folderId, string $name, s
     if ($status !== 200 || $location === '') {
         $d = json_decode((string) $response, true);
         $e = is_array($d['error'] ?? null) ? $d['error'] : ['message' => (string) ($d['error'] ?? '')];
-        throw new RuntimeException(sprintf('Google Drive öffnet keine Hochlade-Sitzung (%s): %s',
-            (string) ($e['code'] ?? $status), (string) ($e['message'] ?? '') ?: 'ohne Angabe'));
+        throw new RuntimeException(t('Google Drive öffnet keine Hochlade-Sitzung (%s): %s',
+            (string) ($e['code'] ?? $status), (string) ($e['message'] ?? '') ?: t('ohne Angabe')));
     }
     return $location;
 }

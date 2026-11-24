@@ -29,8 +29,8 @@ echo json_encode([
     'id'         => BASE_URL,
     'name'       => 'YASAIMAPP',
     'short_name' => 'YASAIMAPP',
-    'description' => 'Eigene Punkte auf amtlichen Luftbildern — auch ohne Netz.',
-    'lang'       => 'de',
+    'description' => t('Eigene Punkte auf amtlichen Luftbildern — auch ohne Netz.'),
+    'lang'       => lang_current(),
     'dir'        => 'ltr',
 
     'start_url' => BASE_URL,

@@ -508,10 +508,10 @@ function list_delete(PDO $pdo, int $userId, int $listId): ?array
        or take the flag off. After the handover above: a joint list that
        passes to another member loses nothing. */
     if ((int) $list['is_species'] === 1 && list_has_points($pdo, $listId)) {
-        throw new InvalidArgumentException(
+        throw new InvalidArgumentException(t(
             'Diese Artenliste trägt noch Funde. '
             . 'Erst die Funde verschieben oder den Haken „Artenliste" herausnehmen, dann lässt sie sich löschen.'
-        );
+        ));
     }
     joint_list_deleted_note($pdo, $userId, $listId);
 
@@ -1335,8 +1335,8 @@ function autolists_compute(PDO $pdo, int $userId): array
 function autolist_create(PDO $pdo, int $userId, string $name, array $filter): array
 {
     if (!autolists_ready($pdo)) {
-        throw new InvalidArgumentException(
-            'Autolisten brauchen Migration 0052 — die ist hier noch nicht eingespielt.');
+        throw new InvalidArgumentException(t(
+            'Autolisten brauchen Migration 0052 — die ist hier noch nicht eingespielt.'));
     }
     $listId = list_create($pdo, $userId, ['name' => $name]);
     $pdo->prepare('UPDATE map_lists SET filter = ? WHERE id = ? AND user_id = ?')
@@ -2439,7 +2439,7 @@ function point_create(PDO $pdo, int $userId, array $data): int
     $data = collection_before_create($pdo, $userId, $data);
     $coords = coordinates_read($data['lat'] ?? null, $data['lon'] ?? null);
     if ($coords === null) {
-        throw new InvalidArgumentException('Ungültige Koordinaten.');
+        throw new InvalidArgumentException(t('Ungültige Koordinaten.'));
     }
 
     // Id assigned by the device: if the same one comes a second time, the
@@ -2755,7 +2755,7 @@ function point_update(PDO $pdo, int $userId, int $pointId, array $data): bool
     if (array_key_exists('lat', $data) || array_key_exists('lon', $data)) {
         $coords = coordinates_read($data['lat'] ?? null, $data['lon'] ?? null);
         if ($coords === null) {
-            throw new InvalidArgumentException('Ungültige Koordinaten.');
+            throw new InvalidArgumentException(t('Ungültige Koordinaten.'));
         }
 
         $before = point_coordinates($pdo, $userId, $pointId);
@@ -3363,14 +3363,14 @@ function areas_load(PDO $pdo, int $userId): array
 function area_corners_read(mixed $raw): array
 {
     if (!is_array($raw) || count($raw) < 3 || count($raw) > 200) {
-        throw new InvalidArgumentException('Ein Gebiet braucht drei bis 200 Ecken.');
+        throw new InvalidArgumentException(t('Ein Gebiet braucht drei bis 200 Ecken.'));
     }
 
     $corners = [];
     foreach ($raw as $e) {
         $coords = coordinates_read($e[0] ?? null, $e[1] ?? null);
         if ($coords === null) {
-            throw new InvalidArgumentException('Ungültige Koordinate in der Umrandung.');
+            throw new InvalidArgumentException(t('Ungültige Koordinate in der Umrandung.'));
         }
         $corners[] = [(float) $coords[0], (float) $coords[1]];
     }

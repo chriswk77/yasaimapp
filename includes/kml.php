@@ -52,7 +52,7 @@ function kml_read(string $path): array
     // empty text.
     $xml = @simplexml_load_string(kml_content($path), SimpleXMLElement::class, LIBXML_NOCDATA);
     if ($xml === false || strtolower($xml->getName()) !== 'kml') {
-        throw new RuntimeException('Das sieht nicht nach einer KML-Datei aus.');
+        throw new RuntimeException(t('Das sieht nicht nach einer KML-Datei aus.'));
     }
 
     $collected = ['groups' => [], 'skipped' => 0, 'ways' => 0];
@@ -82,7 +82,7 @@ function kml_content(string $path): string
 {
     $content = file_get_contents($path);
     if ($content === false) {
-        throw new RuntimeException('Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('Datei nicht lesbar: %s', basename($path)));
     }
     if (!str_starts_with($content, "PK\x03\x04")) {
         return $content;
@@ -92,7 +92,7 @@ function kml_content(string $path): string
     // not stick to it gets the first .kml that can be found.
     $zip = new ZipArchive();
     if ($zip->open($path) !== true) {
-        throw new RuntimeException('KMZ-Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('KMZ-Datei nicht lesbar: %s', basename($path)));
     }
     $index = null;
     for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -109,7 +109,7 @@ function kml_content(string $path): string
     $zip->close();
 
     if ($content === false) {
-        throw new RuntimeException('In der KMZ-Datei steckt keine KML-Datei.');
+        throw new RuntimeException(t('In der KMZ-Datei steckt keine KML-Datei.'));
     }
     return $content;
 }

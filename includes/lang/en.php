@@ -10626,4 +10626,243 @@ return [
     // Fund · Mikroskop · Schlüssel — the find's three areas (24.11.2026).
     'Bereich'
         => 'Area',
+    // The user side's last gaps, closed in one sweep (24.11.2026): the clouds'
+    // and services' messages, the file imports, the find report, the
+    // general error page, help paragraphs rewritten since their translation.
+    '<strong>Artenliste:</strong> mit dem Haken schlägt das Titelfeld eines Punktes wissenschaftliche Namen vor, und die Fundfelder darunter kommen dazu. Für die Listen der Reiche ist er gesetzt. Darunter fragt das Fenster: <strong>Was enthält diese Liste?</strong> Du hakst die Gruppen an — Pilze, Flechten, Pflanzen, die Tiergruppen. Bei „Art" kommen nur Namen aus diesen Gruppen, und ihre Namen kommen von selbst aufs Gerät, damit die Vorschläge auch ohne Empfang gehen (<a href="#arten">%s</a>).'
+        => '<strong>Species list:</strong> with the tick, a point\'s title field suggests scientific names, and the find fields below come with it. For the lists of the kingdoms it is set. Below it the window asks: <strong>Was enthält diese Liste?</strong> You tick the groups — fungi, lichens, plants, the animal groups. In "Art" only names from these groups come up, and their names come onto the device by themselves, so the suggestions work without reception too (<a href="#arten">%s</a>).',
+    '<strong>Die Art.</strong> Das erste Feld heißt „Art" — in jeder Liste. In einer Artenliste schlägt es beim Tippen wissenschaftliche Namen aus der Referenz vor, mit dem Status der Roten Liste dahinter. Aus welchen Artengruppen die Vorschläge kommen, steht bei der Liste, in der der Fund liegt — in der Pilzliste Pilze, in der Flechtenliste Flechten (<a href="#arten">%s</a>). In der Verwaltung unter Einstellungen → Arten schaltest du „Schon gefundene Arten zuerst vorschlagen" ein — dann stehen die Arten aus deinen und den mit dir geteilten Funden oben in der Liste.'
+        => '<strong>The species.</strong> The first field is called "Art" — in every list. In a species list it suggests scientific names from the reference while you type, with the Red List status behind them. Which species groups the suggestions come from is set at the list the find lies in — fungi in the fungi list, lichens in the lichen list (<a href="#arten">%s</a>). In the administration under Einstellungen → Arten you switch on "Schon gefundene Arten zuerst vorschlagen" — then the species from your finds and from those shared with you stand at the top of the list.',
+    '<strong>Die Felder der Liste:</strong> was die Liste, in der der Fund liegt, an Feldern mitbringt — hier die einer Artenliste: Finder, Bestimmer, Bestimmungssicherheit, Anzahl, Substrat, Begleitvegetation, Geruch, Geschmack, Sporenpulverfarbe, Beleg-Nr., Bemerkung. Liegt der Fund in mehreren Listen, stehen die Felder aller hier, jedes einmal. Welche Felder eine Liste hat, legst du in ihrem Fenster fest (<a href="#listen">%s</a>). Substrat / Wirt schlägt beim Tippen Pflanzen, Insekten und Pilze vor, Begleitvegetation nur Pflanzen; eigene Felder, die als Artfeld markiert sind, schlagen dieselben Gruppen vor wie der Titel (<a href="#arten">%s</a>). In einem mehrzeiligen Feld zählt jede Zeile als eigener Name.'
+        => '<strong>The list\'s fields:</strong> the fields the list the find lies in brings along — here those of a species list: finder, identifier, certainty, count, substrate, companion vegetation, odour, taste, spore print colour, voucher number, remark. If the find lies in several lists, the fields of all of them stand here, each once. Which fields a list has you set in its window (<a href="#listen">%s</a>). Substrat / Wirt suggests plants, insects and fungi while you type, Begleitvegetation only plants; own fields marked as species fields suggest the same groups as the title (<a href="#arten">%s</a>). In a multi-line field every line counts as a name of its own.',
+    'Welche <strong>Artengruppen</strong> das Feld „Art" im Punktfenster vorschlägt (<a href="#fenster-text">%s</a>, Punkt 1), legst du bei jeder Liste fest: im Fenster „Liste bearbeiten" unter „Was enthält diese Liste?". In der Pilzliste kommen dann nur Pilze, in der Flechtenliste nur Flechten. Substrat / Wirt schlägt Pflanzen, Insekten und Pilze vor, Begleitvegetation nur Pflanzen. Die Namen aller Gruppen, die deine Listen und die mit dir geteilten brauchen, kommen sofort aufs Gerät — so gehen die Vorschläge auch im Wald ohne Empfang. Braucht keine Liste eine Gruppe mehr, werden ihre Namen wieder entfernt. Hier unter Einstellungen → Arten steht, woher die Namen kommen.'
+        => 'Which <strong>species groups</strong> the field "Art" in the point window suggests (<a href="#fenster-text">%s</a>, item 1) you set at each list: in the window "Liste bearbeiten" under "Was enthält diese Liste?". The fungi list then offers only fungi, the lichen list only lichens. Substrat / Wirt suggests plants, insects and fungi, Begleitvegetation only plants. The names of all groups your lists and those shared with you need come onto the device at once — so the suggestions work in the woods without reception too. Once no list needs a group any more, its names are removed again. Here under Einstellungen → Arten it says where the names come from.',
+    'Nur lesen.'
+        => 'Read only.',
+    'Diesen Dienst gibt es hier nicht.'
+        => 'This service does not exist here.',
+    'Welches Bild?'
+        => 'Which picture?',
+    'Welches Stück welcher Datei?'
+        => 'Which piece of which file?',
+    'Diese Offline-Datei gibt es hier nicht.'
+        => 'This offline file does not exist here.',
+    'Die Offline-Datei ist gerade nicht erreichbar.'
+        => 'The offline file cannot be reached right now.',
+    'Punktfenster ausklappen'
+        => 'Expand the point window',
+    'Punktfenster einklappen'
+        => 'Collapse the point window',
+    'Bearbeitung %d von %s — gilt überall (Taste V wechselt)'
+        => 'Edit %d by %s — valid everywhere (key V switches)',
+    'Auswertung'
+        => 'Evaluation',
+    'Tagestour'
+        => 'Day tour',
+    'Google Drive ist auf diesem Server nicht eingerichtet.'
+        => 'Google Drive is not set up on this server.',
+    'Google antwortet nicht. Später noch einmal versuchen.'
+        => 'Google does not answer. Try again later.',
+    'Google antwortet unverständlich.'
+        => 'Google gives an answer that cannot be read.',
+    'Google lehnt ab (%s): %s'
+        => 'Google refuses (%s): %s',
+    'Google nennt kein Zugriffstoken.'
+        => 'Google names no access token.',
+    'Google hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'
+        => 'Google issued no lasting token. Please connect again and agree to the request once more.',
+    'Google Drive antwortet nicht. Später noch einmal versuchen.'
+        => 'Google Drive does not answer. Try again later.',
+    'Google Drive antwortet unverständlich.'
+        => 'Google Drive gives an answer that cannot be read.',
+    'Google Drive lehnt ab (%s): %s'
+        => 'Google Drive refuses (%s): %s',
+    'Google Drive nennt für „%s" keine Ordnerkennung.'
+        => 'Google Drive names no folder id for "%s".',
+    'Google Drive nimmt die Datei gerade nicht an.'
+        => 'Google Drive is not taking the file right now.',
+    'Google Drive nennt keine Dateikennung.'
+        => 'Google Drive names no file id.',
+    'Google Drive hat %d von %d Bytes angenommen.'
+        => 'Google Drive took %d of %d bytes.',
+    'Google Drive öffnet keine Hochlade-Sitzung (%s): %s'
+        => 'Google Drive opens no upload session (%s): %s',
+    'OneDrive ist auf diesem Server nicht eingerichtet.'
+        => 'OneDrive is not set up on this server.',
+    'Microsoft antwortet nicht. Später noch einmal versuchen.'
+        => 'Microsoft does not answer. Try again later.',
+    'Microsoft antwortet unverständlich.'
+        => 'Microsoft gives an answer that cannot be read.',
+    'Microsoft lehnt ab (%s): %s'
+        => 'Microsoft refuses (%s): %s',
+    'Microsoft nennt kein Zugriffstoken.'
+        => 'Microsoft names no access token.',
+    'Microsoft hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'
+        => 'Microsoft issued no lasting token. Please connect again and agree to the request once more.',
+    'OneDrive antwortet nicht. Später noch einmal versuchen.'
+        => 'OneDrive does not answer. Try again later.',
+    'OneDrive antwortet unverständlich.'
+        => 'OneDrive gives an answer that cannot be read.',
+    'OneDrive lehnt ab (%s): %s'
+        => 'OneDrive refuses (%s): %s',
+    'In OneDrive liegt schon eine Datei namens „%s", wo ein Ordner gebraucht wird.'
+        => 'In OneDrive there is already a file called "%s" where a folder is needed.',
+    'OneDrive nennt für „%s" keine Ordnerkennung.'
+        => 'OneDrive names no folder id for "%s".',
+    'OneDrive nimmt die Datei gerade nicht an.'
+        => 'OneDrive is not taking the file right now.',
+    'OneDrive nennt keine Dateikennung.'
+        => 'OneDrive names no file id.',
+    'OneDrive hat %d von %d Bytes angenommen.'
+        => 'OneDrive took %d of %d bytes.',
+    'OneDrive lehnt das Löschen ab (HTTP %d).'
+        => 'OneDrive refuses the deletion (HTTP %d).',
+    'OneDrive nennt keine Kennung für den App-Ordner.'
+        => 'OneDrive names no id for the app folder.',
+    'OneDrive öffnet keine Hochlade-Sitzung.'
+        => 'OneDrive opens no upload session.',
+    'Der S3-Endpunkt muss über HTTPS auf Port 443 erreichbar sein.'
+        => 'The S3 endpoint must be reachable over HTTPS on port 443.',
+    'Den S3-Endpunkt gibt es nicht — der Name löst sich nicht auf.'
+        => 'This S3 endpoint does not exist — the name does not resolve.',
+    'Dieser S3-Endpunkt liegt nicht im öffentlichen Internet und wird nicht angesprochen.'
+        => 'This S3 endpoint is not on the public internet and is not contacted.',
+    'Der S3-Speicher antwortet nicht. Ist der Endpunkt richtig?'
+        => 'The S3 storage does not answer. Is the endpoint right?',
+    'Der S3-Speicher lehnt ab (%s): %s'
+        => 'The S3 storage refuses (%s): %s',
+    'Der S3-Speicher antwortet unverständlich.'
+        => 'The S3 storage gives an answer that cannot be read.',
+    'Der S3-Speicher hat %d von %d Bytes angenommen.'
+        => 'The S3 storage took %d of %d bytes.',
+    'Der Ordnerpfad ist zu lang für einen S3-Schlüssel.'
+        => 'The folder path is too long for an S3 key.',
+    'pCloud nennt keine Kennung für den App-Ordner.'
+        => 'pCloud names no id for the app folder.',
+    'pCloud gibt das Bild nicht heraus: %s'
+        => 'pCloud does not hand out the picture: %s',
+    'pCloud gibt keine Vorschau heraus (HTTP %d)'
+        => 'pCloud hands out no preview (HTTP %d)',
+    'pCloud gibt die Datei nicht heraus: %s'
+        => 'pCloud does not hand out the file: %s',
+    '%s ist verbunden — als %s.'
+        => '%s is connected — as %s.',
+    '%s ist verbunden.'
+        => '%s is connected.',
+    'Der Rücksprung passt nicht zu dieser Sitzung. Bitte noch einmal auf „Verbinden" drücken.'
+        => 'The return does not match this session. Please press "Verbinden" once more.',
+    'Abgebrochen — es wurde nichts verbunden.'
+        => 'Cancelled — nothing was connected.',
+    'Der Höhendienst antwortet nicht.'
+        => 'The elevation service does not answer.',
+    'Der Höhendienst hat unverständlich geantwortet.'
+        => 'The elevation service gave an answer that cannot be read.',
+    'Außerhalb des deutschen Höhenmodells.'
+        => 'Outside the German elevation model.',
+    'Der Höhendienst meldet einen Fehler.'
+        => 'The elevation service reports an error.',
+    'Der Höhendienst hat keinen brauchbaren Wert geliefert.'
+        => 'The elevation service delivered no usable value.',
+    'Der weltweite Höhendienst antwortet nicht.'
+        => 'The worldwide elevation service does not answer.',
+    'Der weltweite Höhendienst hat keinen brauchbaren Wert geliefert.'
+        => 'The worldwide elevation service delivered no usable value.',
+    'Der Ortsdienst antwortet nicht.'
+        => 'The place service does not answer.',
+    'Der Ortsdienst hat unverständlich geantwortet.'
+        => 'The place service gave an answer that cannot be read.',
+    'Dort liegt keine Gemeinde.'
+        => 'There is no municipality there.',
+    'Ohne Staat ist der Rest wertlos.'
+        => 'Without a country the rest is worthless.',
+    'Der Schutzgebietsdienst antwortet nicht.'
+        => 'The protected-area service does not answer.',
+    'Der Freigabe-Link ist kein pCloud-Link.'
+        => 'The share link is not a pCloud link.',
+    'Stück nicht lesbar: HTTP %d'
+        => 'Piece not readable: HTTP %d',
+    'Keine Verbindung zu %s'
+        => 'No connection to %s',
+    'Datei nicht lesbar: %s'
+        => 'File not readable: %s',
+    'KMZ-Datei nicht lesbar: %s'
+        => 'KMZ file not readable: %s',
+    'ZIP-Datei nicht lesbar: %s'
+        => 'ZIP file not readable: %s',
+    'Das sieht nicht nach einer KML-Datei aus.'
+        => 'That does not look like a KML file.',
+    'In der KMZ-Datei steckt keine KML-Datei.'
+        => 'There is no KML file inside the KMZ file.',
+    'Das sieht nicht nach einer GPX-Datei aus.'
+        => 'That does not look like a GPX file.',
+    'Das sieht nicht nach einer GeoJSON-Datei aus.'
+        => 'That does not look like a GeoJSON file.',
+    'Die Tabelle hat keine Datenzeilen.'
+        => 'The table has no data rows.',
+    'Der Import braucht einen Namen.'
+        => 'The import needs a name.',
+    'Diesen Import gibt es nicht (mehr).'
+        => 'This import does not exist (any more).',
+    'Dieses Format gibt es nicht.'
+        => 'This format does not exist.',
+    'Verzeichnis lässt sich nicht anlegen: %s'
+        => 'Folder cannot be created: %s',
+    'Diese Artenliste trägt noch Funde. Erst die Funde verschieben oder den Haken „Artenliste" herausnehmen, dann lässt sie sich löschen.'
+        => 'This species list still holds finds. Move the finds first or take out the tick "Artenliste", then it can be deleted.',
+    'Autolisten brauchen Migration 0052 — die ist hier noch nicht eingespielt.'
+        => 'Auto lists need migration 0052 — it has not been applied here yet.',
+    'Ungültige Koordinaten.'
+        => 'Invalid coordinates.',
+    'Ein Gebiet braucht drei bis 200 Ecken.'
+        => 'An area needs three to 200 corners.',
+    'Ungültige Koordinate in der Umrandung.'
+        => 'Invalid coordinate in the outline.',
+    'Zu diesem Anker fehlt der Ort.'
+        => 'This anchor is missing its place.',
+    'Zu diesem Feld gibt es keinen Anker (mehr).'
+        => 'There is no anchor (any more) for this field.',
+    'Der Rettungsanker braucht die Migration 0044.'
+        => 'The rescue anchor needs migration 0044.',
+    'Die Gruppe braucht einen Namen.'
+        => 'The group needs a name.',
+    'Du hast schon eine Gruppe mit diesem Namen.'
+        => 'You already have a group with this name.',
+    'Diese Gruppe gibt es nicht mehr.'
+        => 'This group no longer exists.',
+    'In eine Gruppe kannst du nur Freunde aufnehmen.'
+        => 'You can only take friends into a group.',
+    'Das darfst nur du selbst oder der Besitzer der Gruppe.'
+        => 'Only you yourself or the owner of the group may do that.',
+    'Die Nachricht ist leer.'
+        => 'The message is empty.',
+    'Ihr seid nicht (mehr) befreundet.'
+        => 'You are not friends (any more).',
+    'Die Datenbank ist nicht auf dem Stand des Programms — es fehlt eine Migration.'
+        => 'The database is behind the program — a migration is missing.',
+    'Es ist ein Serverfehler aufgetreten.'
+        => 'A server error occurred.',
+    'Es ist ein Fehler aufgetreten.'
+        => 'An error occurred.',
+    'Eigene Punkte auf amtlichen Luftbildern — auch ohne Netz.'
+        => 'Your own points on official aerial imagery — offline too.',
+    'Nur über das Formular.'
+        => 'Only through the form.',
+    'Nichts zu berichten — die Auswahl ist leer.'
+        => 'Nothing to report — the selection is empty.',
+    'Drucken / als PDF speichern'
+        => 'Print / save as PDF',
+    'Im Druckfenster als Ziel „Als PDF sichern" wählen.'
+        => 'In the print window choose "Save as PDF" as the destination.',
+    'Die Karte wird gezeichnet — einen Augenblick.'
+        => 'The map is being drawn — one moment.',
+    'So viele Spalten passen nicht auf A4 — auch klein geschrieben nicht. Weniger Angaben wählen, oder im Fundbericht-Fenster die Kachelform nehmen.'
+        => 'This many columns do not fit on A4 — not even in small print. Choose fewer details, or take the tile form in the find report window.',
+    '1 Art aus %s'
+        => '1 species from %s',
+    '%d Arten aus %s'
+        => '%d species from %s',
+    '%d Funden'
+        => '%d finds',
+    'Erstellt am %s mit YASAIMAPP.'
+        => 'Made on %s with YASAIMAPP.',
 ];

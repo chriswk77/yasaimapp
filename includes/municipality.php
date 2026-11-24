@@ -340,28 +340,28 @@ function municipality_get(float $lat, float $lon): array
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Der Ortsdienst antwortet nicht.');
+        throw new RuntimeException(t('Der Ortsdienst antwortet nicht.'));
     }
 
     $d = json_decode($response, true);
     if (!is_array($d)) {
-        throw new RuntimeException('Der Ortsdienst hat unverständlich geantwortet.');
+        throw new RuntimeException(t('Der Ortsdienst hat unverständlich geantwortet.'));
     }
 
     // Nominatim reports "nothing found" with an error field and status
     // 200 — not with an HTTP error. Open sea looks like this.
     if (isset($d['error'])) {
-        throw new NoMunicipality('Dort liegt keine Gemeinde.');
+        throw new NoMunicipality(t('Dort liegt keine Gemeinde.'));
     }
 
     $name = municipality_name($d);
     if ($name === null) {
-        throw new NoMunicipality('Dort liegt keine Gemeinde.');
+        throw new NoMunicipality(t('Dort liegt keine Gemeinde.'));
     }
 
     $country = strtoupper((string) ($d['address']['country_code'] ?? ''));
     if (strlen($country) !== 2) {
-        throw new NoMunicipality('Ohne Staat ist der Rest wertlos.');
+        throw new NoMunicipality(t('Ohne Staat ist der Rest wertlos.'));
     }
 
     return [

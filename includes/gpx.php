@@ -37,14 +37,14 @@ function gpx_read(string $path): array
 {
     $content = file_get_contents($path);
     if ($content === false) {
-        throw new RuntimeException('Datei nicht lesbar: ' . basename($path));
+        throw new RuntimeException(t('Datei nicht lesbar: %s', basename($path)));
     }
 
     // No LIBXML_NOENT: external entities stay shut — an uploaded file is
     // foreign content, even if it comes from one's own GPS device.
     $xml = @simplexml_load_string($content);
     if ($xml === false || strtolower($xml->getName()) !== 'gpx') {
-        throw new RuntimeException('Das sieht nicht nach einer GPX-Datei aus.');
+        throw new RuntimeException(t('Das sieht nicht nach einer GPX-Datei aus.'));
     }
 
     $points = [];

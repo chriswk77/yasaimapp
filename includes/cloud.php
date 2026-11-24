@@ -2405,7 +2405,7 @@ function pcloud_root_real_id(string $host, string $token): string
     $d = pcloud_call($host, 'listfolder', ['access_token' => $token, 'folderid' => 0, 'nofiles' => 1]);
     $id = (string) ($d['metadata']['folderid'] ?? '');
     if ($id === '') {
-        throw new RuntimeException('pCloud nennt keine Kennung für den App-Ordner.');
+        throw new RuntimeException(t('pCloud nennt keine Kennung für den App-Ordner.'));
     }
     return $id;
 }

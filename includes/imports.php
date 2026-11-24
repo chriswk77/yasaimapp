@@ -94,7 +94,7 @@ function import_rename(PDO $pdo, int $userId, int $importId, string $name): void
 {
     $name = mb_substr(trim($name), 0, 100);
     if ($name === '') {
-        throw new InvalidArgumentException('Der Import braucht einen Namen.');
+        throw new InvalidArgumentException(t('Der Import braucht einen Namen.'));
     }
 
     $row = import_row($pdo, $userId, $importId);
@@ -117,7 +117,7 @@ function import_row(PDO $pdo, int $userId, int $importId): array
     $stmt->execute([$importId, $userId]);
     $row = $stmt->fetch();
     if ($row === false) {
-        throw new InvalidArgumentException('Diesen Import gibt es nicht (mehr).');
+        throw new InvalidArgumentException(t('Diesen Import gibt es nicht (mehr).'));
     }
     return $row;
 }

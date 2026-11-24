@@ -102,12 +102,12 @@ function elevation_get(float $lat, float $lon): array
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Der Höhendienst antwortet nicht.');
+        throw new RuntimeException(t('Der Höhendienst antwortet nicht.'));
     }
 
     $d = json_decode($response, true);
     if (!is_array($d) || !isset($d['Attributes'])) {
-        throw new RuntimeException('Der Höhendienst hat unverständlich geantwortet.');
+        throw new RuntimeException(t('Der Höhendienst hat unverständlich geantwortet.'));
     }
 
     $a = $d['Attributes'];
@@ -123,13 +123,13 @@ function elevation_get(float $lat, float $lon): array
             || str_contains($detail, 'for Germany');
 
         throw new ElevationOutside($outside
-            ? 'Außerhalb des deutschen Höhenmodells.'
-            : 'Der Höhendienst meldet einen Fehler.', $outside ? 1 : 0);
+            ? t('Außerhalb des deutschen Höhenmodells.')
+            : t('Der Höhendienst meldet einen Fehler.'), $outside ? 1 : 0);
     }
 
     $elevation = $a['Elevation'] ?? null;
     if (!is_numeric($elevation) || $elevation < -500 || $elevation > 3000) {
-        throw new RuntimeException('Der Höhendienst hat keinen brauchbaren Wert geliefert.');
+        throw new RuntimeException(t('Der Höhendienst hat keinen brauchbaren Wert geliefert.'));
     }
 
     return [
@@ -179,7 +179,7 @@ function elevation_worldwide(float $lat, float $lon): array
     ]));
 
     if ($response === false) {
-        throw new RuntimeException('Der weltweite Höhendienst antwortet nicht.');
+        throw new RuntimeException(t('Der weltweite Höhendienst antwortet nicht.'));
     }
 
     $d = json_decode($response, true);
@@ -187,7 +187,7 @@ function elevation_worldwide(float $lat, float $lon): array
 
     // Limits set wide: from the Dead Sea (-430 m) to Everest.
     if (!is_numeric($elevation) || $elevation < -500 || $elevation > 9000) {
-        throw new RuntimeException('Der weltweite Höhendienst hat keinen brauchbaren Wert geliefert.');
+        throw new RuntimeException(t('Der weltweite Höhendienst hat keinen brauchbaren Wert geliefert.'));
     }
 
     return [

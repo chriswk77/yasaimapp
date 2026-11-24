@@ -200,7 +200,7 @@ function protected_areas_get(float $lat, float $lon): array
     }
 
     if (!$reached) {
-        throw new RuntimeException('Der Schutzgebietsdienst antwortet nicht.');
+        throw new RuntimeException(t('Der Schutzgebietsdienst antwortet nicht.'));
     }
     return $names;
 }

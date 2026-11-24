@@ -37,7 +37,7 @@ $straightLength = measure_style_read($me['measure_style'] ?? null)['straight_len
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    exit('Nur über das Formular.');
+    exit(t('Nur über das Formular.'));
 }
 csrf_check();
 
@@ -47,7 +47,7 @@ $ids = array_values(array_filter(array_map(
 $points = export_points($pdo, (int) $me['id'], $ids);
 if ($points === []) {
     http_response_code(422);
-    exit('Nichts zu berichten — die Auswahl ist leer.');
+    exit(t('Nichts zu berichten — die Auswahl ist leer.'));
 }
 
 /* THE ORDER OF THE REPORT IS THE ORDER OF THE FIND, not of the database:
@@ -163,10 +163,10 @@ $mapWidth  = (int) round(182 * 96 / 25.4 * 2);
 $mapHeight = (int) round(90 * 96 / 25.4 * 2);
 
 ?><!DOCTYPE html>
-<html lang="de">
+<html lang="<?= h(lang_current()) ?>">
 <head>
 <meta charset="utf-8">
-<title>Fundbericht<?= $heading['area'] !== '' ? ' · ' . h($heading['area']) : '' ?></title>
+<title><?= h(t('Fundbericht')) ?><?= $heading['area'] !== '' ? ' · ' . h($heading['area']) : '' ?></title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 /* IT BECOMES A PDF, NOT A PRINTOUT (23.08.2026): "Da brauchen
@@ -393,14 +393,14 @@ table .report-count { font-size: .81em; }
 <body>
 
 <div class="report-bar">
-    <button type="button" onclick="window.print()">Drucken / als PDF speichern</button>
-    Im Druckfenster als Ziel „Als PDF sichern" wählen.
+    <button type="button" onclick="window.print()"><?= h(t('Drucken / als PDF speichern')) ?></button>
+    <?= h(t('Im Druckfenster als Ziel „Als PDF sichern" wählen.')) ?>
     <?php if ($withMap): ?>
         <?php /* The tiles come from a foreign server, and until they are all
              there the picture is not drawn. The script takes this line
              away the moment it is — so it says something true at every
              moment instead of standing there as a general warning. */ ?>
-        <span id="report-map-wait">Die Karte wird gezeichnet — einen Augenblick.</span>
+        <span id="report-map-wait"><?= h(t('Die Karte wird gezeichnet — einen Augenblick.')) ?></span>
     <?php endif; ?>
     <?php if ($layout === 'list'): ?>
         <?php /* A STATE, so it stays in the flow (CLAUDE.md): it is the reason
@@ -408,8 +408,7 @@ table .report-count { font-size: .81em; }
              acts on it. The script unhides it when even the smallest
              writing does not bring the columns onto the page. */ ?>
         <span class="report-wide" id="report-wide" hidden>
-            So viele Spalten passen nicht auf A4 — auch klein geschrieben nicht.
-            Weniger Angaben wählen, oder im Fundbericht-Fenster die Kachelform nehmen.
+            <?= h(t('So viele Spalten passen nicht auf A4 — auch klein geschrieben nicht. Weniger Angaben wählen, oder im Fundbericht-Fenster die Kachelform nehmen.')) ?>
         </span>
     <?php endif; ?>
 </div>
@@ -420,7 +419,7 @@ table .report-count { font-size: .81em; }
 <div class="report-sheet" id="report-sheet">
 
 <div class="report-head">
-    <h1>Fundbericht</h1>
+    <h1><?= h(t('Fundbericht')) ?></h1>
     <?php if ($heading['area'] !== ''): ?>
         <p class="report-place"><?= h($heading['area']) ?></p>
     <?php endif; ?>
@@ -430,10 +429,11 @@ table .report-count { font-size: .81em; }
         <?php if ($merge): ?>
             <?php /* Merged, the interesting number is a different one: how many
                  SPECIES were there — and out of how many finds. */ ?>
-            <span><?= count($groups) ?> Art<?= count($groups) === 1 ? '' : 'en' ?>
-                  aus <?= count($points) ?> Fund<?= count($points) === 1 ? '' : 'en' ?></span>
+            <span><?= h(count($groups) === 1
+                ? t('1 Art aus %s', count($points) === 1 ? t('1 Fund') : t('%d Funden', count($points)))
+                : t('%d Arten aus %s', count($groups), count($points) === 1 ? t('1 Fund') : t('%d Funden', count($points)))) ?></span>
         <?php else: ?>
-            <span><?= count($points) ?> Fund<?= count($points) === 1 ? '' : 'e' ?></span>
+            <span><?= h(count($points) === 1 ? t('1 Fund') : t('%d Funde', count($points))) ?></span>
         <?php endif; ?>
         <?php if ($owners !== []): ?><span><?= h(implode(', ', $owners)) ?></span><?php endif; ?>
     </p>
@@ -460,7 +460,7 @@ table .report-count { font-size: .81em; }
 <?php if ($layout === 'list'): ?>
     <table>
         <thead>
-            <tr><?php foreach ($chosen as $key): ?><th><?= h($catalogue[$key][0]) ?></th><?php endforeach; ?></tr>
+            <tr><?php foreach ($chosen as $key): ?><th><?= h(t($catalogue[$key][0])) ?></th><?php endforeach; ?></tr>
         </thead>
         <tbody>
         <?php foreach ($groups as $members): ?>
@@ -469,7 +469,7 @@ table .report-count { font-size: .81em; }
                     <td>
                         <?= nl2br(h(report_group_value($catalogue, $key, $members))) ?>
                         <?php if ($i === 0 && count($members) > 1): ?>
-                            <span class="report-count"><?= count($members) ?> Funde</span>
+                            <span class="report-count"><?= h(t('%d Funde', count($members))) ?></span>
                         <?php endif; ?>
                         <?php if ($i === 0 && $withGerman && ($g = $germanName($members)) !== ''): ?>
                             <div class="report-german"><?= h($g) ?></div>
@@ -495,9 +495,9 @@ table .report-count { font-size: .81em; }
     <?php foreach ($groups as $members): ?>
         <div class="report-tile">
             <div class="report-tile-title">
-                <?= h(report_group_value($catalogue, $first, $members)) ?: 'Ohne Titel' ?>
+                <?= h(report_group_value($catalogue, $first, $members)) ?: h(t('Ohne Titel')) ?>
                 <?php if (count($members) > 1): ?>
-                    <span class="report-count"><?= count($members) ?> Funde</span>
+                    <span class="report-count"><?= h(t('%d Funde', count($members))) ?></span>
                 <?php endif; ?>
             </div>
             <?php if ($withGerman && ($g = $germanName($members)) !== ''): ?>
@@ -506,7 +506,7 @@ table .report-count { font-size: .81em; }
             <div class="report-tile-pairs">
                 <?php foreach ($rest as $key): $value = report_group_value($catalogue, $key, $members); ?>
                     <?php if (trim($value) !== ''): ?>
-                        <div><b><?= h($catalogue[$key][0]) ?>:</b> <?= h($value) ?></div>
+                        <div><b><?= h(t($catalogue[$key][0])) ?>:</b> <?= h($value) ?></div>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
@@ -523,7 +523,7 @@ table .report-count { font-size: .81em; }
      „mit der Karte" was the line from before the christening; the maintainer
      read it on the first printed report of a real excursion, 12.09.2026. */ ?>
 <p class="report-foot">
-    Erstellt am <?= h(date('d.m.Y')) ?> mit YASAIMAPP.
+    <?= h(t('Erstellt am %s mit YASAIMAPP.', date('d.m.Y'))) ?>
 </p>
 
 </div><?php /* .report-sheet */ ?>

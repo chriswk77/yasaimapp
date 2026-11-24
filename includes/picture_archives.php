@@ -228,7 +228,7 @@ function archive_directory(int $archiveId): string
 {
     $dir = PROJECT_PATH . '/data/picture_archives/' . $archiveId;
     if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-        throw new RuntimeException('Verzeichnis lässt sich nicht anlegen: ' . $dir);
+        throw new RuntimeException(t('Verzeichnis lässt sich nicht anlegen: %s', $dir));
     }
     return $dir;
 }
@@ -696,8 +696,8 @@ function archive_addresses(array $link, string $fileId, string $size): array
     [$status, $body] = offline_map_http("$api/getpublinkdownload?code=$code&fileid=$file");
     $d = json_decode($body, true);
     if ($status !== 200 || !is_array($d) || ($d['result'] ?? -1) !== 0 || empty($d['hosts'])) {
-        throw new RuntimeException('pCloud gibt das Bild nicht heraus: '
-            . (is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
+        throw new RuntimeException(t('pCloud gibt das Bild nicht heraus: %s',
+            is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
     }
     $out = [];
     foreach (array_slice($d['hosts'], 0, 3) as $host) {
@@ -719,7 +719,7 @@ function archive_small(array $archive, array $link, string $fileId): string
     if (!is_file($path)) {
         [$status, $bytes] = offline_map_http(archive_addresses($link, $fileId, 'small')[0]['url']);
         if ($status !== 200 || picture_type($bytes) === null) {
-            throw new RuntimeException("pCloud gibt keine Vorschau heraus (HTTP $status)");
+            throw new RuntimeException(t('pCloud gibt keine Vorschau heraus (HTTP %d)', $status));
         }
         file_put_contents($path . '.tmp', $bytes, LOCK_EX);
         rename($path . '.tmp', $path);

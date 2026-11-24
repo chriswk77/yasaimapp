@@ -854,7 +854,7 @@ function report_heading(array $points): array
 function export_build(array $points, string $format, string $title = 'YASAIMAPP', array $options = []): array
 {
     if (!isset(EXPORT_FORMATS[$format])) {
-        throw new InvalidArgumentException('Dieses Format gibt es nicht.');
+        throw new InvalidArgumentException(t('Dieses Format gibt es nicht.'));
     }
     [, $extension, $mime] = EXPORT_FORMATS[$format];
 
