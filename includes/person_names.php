@@ -49,3 +49,49 @@ function person_names_self(string $text, array $self): bool
     }
     return true;
 }
+
+/**
+ * THE NAMES ONE HAS WRITTEN AS FINDER OR DETERMINER, for the suggestions
+ * under those two fields (24.11.2026: „Oft sind es ja die gleichen
+ * Personen, die im Verein sind … mit denen man zusammenarbeitet").
+ *
+ * Every value as it stands, with how often it stands so — the browser
+ * splits „Volker Maier und Sebastian Schröder" into its two people and
+ * merges the spellings (pointwindow.js, peopleOffers), so the rule lives in
+ * ONE place and also covers what was typed since the page came. Only one's
+ * OWN finds: a name a friend wrote is his vocabulary, and a foreign find's
+ * finder is not somebody one has entered. The trash counts too — a name
+ * does not stop being a club member's because one find of his was thrown
+ * away.
+ *
+ * Read per page, not stored: a few thousand rows' JSON cost milliseconds,
+ * and a table of its own would have to be kept in step with every save,
+ * import and handover.
+ *
+ * @return array<int, array{0: string, 1: int}>  [value, count], most frequent first
+ */
+function person_names_written(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare("SELECT extra FROM map_points
+                            WHERE user_id = ? AND (extra LIKE '%\"Finder\"%' OR extra LIKE '%\"Bestimmer\"%')");
+    $stmt->execute([$userId]);
+    $count = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $json) {
+        $extra = json_decode((string) $json, true);
+        if (!is_array($extra)) {
+            continue;
+        }
+        foreach (['Finder', 'Bestimmer'] as $field) {
+            $value = trim((string) preg_replace('/\s+/u', ' ', (string) ($extra[$field] ?? '')));
+            if ($value !== '' && mb_strlen($value) <= 200) {
+                $count[$value] = ($count[$value] ?? 0) + 1;
+            }
+        }
+    }
+    arsort($count);
+    $out = [];
+    foreach (array_slice($count, 0, 500, true) as $value => $n) {
+        $out[] = [(string) $value, $n];
+    }
+    return $out;
+}

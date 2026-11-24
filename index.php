@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/data.php';
 require_once __DIR__ . '/includes/chat_window.php';
 require_once __DIR__ . '/includes/sequences.php';
 require_once __DIR__ . '/includes/find_fields.php';
+require_once __DIR__ . '/includes/person_names.php';
 require_once __DIR__ . '/includes/species_packages.php';   // species_group_shapes() for the start data
 require_once __DIR__ . '/includes/taxonomy.php';
 require_once __DIR__ . '/includes/map_layers.php';
@@ -106,6 +107,10 @@ $startData = [
        windows — the badge appears when a window is open (map.js,
        drawMappingOffer), and the map keeps the clock. */
     'mappingOffers' => $guest ? [] : excursion_mapping_offers($pdo, (int) $me['id']),
+    // The names one has written under Finder and Bestimmer, for their
+    // suggestions (person_names.php, pointwindow.js peopleOffers). A guest
+    // has written none.
+    'people' => $guest ? [] : person_names_written($pdo, (int) $me['id']),
     // the rest feeds the status line so the guest knows where he is.
     'guest' => $guest ? [
         'excursion' => (string) $actor['excursion']['name'],

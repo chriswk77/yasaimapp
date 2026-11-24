@@ -46,6 +46,7 @@ import * as timeRange from './timerange.js';
 import * as tour from './tour.js';
 import { differences, outlineEqual } from './fieldtimes.js';
 import { placeWritten } from './finddetails.js';
+import { bindPeople, peopleOffers } from './people.js';
 
 /**
  * The elements of the point window, by the names the code in
@@ -2860,6 +2861,14 @@ export function mountPointWindow(host) {
                    the title does. */
                 if (f.is_species) {
                     bindSpecies(input, () => true, () => f.species_groups ?? titleGroups());
+                }
+                /* The people written before (people.js): under Finder and
+                   Bestimmer, from one's own finds — the server's and the ones
+                   this page holds, which carry what was typed since. */
+                if (f.name === 'Finder' || f.name === 'Bestimmer') {
+                    bindPeople(input, () => peopleOffers(start.people,
+                        [...state.points.values()].flatMap(p => [p.extra?.Finder, p.extra?.Bestimmer])
+                            .filter(v => typeof v === 'string' && v.trim() !== '')));
                 }
             }
             input.id = elementId;

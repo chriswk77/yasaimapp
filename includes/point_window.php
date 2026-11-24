@@ -25,6 +25,7 @@ require_once __DIR__ . '/folders.php';
 require_once __DIR__ . '/friends.php';
 require_once __DIR__ . '/find_number.php';
 require_once __DIR__ . '/field_times.php';
+require_once __DIR__ . '/person_names.php';
 require_once __DIR__ . '/point_hints.php';
 require_once __DIR__ . '/cloud.php';
 
@@ -630,6 +631,8 @@ function point_window_start(PDO $pdo, array $me): array
 
     return [
         'user'    => ['id' => $userId, 'name' => user_display_name($me), 'isAdmin' => is_admin($me), 'finder' => $finder],
+        // The names under Finder and Bestimmer (person_names.php, pointwindow.js peopleOffers).
+        'people'  => person_names_written($pdo, $userId),
         'lists'   => lists_load($pdo, $userId),
         'folders' => folders_load($pdo, $userId),
         'shared'  => $shared,
