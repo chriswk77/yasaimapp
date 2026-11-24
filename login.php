@@ -108,9 +108,43 @@ page_header(t('Anmelden'));
         <?php foreach (LANGUAGES as $code => $name): ?>
             <?php if ($code !== array_key_first(LANGUAGES)) echo ' · '; ?>
             <?php if ($code === lang_current()): ?><?= h($name) ?><?php
-            else: ?><a href="?lang=<?= h($code) ?>"><?= h($name) ?></a><?php endif; ?>
+            else: ?><a class="lang-switch" href="?<?= h(http_build_query(array_filter(['lang' => $code, 'next' => $next]))) ?>"><?= h($name) ?></a><?php endif; ?>
         <?php endforeach; ?>
     </p>
+    <?php /* WHAT WAS TYPED SURVIVES THE SWITCH (24.11.2026: switching the
+         language below an already filled form emptied address and
+         password). The switch has to reload — every sentence comes from
+         the server — so the typed values ride along in sessionStorage:
+         this tab only, written on the click and removed the moment the
+         page is back. Turning the links into a POST of the form was the
+         discarded alternative: the server would have to write the password
+         back into the page's markup, and a page holding a password is
+         worse than a value that lives for one reload inside the tab. */ ?>
+    <script type="module">
+    const KEY = 'loginCarry';
+    const form = document.querySelector('form[method="post"]');
+    const field = name => form.elements[name];
+    try {
+        const kept = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+        sessionStorage.removeItem(KEY);
+        if (kept) {
+            if (kept.email && !field('email').value) field('email').value = kept.email;
+            if (kept.password) field('password').value = kept.password;
+            field('stay').checked = !!kept.stay;
+            (kept.email ? field('password') : field('email')).focus();
+        }
+    } catch { /* no storage, no carrying — the page works as before */ }
+    document.querySelectorAll('.lang-switch').forEach(link => link.addEventListener('click', () => {
+        if (!field('email').value && !field('password').value) return;
+        try {
+            sessionStorage.setItem(KEY, JSON.stringify({
+                email: field('email').value,
+                password: field('password').value,
+                stay: field('stay').checked,
+            }));
+        } catch { /* see above */ }
+    }));
+    </script>
     <?php /* What happens to an address typed in here — to be read BEFORE
          it is typed, so the link stands on the one page everybody sees
          first (pages/privacy.php, 20.11.2026). */ ?>
