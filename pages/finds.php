@@ -264,6 +264,15 @@ page_header(t('Fundbrowser'), [
              the key stands where it was left. Only where a tool is offered
              to this account — without one neither the frame nor the
              button above exists, and finds.js steps over both. */ ?>
+        <?php /* THE MICROSCOPE, AN AREA LIKE THE KEY (24.11.2026: „momentan
+             ist das Mikroskop ja ein Overlay-Modal. Das könnten wir dann
+             quasi in den Inhalt packen, wie den Schlüssel" — so that the
+             find's bar with its row stays the same in all three). The
+             microscope's <dialog> (gallery_windows.php) is moved in here by
+             finds.js and opened IN the page with show(), as the picture
+             viewer is in its tab; its own head is not drawn. On the map it
+             stays the full-screen window it was. */ ?>
+        <div class="finds-microview" id="finds-microview"></div>
         <?php if (module_first('key_tool', user_current()) !== null): ?>
         <div class="finds-keyview" id="finds-keyview" hidden>
             <iframe id="finds-key-frame" title="<?= h(t('Schlüssel')) ?>"></iframe>

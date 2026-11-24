@@ -322,12 +322,17 @@ function readableExposure(us) {
  * @param {() => boolean} host.microShrink  does a micrograph go up shrunk
  * @param {() => {line: string, seam: string}} host.lineColours  the
  *        account's measuring colours — a line in a picture wears them
- * @param {?{show: (area: 'find'|'key', pointId: number) => void, keyOffered: () => boolean}} host.areas
- *        the page behind the window, where it has the find's other areas
- *        (the Fundbrowser; pages/finds.php): show() brings one up when the
- *        window steps aside, keyOffered() says whether the find in front
- *        may be keyed. Null where the page has none — the window then only
- *        steps aside for whatever lies beneath it
+ * @param {?object} host.areas  the page around the window, where it has
+ *        the find's areas (the Fundbrowser; pages/finds.php, finds.js):
+ *          inPage      true: the window is one of those areas — opened IN
+ *                      the page with show(), its head not drawn
+ *          bind(api)   the page takes { aside(), end() } to step the
+ *                      window aside and to end the camera
+ *          ended()     the camera ended and the window closed for good
+ *          show(area, pointId), keyOffered()   for a window that is NOT in
+ *                      the page but stands over one with areas
+ *        Null where the page has none (the map) — the window is the
+ *        full-screen one, and steps aside for whatever lies beneath it
  * @param {() => {colour: string, seam: string, font: number}} host.scaleStyle
  *        the account's scale bar dress — the bar over the live picture
  *        wears it, as the photo window's does
@@ -2826,6 +2831,7 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         stop();
         endViews();
         report('');
+        areas?.ended?.();
     });
 
     // --- Fund · Mikroskop · Schlüssel -------------------------------------------
@@ -2859,6 +2865,31 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
     const views = el('microscope-views');
     const backBar = el('microscope-return');
 
+    /* AN AREA OF THE PAGE, WHERE THE PAGE HAS AREAS (24.11.2026: „momentan
+       ist das Mikroskop ja ein Overlay-Modal. Das könnten wir dann quasi in
+       den Inhalt packen, wie den Schlüssel"). In the Fundbrowser the find's
+       bar with the row Fund · Mikroskop · Schlüssel is to stay the same in
+       all three; a full-screen window over it brought a second head with a
+       second row. So there the <dialog> stands inside the page (finds.js
+       moves it) and is opened with show() — no backdrop, nothing made
+       inert, the find's bar above it alive. Everything else is the same
+       window: the same session, the same shutter, the same stepping aside.
+
+       What the head held comes down into the column's foot: the device
+       with its gear, and „Kamera aus" for the arrow — with show() Escape
+       closes nothing, and changing areas must not end the camera, so the
+       end needs a button of its own. On the map nothing changes. */
+    const inPage = areas?.inPage === true;
+    const raise = () => (inPage ? box.show() : box.showModal());
+    if (inPage) {
+        const foot = el('microscope-foot');
+        foot.prepend(box.querySelector('.microscope-head-end'));
+        foot.hidden = false;
+        // Over the tiles there is no find to come back to — the bar offers the camera's end instead.
+        el('microscope-return-button').hidden = true;
+        el('microscope-return-off').hidden = false;
+    }
+
     /* THE SIGN THAT THE CAMERA RUNS while the window stands aside: a class
        on the body, and the stylesheet paints it on the switch row's
        „Mikroskop" (app.css) — the row is the page's, and so is the sign. */
@@ -2866,15 +2897,23 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         document.body.classList.toggle('is-microscope-live', session !== null && view === 'aside');
     }
 
-    /** Aside for the page behind — the find itself, or its key. */
-    function stepAside(to) {
-        if (calibrating || view === 'aside') return;
+    /**
+     * Aside for the rest of the page — the find itself, or its key.
+     *
+     * @param {?string} to  the area the page is to show; null when the page
+     *        asked for this itself and knows where it is going
+     * @returns {boolean} false while a calibration holds the window
+     */
+    function stepAside(to = null) {
+        if (calibrating) return false;
+        if (view === 'aside' || !box.open) return true;
         view = 'aside';
         backBar.hidden = false;
         hideMediumInfo();
         markLive();
         box.close();
-        areas?.show(to, pointNow);
+        if (to !== null) areas?.show?.(to, pointNow);
+        return true;
     }
 
     /** In front again, as it was left. */
@@ -2883,9 +2922,24 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         view = 'microscope';
         backBar.hidden = true;
         markLive();
-        if (!box.open) box.showModal();
+        if (!box.open) raise();
         queueScaleBar();
     }
+
+    /** The camera's end from outside the window — the bar over the tiles, or the page. */
+    function end() {
+        if (box.open) {
+            box.close();   // the close handler does the rest
+            return;
+        }
+        if (calibrating) calibrateEnd();
+        stop();
+        endViews();
+        report('');
+        areas?.ended?.();
+    }
+    el('microscope-return-off').addEventListener('click', end);
+    areas?.bind?.({ aside: () => stepAside(), end });
 
     /** The window closed for good: nothing stands aside any more. */
     function endViews() {
@@ -2914,7 +2968,7 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         pointNow = pointId;
         // The third button only where the page behind has a key area for this find.
         const keyButton = views.querySelector('[data-area="key"]');
-        if (keyButton) keyButton.hidden = !(areas && pointId > 0 && areas.keyOffered());
+        if (keyButton) keyButton.hidden = !(pointId > 0 && areas?.keyOffered?.());
     }
 
     /**
@@ -2946,7 +3000,7 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         drawObjectives();
         drawMedia();
         light.disabled = true;
-        box.showModal();
+        raise();
         connect();
     }
 

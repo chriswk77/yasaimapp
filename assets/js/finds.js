@@ -136,9 +136,13 @@ document.getElementById('finds-fund-actions').append(
      (#finds-keyview, its address with embed=1). It takes the place of the
      tabs and their content; switching away only hides it, so it stands
      where it was left — the open couplet, the scrolled portrait.
-   - „Mikroskop" is the full-screen window it always was, opened over
-     either of the two. It steps aside for them and the camera runs on
-     (microscope.js); the row's button wears a dot while it does.
+   - „Mikroskop" is the microscope's window, standing IN the page under
+     the bar (#finds-microview; the same day: „das könnten wir dann quasi
+     in den Inhalt packen, wie den Schlüssel") — its <dialog> is moved in
+     here and opened with show(), so the bar and its row stay the same in
+     all three. For the other two it steps aside and the camera runs on
+     (microscope.js); the row's button wears a dot while it does. The
+     camera ends with „Kamera aus" at the foot of the microscope's column.
 
    THE KEY GOES ON WHERE MY WAY STANDS, AND ELSE BEGINS ONE — exactly what
    the two buttons did that the row replaces: „Zurück zum Schlüssel" showed
@@ -168,13 +172,19 @@ const areaSources = {
     key: document.getElementById('d-key'),
     keyBack: document.getElementById('d-key-back'),
 };
-let area = 'find';       // 'find' or 'key' — the microscope is a window over either
+let area = 'find';       // 'find', 'key' or 'microscope'
 let areasFind = 0;       // the find the areas stand at
 let keyFor = 0;          // the find whose key stands loaded in the frame
 let keyWarm = false;     // the key was used on this page: the next find's is loaded ahead
 let keyKnown = 0;        // the find whose ways are known by now (keyingsDrawn)
 let keyWaiting = [];     // whoever waits for that word
 let waysStale = false;   // the key saved a walk: the ways under „Art" are asked anew when the find shows
+
+/* The microscope's window into its area — before anything mounts it
+   (photogallery.js finds it by its id, wherever it stands). */
+const microBox = document.getElementById('microscope-window');
+if (microBox) document.getElementById('finds-microview').append(microBox);
+let micro = null;        // { aside(), end() } — the window's word, once it is mounted (areas.bind)
 
 const areaButton = (name) => areasBox.querySelector(`[data-area="${name}"]`);
 
@@ -239,27 +249,42 @@ function keyingsKnown(id) {
 }
 
 async function showArea(next) {
+    const id = current?.id ?? 0;
+    if (next === area || !(id > 0)) return;
+    /* OUT OF THE MICROSCOPE the window steps aside first, the camera running
+       on. It refuses while an objective is being calibrated — a line half
+       drawn is not left by a click on the row. */
+    if (area === 'microscope' && micro && !micro.aside()) return;
     if (next === 'microscope') {
-        // The window's own button: it knows the find, the camera and whether a session stands aside.
+        /* The window's own button opens it: it knows the find, the camera
+           and whether a session stands aside (photogallery.js). It opens
+           at once or not at all — a find not yet saved has no pictures. */
+        /* THE AREA FIRST, THEN THE WINDOW: opened inside a box that is not
+           drawn yet, the live picture would measure a stage of no size. */
+        const was = area;
+        paintArea('microscope');
         areaSources.microscope?.click();
+        if (!microBox?.open) paintArea(was);
         return;
     }
-    const id = current?.id ?? 0;
     if (next === 'key') {
-        if (!keyFrame || !(id > 0)) return;
+        if (!keyFrame) return;
         /* WHAT WAITS FOR THE AUTOSAVE GOES FIRST: a species confirmed in
            the key renames the find on the server, and a name still unsaved
            here would be written over it a second later. */
         if (cockpit?.dirty()) await cockpit.flush();
+        if ((current?.id ?? 0) !== id) return;
+        // In sight at once — the page inside may still be on its way.
+        paintArea('key');
         if (keyFor !== id) {
             await keyingsKnown(id);
             if (current?.id !== id) return;
             if (keyFor !== id) loadKey(id);
         }
+        keyFrame.focus();
+        return;
     }
-    if ((current?.id ?? 0) !== id) return;
     paintArea(next);
-    if (next === 'key') keyFrame.focus();
 }
 
 /** Another find stands in the page: the areas are its own from here on. */
@@ -268,6 +293,7 @@ function areasForFind(id) {
     areasFind = id;
     keyKnown = 0;
     waysStale = false;
+    if (area === 'microscope') micro?.aside();
     paintArea('find');
     if (keyFrame && keyFor !== id && keyFor !== 0) {
         // The old find's page goes — and saves its way on the way out (the tool's pagehide).
@@ -302,7 +328,13 @@ window.addEventListener('message', (e) => {
 
 /** What the page offers the windows mounted in it (cockpit.js hands it on). */
 const areas = {
-    // The microscope steps aside for the find or for its key.
+    /* The microscope is an area here, not a window over the page
+       (microscope.js, inPage). It hands over how to step it aside, and
+       says when its camera ended — the area has nothing to show then, and
+       the find comes back. */
+    inPage: !!microBox,
+    bind: (api) => { micro = api; },
+    ended: () => { if (area === 'microscope') paintArea('find'); },
     show: (to) => showArea(to),
     keyOffered: () => {
         const key = areaButton('key');
@@ -1328,7 +1360,10 @@ function showBrowse() {
     if (photoWindowEl.open) photoWindowEl.close();
     tools?.plates.close();
     lastKey = null;
-    // Back at the tiles the find's own view is what the next opening shows; its key stays loaded.
+    /* Back at the tiles the find's own view is what the next opening shows;
+       its key stays loaded, and a camera running runs on — the microscope
+       steps aside as for any other area. */
+    if (area === 'microscope') micro?.aside();
     paintArea('find');
     fund.hidden = true;
     browse.hidden = false;

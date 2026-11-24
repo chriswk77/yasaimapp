@@ -534,6 +534,20 @@ function gallery_windows_render(): void
                             <button type="button" class="button subtle small" id="microscope-whitebalance"><?= h(t('Weißabgleich')) ?></button>
                         </div>
                     </fieldset>
+                    <?php /* THE COLUMN'S FOOT, ONLY WHERE THE WINDOW IS AN AREA
+                         OF THE PAGE (the Fundbrowser; microscope.js, inPage).
+                         There the window's own head is not drawn — the
+                         find's bar stands above it —, and what the head
+                         held besides the name comes down here: the device
+                         and its gear (microscope.js moves them), and the
+                         one thing the arrow in the head did, ENDING THE
+                         CAMERA. Changing between the find's areas leaves
+                         it running; this button is how it stops. A submit
+                         of the dialog form, as the arrow is — one close for
+                         both. */ ?>
+                    <div class="microscope-foot" id="microscope-foot" hidden>
+                        <button type="submit" value="close" class="button subtle small" id="microscope-off"><?= icon('close') ?><?= h(t('Kamera aus')) ?></button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -547,6 +561,10 @@ function gallery_windows_render(): void
     <div class="microscope-return" id="microscope-return" hidden>
         <span class="hint-text small"><?= h(t('Die Kamera läuft weiter.')) ?></span>
         <button type="button" class="button" id="microscope-return-button"><?= icon('microscope') ?><?= h(t('Zurück zum Mikroskop')) ?></button>
+        <?php /* Over the Fundbrowser's tiles the microscope has no find to come
+             back to — it is an area of a find there. The bar still says
+             that the camera runs, and offers the one thing to do about it. */ ?>
+        <button type="button" class="button subtle" id="microscope-return-off" hidden><?= icon('close') ?><?= h(t('Kamera aus')) ?></button>
     </div>
 
     <?php /* Step 1: the outline -----------------------------------------------
