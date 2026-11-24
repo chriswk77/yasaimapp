@@ -7380,6 +7380,12 @@ a.chat-flyout-row:hover { color: var(--text); }
     text-decoration: none;
     font-size: .88rem;
 }
+/* A site with many pages wraps inside its chip (24.11.2026): Wikipedia
+   brings a hundred languages for a common species, and in one line the chip
+   ran out of the page and made the whole page scroll sideways. Wrapped, the
+   pill's round ends would cut into the lines, so its corners are a fixed
+   size here. */
+.web-links-chip.is-multi { flex-wrap: wrap; row-gap: .1rem; border-radius: 1rem; }
 .web-links-chip.is-multi a { color: var(--accent); }
 a.web-links-chip:hover { border-color: var(--accent); }
 
