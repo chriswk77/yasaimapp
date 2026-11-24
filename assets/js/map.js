@@ -11207,30 +11207,64 @@ function liveRows(raw) {
     return Array.isArray(raw) ? raw.filter(p => Array.isArray(p) && p.length >= 2) : [];
 }
 
+/* The three strokes of the running walk — halo, line, start — made ONCE
+   and then only moved. */
+let liveStrokes = null;
+
 function liveClear() {
     live.positions = [];
     live.startedAt = null;
     live.tourId = null;
     if (liveLayer) { liveLayer.clearLayers(); }
+    liveStrokes = null;
 }
 
+/* THE STROKES STAY, ONLY THEIR POINTS MOVE (24.11.2026, measured in the
+   app on the vector map). Every event used to throw the three strokes
+   away and draw three new ones. Leaflet does that in a blink; the vector
+   map turns every new stroke into a source of its own, and a new source
+   is cut into tiles in a worker before it can be shown — one to three
+   seconds in the emulator. The recorder fires every one to three
+   seconds, so each line was taken off before it ever appeared, and the
+   walk showed nothing until the events paused. setLatLngs() hands the
+   SAME source new data instead, and MapLibre keeps drawing the old tiles
+   until the new ones are cut — the line grows instead of blinking. */
 function liveDraw() {
     liveLayer ??= L.layerGroup().addTo(map);
-    liveLayer.clearLayers();
     const latlngs = live.positions.map(p => [p[0], p[1]]);
-    if (latlngs.length === 0) return;
-    trackRenderer ??= L.canvas({ padding: 0.5 });
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#96ff50';
-    if (latlngs.length >= 2) {
-        L.polyline(latlngs, { renderer: trackRenderer, ...TRACK_HALO, interactive: false, smoothFactor: 1.5 }).addTo(liveLayer);
-        L.polyline(latlngs, { renderer: trackRenderer, color: accent, ...TRACK_LINE, interactive: false, smoothFactor: 1.5 }).addTo(liveLayer);
+    if (latlngs.length === 0) {
+        liveLayer.clearLayers();
+        liveStrokes = null;
+        return;
     }
-    // The start as on every walk; the head is where the location marker
-    // stands, and a second dot there would only fight it.
-    L.circleMarker(latlngs[0], {
-        renderer: trackRenderer, radius: 5, weight: 2, color: '#000', opacity: .7,
-        fillColor: accent, fillOpacity: 1, interactive: false,
-    }).addTo(liveLayer);
+    // One position is a line of zero length — its round cap hides under
+    // the start dot, and the strokes exist from the first fix on.
+    const path = latlngs.length >= 2 ? latlngs : [latlngs[0], latlngs[0]];
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#96ff50';
+    if (!liveStrokes) {
+        trackRenderer ??= L.canvas({ padding: 0.5 });
+        liveStrokes = {
+            accent,
+            halo: L.polyline(path, { renderer: trackRenderer, ...TRACK_HALO, interactive: false, smoothFactor: 1.5 }).addTo(liveLayer),
+            line: L.polyline(path, { renderer: trackRenderer, color: accent, ...TRACK_LINE, interactive: false, smoothFactor: 1.5 }).addTo(liveLayer),
+            // The start as on every walk; the head is where the location
+            // marker stands, and a second dot there would only fight it.
+            start: L.circleMarker(latlngs[0], {
+                renderer: trackRenderer, radius: 5, weight: 2, color: '#000', opacity: .7,
+                fillColor: accent, fillOpacity: 1, interactive: false,
+            }).addTo(liveLayer),
+        };
+        return;
+    }
+    liveStrokes.halo.setLatLngs(path);
+    liveStrokes.line.setLatLngs(path);
+    liveStrokes.start.setLatLng(latlngs[0]);
+    // A theme switched during the walk dresses the line anew.
+    if (liveStrokes.accent !== accent) {
+        liveStrokes.accent = accent;
+        liveStrokes.line.setStyle({ color: accent });
+        liveStrokes.start.setStyle({ fillColor: accent });
+    }
 }
 
 /**
