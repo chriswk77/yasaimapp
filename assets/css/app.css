@@ -6296,13 +6296,17 @@ body:has(#finds-fund:not([hidden])) .microscope-return { display: none !importan
    frame. The page inside brings its own ground and its own scrolling, so
    the frame is the one scroll area here (trap 4). */
 .finds-fund[data-area="key"] > :not(.finds-fund-bar, .finds-keyview) { display: none !important; }
-.finds-keyview { flex: 1; min-height: 0; display: flex; padding-top: .6rem; }
+/* NO FRAME AND NO AIR AROUND IT (24.11.2026: „das Bestimmungsfenster hat
+   einen Rahmen, das brauchen wir nicht. Und um den Rahmen ist noch ein
+   Abstand. Da können wir noch ein bisschen Platz sparen"). The key is not a
+   window inside the find, it IS the find's area: it starts right under the
+   bar and reaches the page's edges, as the bar does. */
+.finds-keyview { flex: 1; min-height: 0; display: flex; margin-inline: calc(-1 * var(--page-edge)); }
 .finds-keyview iframe {
     flex: 1;
     width: 100%;
     min-height: 0;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border: 0;
     background: var(--ground);
 }
 .finds-fund > .detail-origin { display: none !important; }   /* „von …" stands behind the name (finds.js) */
