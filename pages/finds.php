@@ -107,7 +107,39 @@ page_header(t('Fundbrowser'), [
                  moves the elements here — they keep their ids, and
                  pointwindow.js goes on writing into them. */ ?>
             <div class="finds-fund-heading" id="finds-fund-heading"></div>
-            <div class="finds-fund-actions" id="finds-fund-actions"></div>
+            <div class="finds-fund-actions" id="finds-fund-actions">
+                <?php /* FUND · MIKROSKOP · SCHLÜSSEL, ONE ROW FOR ALL THREE
+                     (24.11.2026: „eine einheitliche Kopfzeile mit den 3
+                     Buttons … und dort switchen wir zwischen den Sachen …
+                     von allen drei Modulen kann man in jeweils die 2 anderen
+                     springen"). Whoever identifies a find changes between
+                     its pictures, the microscope and the key all the time,
+                     and every change used to be a page of its own: the key
+                     a full load away, the camera's session ended by it.
+                     Now the three are areas of the ONE find that stands in
+                     this page, and nothing is loaded anew between them —
+                     the key's page lives in the frame below, the microscope
+                     is the window it always was, with the same row in its
+                     head (gallery_windows.php).
+
+                     ALL THREE FOLLOW THE FIND („der Fundwechsel wechselt
+                     alle Module mit … wir bleiben nicht bei einem alten Stand
+                     in irgendeinem Modul hängen"): another find opened here
+                     is the find the camera saves to and the key keys for
+                     (finds.js, areas).
+
+                     The two buttons beside „Fund" show only where their
+                     area can work — finds.js mirrors the point window's own
+                     „Mikroskopieren" and „Schlüsseln", which keep deciding
+                     that and stay in the page unseen. */ ?>
+                <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
+                    <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
+                    <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
+                    <?php if (module_first('key_tool', user_current()) !== null): ?>
+                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
         <?php /* THE FIND'S TABS, EACH WITH THE WHOLE WIDTH
              (12.10.2026: „komplett in eine Tab-Ansicht … dann haben wir für
@@ -223,6 +255,20 @@ page_header(t('Fundbrowser'), [
                 <aside class="finds-face" id="finds-face" aria-label="<?= h(t('Bilder, Dateien und Sequenzen des Fundes')) ?>"></aside>
             </div>
         </div>
+        <?php /* THE KEY FOR THIS FIND, under the find's bar — the key tool's
+             page itself, without its header bar (its address with embed=1;
+             includes/modules.php, key_tool). It takes the place of the
+             tabs and their content while the area „Schlüssel" shows
+             (data-area on the section, app.css), and STAYS LOADED while
+             the find stays: back from the microscope or from the pictures,
+             the key stands where it was left. Only where a tool is offered
+             to this account — without one neither the frame nor the
+             button above exists, and finds.js steps over both. */ ?>
+        <?php if (module_first('key_tool', user_current()) !== null): ?>
+        <div class="finds-keyview" id="finds-keyview" hidden>
+            <iframe id="finds-key-frame" title="<?= h(t('Schlüssel')) ?>"></iframe>
+        </div>
+        <?php endif; ?>
     </section>
 </div>
 <?php photo_window_render(); ?>

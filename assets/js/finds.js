@@ -108,39 +108,229 @@ titleRow.className = 'finds-fund-titlerow';
 titleRow.append(fundTitle, fundOwner);
 document.getElementById('finds-fund-heading').append(titleRow, factsLine, fundWhere);
 const factsTable = document.getElementById('d-facts-more');
-// „Zurück zum Schlüssel" first: a word among the signs, and the one that is due when it shows.
+// After the switch row (pages/finds.php); the first three stand there unseen, see below.
 document.getElementById('finds-fund-actions').append(
     ...[document.getElementById('d-photo-microscope'), document.getElementById('d-key-back'),
         document.getElementById('d-key')].filter(Boolean),
     document.getElementById('d-center'), document.getElementById('d-delete'),
     document.getElementById('d-facts-toggle'));
-/* MIKROSKOPIEREN AND SCHLÜSSELN IN THE BAR (20.11.2026: „oben
-   in der Kopfzeile … den Button mikroskopieren und einen Button schlüsseln,
-   falls ich schlüsseln darf … Und die Buttons, wo sie vorher waren … die
-   kannst du entfernen" — first in the middle, then the same hour: „doch
-   nicht in die Mitte der Kopfzeile, sondern rechts an den Rand. Zu dem
-   Löschen und zum Punkt gehen Button dazu"). The two buttons MOVE into the
-   actions, ids and all: microscope.js still shows „Mikroskopieren" only
-   where a camera is set up and a cloud takes the uploads, photogallery.js
-   still opens it, and pointwindow.js still shows the key only to whoever
-   may read the keys and write the find's species (drawKeyings) and leads
-   it to the identification module. Before, „Mikroskop" stood in the
-   pictures' rail and the key as a bare sign behind „Art". The map's point
-   window keeps both where they were.
-   ONE PLACE FOR THE KEY (the same message: „Für den Schlüssel gibt es in
-   der Kopfzeile ja schon einen Button zurück zum Schlüssel. Das ist im
-   Prinzip der gleiche Button dann, der nur seine Aufschrift ändert"):
-   „Zurück zum Schlüssel" stands right before „Schlüsseln", and while it
-   shows, „Schlüsseln" steps back (app.css) — one button that changes its
-   words. */
-{
-    const key = document.getElementById('d-key');
-    if (key) {
-        key.className = 'button subtle small';
-        key.append(t('Schlüsseln'));
-        key.removeAttribute('aria-label');
+/* MIKROSKOPIEREN AND SCHLÜSSELN STAND IN THE BAR UNSEEN. On 20.11.2026 the
+   two buttons moved up here out of the pictures' rail and from behind „Art"
+   („oben in der Kopfzeile … den Button mikroskopieren und einen Button
+   schlüsseln, falls ich schlüsseln darf"), ids and all: microscope.js
+   still shows „Mikroskopieren" only where a camera is set up and a cloud
+   takes the uploads, photogallery.js still opens it, and pointwindow.js
+   still shows the key only to whoever may read the keys and write the
+   find's species (drawKeyings). Since 24.11.2026 the switch row beside
+   them is what one sees and presses (the areas, below) — the buttons keep
+   DECIDING, and the row mirrors them; app.css hides them here. The map's
+   point window keeps both as they were. */
+
+// --- Fund · Mikroskop · Schlüssel ---------------------------------------------
+
+/* THE FIND'S THREE AREAS, ONE CLICK APART AND NOTHING LOADED ANEW
+   (pages/finds.php says what was asked for, 24.11.2026). How they live:
+
+   - „Fund" is this page as it stands: the tabs, the pictures, the viewer.
+   - „Schlüssel" is the key tool's page in the frame under the bar
+     (#finds-keyview, its address with embed=1). It takes the place of the
+     tabs and their content; switching away only hides it, so it stands
+     where it was left — the open couplet, the scrolled portrait.
+   - „Mikroskop" is the full-screen window it always was, opened over
+     either of the two. It steps aside for them and the camera runs on
+     (microscope.js); the row's button wears a dot while it does.
+
+   THE KEY GOES ON WHERE MY WAY STANDS, AND ELSE BEGINS ONE — exactly what
+   the two buttons did that the row replaces: „Zurück zum Schlüssel" showed
+   while a way of mine stood open at the find and led to it (resume=1),
+   „Schlüsseln" otherwise began a new way at the species in the field. The
+   row asks the same question of the same button (keyBack shown or not).
+   How ways are begun, shown and removed is to be gone through with the
+   maintainer in detail later („da sprechen wir dann nochmal im Detail
+   drüber") — until then nothing about it changes here.
+
+   ALL THREE FOLLOW THE FIND. Another find opened is the find the key keys
+   for: the frame lets the old find's page go (which saves its way, the
+   tool's own pagehide) and loads the new find's. The camera follows through
+   „Mikroskop" itself (photogallery.js: every press names the find in the
+   page). Nothing stays behind at an old find.
+
+   LOADED AHEAD ONCE THE KEY IS IN USE (keyWarm): the tool's page fetches
+   its books at every start — about a megabyte — and that would be the one
+   wait left between the areas. Whoever has used the key on this page gets
+   the next find's key loaded while still looking at its pictures. Not
+   before the first use: most finds are only looked at. */
+const areasBox = document.getElementById('finds-areas');
+const keyViewBox = document.getElementById('finds-keyview');
+const keyFrame = document.getElementById('finds-key-frame');
+const areaSources = {
+    microscope: document.getElementById('d-photo-microscope'),
+    key: document.getElementById('d-key'),
+    keyBack: document.getElementById('d-key-back'),
+};
+let area = 'find';       // 'find' or 'key' — the microscope is a window over either
+let areasFind = 0;       // the find the areas stand at
+let keyFor = 0;          // the find whose key stands loaded in the frame
+let keyWarm = false;     // the key was used on this page: the next find's is loaded ahead
+let keyKnown = 0;        // the find whose ways are known by now (keyingsDrawn)
+let keyWaiting = [];     // whoever waits for that word
+let waysStale = false;   // the key saved a walk: the ways under „Art" are asked anew when the find shows
+
+const areaButton = (name) => areasBox.querySelector(`[data-area="${name}"]`);
+
+/** The row as the two unseen buttons say: which areas this find has. */
+function syncAreas() {
+    const mic = areaButton('microscope');
+    const key = areaButton('key');
+    if (mic) {
+        mic.hidden = !areaSources.microscope || areaSources.microscope.hidden;
+        mic.disabled = areaSources.microscope?.disabled === true;
+    }
+    /* A foreign find's key is not mine to walk — but somebody's way opened
+       from its line under „Art" stands in the key area all the same, and
+       the row must show where one is. */
+    if (key) key.hidden = !keyFrame || ((!areaSources.key || areaSources.key.hidden) && area !== 'key');
+    // A switch of one is no switch.
+    areasBox.hidden = (!mic || mic.hidden) && (!key || key.hidden);
+}
+for (const source of [areaSources.microscope, areaSources.key]) {
+    if (source) new MutationObserver(syncAreas).observe(source, { attributes: true, attributeFilter: ['hidden', 'disabled'] });
+}
+
+/** The area in sight — the row's mark, the frame, the section's data-area (app.css). */
+function paintArea(next) {
+    const was = area;
+    area = next;
+    fund.dataset.area = next;
+    if (keyViewBox) keyViewBox.hidden = next !== 'key';
+    for (const b of areasBox.querySelectorAll('[data-area]')) {
+        const on = b.dataset.area === next;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-pressed', String(on));
+    }
+    syncAreas();
+    /* Back in the find: the map of the tab „Karte" was hidden meanwhile and
+       measures itself anew, as on every showing. */
+    if (was === 'key' && next === 'find' && current && tab === 'place') cockpit?.mapShown();
+    if (next === 'find' && waysStale && current) {
+        waysStale = false;
+        cockpit?.waysChanged();
     }
 }
+
+/** Load the key tool's page for a find into the frame — my way, or the one asked for. */
+function loadKey(id, params = null) {
+    if (!keyFrame || !START.keyTool) return;
+    keyFor = id;
+    keyWarm = true;
+    const name = document.getElementById('d-title')?.value.trim() ?? '';
+    const mine = areaSources.keyBack && !areaSources.keyBack.hidden ? { find: id, resume: 1, name } : { find: id, name };
+    // The tool's page with the core's parameters (includes/modules.php, key_tool).
+    keyFrame.src = `${START.keyTool.url}?` + new URLSearchParams({ ...(params ?? mine), embed: 1 });
+}
+
+/** Once the find's ways are known — or after four seconds, whichever comes first. */
+function keyingsKnown(id) {
+    if (keyKnown === id) return Promise.resolve();
+    return new Promise((resolve) => {
+        keyWaiting.push(resolve);
+        setTimeout(resolve, 4000);
+    });
+}
+
+async function showArea(next) {
+    if (next === 'microscope') {
+        // The window's own button: it knows the find, the camera and whether a session stands aside.
+        areaSources.microscope?.click();
+        return;
+    }
+    const id = current?.id ?? 0;
+    if (next === 'key') {
+        if (!keyFrame || !(id > 0)) return;
+        /* WHAT WAITS FOR THE AUTOSAVE GOES FIRST: a species confirmed in
+           the key renames the find on the server, and a name still unsaved
+           here would be written over it a second later. */
+        if (cockpit?.dirty()) await cockpit.flush();
+        if (keyFor !== id) {
+            await keyingsKnown(id);
+            if (current?.id !== id) return;
+            if (keyFor !== id) loadKey(id);
+        }
+    }
+    if ((current?.id ?? 0) !== id) return;
+    paintArea(next);
+    if (next === 'key') keyFrame.focus();
+}
+
+/** Another find stands in the page: the areas are its own from here on. */
+function areasForFind(id) {
+    if (areasFind === id) return;
+    areasFind = id;
+    keyKnown = 0;
+    waysStale = false;
+    paintArea('find');
+    if (keyFrame && keyFor !== id && keyFor !== 0) {
+        // The old find's page goes — and saves its way on the way out (the tool's pagehide).
+        keyFrame.src = 'about:blank';
+        keyFor = 0;
+    }
+}
+
+areasBox.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-area]');
+    if (b && !b.disabled) showArea(b.dataset.area);
+});
+
+/* The key's word (the tool's message, includes/modules.php names its
+   type and its events). „Beenden" or a confirmed species lead back to the
+   find; a walk saved only marks the ways under „Art" as old — they are
+   asked anew when the find shows, or at once where it shows already (the
+   save comes 600 ms after the last answer, often after the switch).
+   Only from this origin, from the frame, and about the find in the page. */
+window.addEventListener('message', (e) => {
+    if (!keyFrame || e.origin !== location.origin || e.source !== keyFrame.contentWindow) return;
+    const d = e.data;
+    if (d?.type !== 'yasaimapp-keying' || Number(d.find) !== current?.id) return;
+    waysStale = true;
+    if (d.event === 'saved') {
+        if (area === 'find') paintArea('find');
+        return;
+    }
+    if (d.event === 'confirmed' && d.name) cockpit?.speciesConfirmed(current.id);
+    showArea('find');
+});
+
+/** What the page offers the windows mounted in it (cockpit.js hands it on). */
+const areas = {
+    // The microscope steps aside for the find or for its key.
+    show: (to) => showArea(to),
+    keyOffered: () => {
+        const key = areaButton('key');
+        return !!key && !!areaSources.key && !areaSources.key.hidden;
+    },
+    /* A way under „Art" (pointwindow.js): into the frame as asked for.
+       Somebody else's way is looked at, not mine — the next „Schlüssel"
+       loads my own again. */
+    keyOpen: async (params, own) => {
+        const id = current?.id ?? 0;
+        if (!keyFrame || !(id > 0) || Number(params.find) !== id) return;
+        if (cockpit?.dirty()) await cockpit.flush();
+        if (current?.id !== id) return;
+        loadKey(id, params);
+        if (!own) keyFor = 0;
+        paintArea('key');
+        keyFrame.focus();
+    },
+    keyingsDrawn: (id) => {
+        if (!(id > 0) || id !== current?.id) return;
+        keyKnown = id;
+        for (const resolve of keyWaiting.splice(0)) resolve();
+        syncAreas();
+        // Ahead of the click, once the key is in use on this page (the head of this block).
+        if (keyWarm && area === 'find' && keyFor !== id && areas.keyOffered()) loadKey(id);
+    },
+};
+
 // „Zeigen" as a sign alone, like its neighbours (pages/finds.php says why) — the word stays as tooltip.
 {
     const show = document.getElementById('d-center');
@@ -1138,6 +1328,8 @@ function showBrowse() {
     if (photoWindowEl.open) photoWindowEl.close();
     tools?.plates.close();
     lastKey = null;
+    // Back at the tiles the find's own view is what the next opening shows; its key stays loaded.
+    paintArea('find');
     fund.hidden = true;
     browse.hidden = false;
     // The find just left: its tile as the find stands now — or the whole list, where it came in meanwhile (listReload).
@@ -1162,6 +1354,7 @@ function drawFund(f) {
     choose(f.id);
     browse.hidden = true;
     fund.hidden = false;
+    areasForFind(f.id);
     /* The rail keeps its place per find (scrollkeep.js): back from the map,
        after a reload, out of another tab — the pictures stand where one
        left them. Another find is other pictures and starts at the top. */
@@ -2230,6 +2423,7 @@ function loadDetail(f) {
                     mapAddress: (id) => MAP + '?point=' + id,
                     mapBox: document.getElementById('finds-map'),
                     savedLine: document.getElementById('finds-saved'),
+                    areas,
                 });
                 cockpit.overview(finds);
             }

@@ -1712,12 +1712,10 @@ export function mountPhotoGallery(host) {
            reads them too — one list for the page. */
         setPresets: (list) => { start.photo_scales = list; },
         cloudReady: () => start.cloudUpload === true,
-        // The view „Schlüssel" — the key tool's address, where a module offers one to this account.
-        keyTool: () => start.keyTool?.url ?? null,
-        /* A species confirmed in the window's key changed the find's name on
-           the server; the page behind takes the find in afresh, or its next
-           autosave would write the old name back (host.speciesConfirmed). */
-        keyConfirmed: (pointId, name) => host.speciesConfirmed?.(pointId, name),
+        /* The find's other areas, where the page has them (the Fundbrowser;
+           pages/finds.php): the window steps aside for the find or for its
+           key, and the page shows which. The map has none. */
+        areas: host.areas ?? null,
         microShrink: () => measureStyle.micro_shrink !== false,
         lineColours: () => ({ line: measureStyle.line_color ?? '#000000', seam: measureStyle.seam_color ?? '#ffffff' }),
         scaleStyle: () => ({ colour: measureStyle.scale_color ?? '#000000', seam: measureStyle.scale_seam_color ?? '#ffffff',
@@ -1739,9 +1737,13 @@ export function mountPhotoGallery(host) {
         },
     });
 
-    /* The find the window was opened for — a click in the map behind it
-       cannot change it, the window is modal; this only keeps the uploads
-       of a closed window on the right find. */
+    /* The find the window works for. While it stands in front nothing
+       behind it can be clicked — the window is modal —, but stepped aside
+       the page may show another find by the time „Mikroskop" is pressed
+       again, and the camera FOLLOWS (24.11.2026: „wird dann ab da zu
+       diesem Fund gespeichert"; microscope.js, open): every press sets
+       the find anew. A still taken before keeps its own — save() above
+       read the number when the shutter fell. */
     let microscopePoint = 0;
 
     photoFields.microscope?.addEventListener('click', () => {

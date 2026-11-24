@@ -6256,9 +6256,55 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
 .finds-fund-heading .finds-fund-title { min-width: 0; line-height: var(--symbol-size); }
 .finds-fund-owner { flex: none; color: var(--text-quiet); font-size: .95rem; }
 .finds-fund-actions { margin-left: auto; display: flex; align-items: center; gap: .4rem; }
-/* THE KEY'S ONE PLACE (finds.js, 20.11.2026): while „Zurück zum Schlüssel"
-   shows, „Schlüsseln" beside it steps back — one button, two words. */
-.finds-fund-actions #d-key-back:not([hidden]) + #d-key { display: none; }
+/* FUND · MIKROSKOP · SCHLÜSSEL (pages/finds.php, finds.js: the areas;
+   24.11.2026). The row is the same in the find's bar and in the
+   microscope window's head: three quiet buttons, the area in sight on the
+   stronger surface and bold — the dress of the page's own header buttons
+   (.app-tab), because it is the same kind of choice one level down.
+   „Mikroskopieren", „Schlüsseln" and „Zurück zum Schlüssel" stand in the
+   bar unseen: they keep deciding what this find offers, and the row
+   mirrors them. !important because pointwindow.css gives them a display of
+   its own. */
+.area-switch { display: flex; align-items: center; gap: .35rem; }
+.area-switch .button.is-active {
+    background: color-mix(in srgb, var(--text) 20%, transparent);
+    color: var(--text);
+    font-weight: 600;
+}
+.finds-fund-actions .area-switch { margin-right: .5rem; }
+.finds-fund-actions :is(#d-photo-microscope, #d-key, #d-key-back) { display: none !important; }
+/* THE CAMERA RUNS while the window stands aside (microscope.js, markLive):
+   a dot on the row's „Mikroskop" — green, because it says „on", and it is
+   the way back to it. */
+.area-switch [data-area="microscope"] { position: relative; }
+body.is-microscope-live .area-switch [data-area="microscope"]::after {
+    content: "";
+    position: absolute;
+    top: -.2rem;
+    right: -.2rem;
+    width: .6rem;
+    height: .6rem;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 2px var(--ground-2);
+}
+/* Inside a find the row leads back to the microscope; the bar at the
+   bottom is for where no row shows (gallery_windows.php). */
+body:has(#finds-fund:not([hidden])) .microscope-return { display: none !important; }
+/* THE KEY TAKES THE PLACE OF THE TABS AND THEIR CONTENT: the find's bar
+   stays — its name, the row —, everything beneath it gives way to the
+   frame. The page inside brings its own ground and its own scrolling, so
+   the frame is the one scroll area here (trap 4). */
+.finds-fund[data-area="key"] > :not(.finds-fund-bar, .finds-keyview) { display: none !important; }
+.finds-keyview { flex: 1; min-height: 0; display: flex; padding-top: .6rem; }
+.finds-keyview iframe {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground);
+}
 .finds-fund > .detail-origin { display: none !important; }   /* „von …" stands behind the name (finds.js) */
 /* CLOSER TO THE PAGE'S TOP (13.10.2026: „etwas höher an die
    Hauptkopfzeile setzen, etwas näher dran" — a third of the padding then;

@@ -286,6 +286,11 @@ export function mountCockpit(start, host) {
         hintLeave: nothing,
         // The key behind „Art" leaves the page: what waits for the autosave goes first.
         beforeLeave: () => saveNow(),
+        /* The key BESIDE the find, where the page has that area (finds.js,
+           areas): a way under „Art" opens there, and the area hears when
+           the find's ways are known. */
+        keyOpen: host.areas ? (params, own) => host.areas.keyOpen(params, own) : null,
+        keyingsDrawn: (id) => host.areas?.keyingsDrawn(id),
         // A name picked from the species list: saved at once (choosingSpecies says why).
         speciesPicked: () => { saveNow(); },
         syncExcursions: async () => {},
@@ -360,18 +365,8 @@ export function mountCockpit(start, host) {
         state,
         drawList: nothing,
         pointReady: async (point) => (point ? state.points.get(point.id) ?? null : null),
-        /* A species confirmed in the microscope window's key: the server
-           renamed the find while this page stood still behind the window.
-           Taken in afresh — through fillDetail's guard, which leaves typed
-           fields alone — or the next autosave writes the old name back. */
-        speciesConfirmed: async (id) => {
-            try {
-                const fresh = await request(`points.php?id=${id}`);
-                if (!state.points.has(id)) return;
-                state.points.set(id, fresh);
-                if (state.selectedId === id) windowApi.fillDetail(fresh);
-            } catch { /* the next load brings it */ }
-        },
+        // The find's other areas (pages/finds.php) — the microscope steps aside for them.
+        areas: host.areas ?? null,
         status: (text, isError = false) => host.status(text, isError),
         get filesOffered() { return filesOffered; },
         set filesOffered(v) { filesOffered = v; },
@@ -382,6 +377,25 @@ export function mountCockpit(start, host) {
     return {
         /** The find's other files, to open and fetch from elsewhere on the page (the overview). */
         files: pointFiles,
+
+        /**
+         * A species confirmed in the key beside the find (finds.js, areas):
+         * the server renamed the find while its texts stood still in the
+         * page. Taken in afresh — through fillDetail's guard, which leaves
+         * typed fields alone — or the next autosave writes the old name back.
+         */
+        /** The find's ways changed in the key beside it: the lines under „Art" and „a way of mine stands open" anew. */
+        waysChanged: () => windowApi.keyingsRefresh(),
+
+        async speciesConfirmed(id) {
+            try {
+                const fresh = await request(`points.php?id=${id}`);
+                if (!state.points.has(id)) return;
+                state.points.set(id, fresh);
+                if (state.selectedId === id) windowApi.fillDetail(fresh);
+                host.changed?.(fresh);   // the tile and the head take the new name too
+            } catch { /* the next load brings it */ }
+        },
 
         /** Draw the Belege of the open find again — after the viewer changed a name or removed a picture. */
         redrawGallery() {

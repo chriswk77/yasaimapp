@@ -1871,6 +1871,26 @@ export function mountPointWindow(host) {
      * quiet refill after a save.
      */
     async function drawKeyings(point, force = false) {
+        /* The page's key area waits for the end of this (finds.js, areas):
+           only then is it known whether a way of mine stands open at the
+           find — which decides whether its key goes on there or begins
+           anew. SAID ONCE PER FIND, WHEN EVERY RUN FOR IT HAS SETTLED: a
+           quiet refill returns at once while the first run still waits for
+           the server, and its early word would say „no way stands open". */
+        const id = point?.id ?? null;
+        if (keyingsRuns?.id !== id) keyingsRuns = { id, open: 0 };
+        const runs = keyingsRuns;
+        runs.open++;
+        try {
+            await drawKeyingsNow(point, force);
+        } finally {
+            runs.open--;
+        }
+        if (runs.open === 0 && keyingsRuns === runs) host.keyingsDrawn?.(id);
+    }
+    let keyingsRuns = null;
+
+    async function drawKeyingsNow(point, force) {
         if (!keyButton || !keyingsBox) return;
         const id = point?.id ?? null;
         keyButton.hidden = !(start.keyTool && id > 0 && !fields.title.disabled && !GUEST);
@@ -1932,6 +1952,17 @@ export function mountPointWindow(host) {
             const el = document.createElement(href ? 'a' : 'span');
             el.className = 'detail-keying-way';
             if (href) el.href = href;
+            /* WHERE THE PAGE HAS THE KEY BESIDE THE FIND (the Fundbrowser;
+               finds.js, areas) the way opens THERE — no page is left, the
+               camera of a microscope standing aside runs on. The address
+               stays on the line for a new tab. */
+            if (href && host.keyOpen) {
+                el.addEventListener('click', (e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                    e.preventDefault();
+                    host.keyOpen({ find: id, user: entry.user_id, ...(way?.n != null ? { way: way.n } : {}) }, entry === answer.mine);
+                });
+            }
             /* THE BOOK AND THE RESULT, NOTHING BETWEEN (05.11.2026:
                „Das ist zu viel Text dort … Nur das Buch und das Ergebnis und
                keine anderen Schlüsselwege … wenn man auf das Buch klickt,
@@ -4184,6 +4215,11 @@ export function mountPointWindow(host) {
     return {
         /** The Fundbrowser's autosave — saveDetail without toast, refill or stepping aside. */
         autoSave: () => saveDetail({ quiet: true }),
+        /** The ways under „Art" asked of the server anew — they changed in the key beside the find (finds.js, areas). */
+        keyingsRefresh: () => {
+            const point = state.points.get(state.selectedId) ?? state.sharedPoints.get(state.selectedId);
+            if (point) drawKeyings(point, true);
+        },
         detailDirty,
         detailPhotoTab,
         detailState,

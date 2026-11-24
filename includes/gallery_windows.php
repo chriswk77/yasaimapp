@@ -250,21 +250,29 @@ function gallery_windows_render(): void
                      microscoping, the window itself says. */ ?>
                 <h2 id="microscope-point"></h2>
                 <p class="hint-text small"><?= h(t('Mikroskopieren')) ?></p>
-                <?php /* MICROSCOPE · PICTURES · KEY, ONE CLICK APART
-                     (05.11.2026: „ich brauche einen weg zwischen mikroskopieren
-                     Bilder und schlüssel ich muß ständig dazwischen wechseln
-                     beim schlüsseln", and asked: „Umschalten"). The camera
-                     runs on in every view; no page is left, no objective
-                     asked again (microscope.js, setView). */ ?>
-                <div class="microscope-views" id="microscope-views" role="group" aria-label="<?= h(t('Ansicht')) ?>">
-                    <button type="button" class="button subtle small is-active" data-view="microscope" aria-pressed="true"><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
-                    <button type="button" class="button subtle small" data-view="pictures" aria-pressed="false"><?= icon('photo') ?><?= h(t('Bilder')) ?></button>
-                    <?php /* The third view only where a module offers a key tool to
-                         this account (includes/modules.php, key_tool) — without
-                         one neither the button nor its frame below exists, and
-                         microscope.js steps over both. */ ?>
+                <?php /* FUND · MIKROSKOP · SCHLÜSSEL — THE SAME ROW AS IN THE
+                     FIND'S BAR (pages/finds.php says why; 24.11.2026: „eine
+                     einheitliche Kopfzeile mit den 3 Buttons"). It began
+                     here on 05.11.2026 as the window's own three views
+                     („ich brauche einen weg zwischen mikroskopieren Bilder
+                     und schlüssel ich muß ständig dazwischen wechseln beim
+                     schlüsseln"), with the key's page inside the window.
+                     Now the key lives in the page behind, where it outlasts
+                     the window („den Schlüssel direkt aus dem Mikroskop
+                     brauchen wir dann nicht mehr"), and both other buttons
+                     do the same thing: the window STEPS ASIDE for the page
+                     and the camera runs on — no objective asked again
+                     (microscope.js, stepAside). */ ?>
+                <div class="area-switch microscope-views" id="microscope-views" role="group" aria-label="<?= h(t('Bereich')) ?>">
+                    <button type="button" class="button subtle small" data-area="find" aria-pressed="false"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
+                    <button type="button" class="button subtle small is-active" data-area="microscope" aria-pressed="true"><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
+                    <?php /* The third only where the page behind has a key area
+                         for this find (the host's areas.keyOffered) — on the
+                         map there is none, and without a key tool
+                         (includes/modules.php, key_tool) the button does not
+                         exist at all. */ ?>
                     <?php if (module_first('key_tool', user_current()) !== null): ?>
-                    <button type="button" class="button subtle small" data-view="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
+                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
                     <?php endif; ?>
                 </div>
                 <?php /* THE DEVICE IN THE HEAD (04.11.2026: „Die
@@ -528,21 +536,14 @@ function gallery_windows_render(): void
                     </fieldset>
                 </div>
             </div>
-            <?php /* THE KEY FOR THIS FIND, in the window — the key tool's page
-                 itself, without its header bar (its address with embed=1).
-                 Loaded once per find and kept, so switching back finds it
-                 where it was. Only where a tool is offered (see the views'
-                 third button above). */ ?>
-            <?php if (module_first('key_tool', user_current()) !== null): ?>
-            <div class="microscope-keyview" id="microscope-keyview" hidden>
-                <iframe id="microscope-key-frame" title="<?= h(t('Schlüssel')) ?>"></iframe>
-            </div>
-            <?php endif; ?>
         </form>
     </dialog>
-    <?php /* BACK FROM THE PICTURES: the window steps aside for the gallery
+    <?php /* BACK FROM THE PAGE: the window steps aside for what lies
          underneath — the find's own pictures, with everything the page does
-         with them — and the camera runs on. This bar is the way back. */ ?>
+         with them — and the camera runs on. This bar is the way back WHERE
+         NO SWITCH ROW SHOWS: on the map, and over the Fundbrowser's tiles.
+         Inside a find there the row's „Mikroskop" leads back and wears the
+         sign that the camera runs (app.css hides the bar there). */ ?>
     <div class="microscope-return" id="microscope-return" hidden>
         <span class="hint-text small"><?= h(t('Die Kamera läuft weiter.')) ?></span>
         <button type="button" class="button" id="microscope-return-button"><?= icon('microscope') ?><?= h(t('Zurück zum Mikroskop')) ?></button>

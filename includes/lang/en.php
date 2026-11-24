@@ -10628,4 +10628,8 @@ return [
         => 'Please read the rules and tick that you will keep to them.',
     'Ich halte mich an die <a href="%s" target="_blank" rel="noopener">Regeln</a>.'
         => 'I will keep to the <a href="%s" target="_blank" rel="noopener">rules</a>.',
+
+    // Fund · Mikroskop · Schlüssel — the find's three areas (24.11.2026).
+    'Bereich'
+        => 'Area',
 ];

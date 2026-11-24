@@ -28,9 +28,13 @@
  *         resume  1 = go on where this account's walk stands
  *         user    whose walk is to be shown (another keyer's, read only)
  *         way     which of that walk's ways
- *         embed   1 = inside another page's window, without the header
- *       Inside a window the tool answers by postMessage with the type
- *       'yasaimapp-keying' (assets/js/microscope.js reads it).
+ *         embed   1 = inside another page's frame, without the header
+ *       Inside a frame the tool answers by postMessage with the type
+ *       'yasaimapp-keying' and { event, find, name? } — the Fundbrowser's
+ *       key area reads it (assets/js/finds.js, areas):
+ *         'done' | 'confirmed'  the tool is finished here, show the find
+ *                               again ('confirmed' with the species' name)
+ *         'saved'               the walk at the find changed on the server
  *
  *   walk_writer(array $user): bool
  *       may this account store a walk at a find (includes/point_keyings.php)

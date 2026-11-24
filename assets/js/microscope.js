@@ -322,17 +322,18 @@ function readableExposure(us) {
  * @param {() => boolean} host.microShrink  does a micrograph go up shrunk
  * @param {() => {line: string, seam: string}} host.lineColours  the
  *        account's measuring colours — a line in a picture wears them
- * @param {() => ?string} host.keyTool  the address of the key tool's page for
- *        this account, or null — the view „Schlüssel" is offered only with one
- * @param {(pointId: number, name: string) => void} host.keyConfirmed  a
- *        species was confirmed in the key: the find's name changed on the
- *        server, and the page behind the window must take it in
+ * @param {?{show: (area: 'find'|'key', pointId: number) => void, keyOffered: () => boolean}} host.areas
+ *        the page behind the window, where it has the find's other areas
+ *        (the Fundbrowser; pages/finds.php): show() brings one up when the
+ *        window steps aside, keyOffered() says whether the find in front
+ *        may be keyed. Null where the page has none — the window then only
+ *        steps aside for whatever lies beneath it
  * @param {() => {colour: string, seam: string, font: number}} host.scaleStyle
  *        the account's scale bar dress — the bar over the live picture
  *        wears it, as the photo window's does
  */
 export function mountMicroscope({ button, presets, devices, setDevices, save, cloudReady, setPresets, microShrink, lineColours, scaleStyle,
-                                  keyTool = () => null, keyConfirmed = () => {} }) {
+                                  areas = null }) {
     const box = document.getElementById('microscope-window');
     if (!button || !box) return { open() {} };
 
@@ -1164,6 +1165,7 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
     function stop() {
         const s = session;
         session = null;
+        markLive();
         quickClear();
         // The next opening starts fitted.
         liveZoom?.reset();
@@ -2818,109 +2820,102 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         /* The event comes a moment after close() — a window opened again
            in between belongs to a new session, which must live. */
         if (box.open) return;
-        // Stepped aside for the pictures: the session lives on.
-        if (view === 'pictures') return;
+        // Stepped aside for the page behind: the session lives on.
+        if (view === 'aside') return;
         if (calibrating) calibrateEnd();
         stop();
         endViews();
         report('');
     });
 
-    // --- Microscope · Bilder · Schlüssel ---------------------------------------
+    // --- Fund · Mikroskop · Schlüssel -------------------------------------------
 
-    /* ONE CLICK BETWEEN THE THREE (05.11.2026: „ich muß ständig
-       dazwischen wechseln beim schlüsseln und der weg wie es heute geht ist
-       zu umständlich" — every way led over another page, and leaving the
-       window ended the camera's session and asked for the objective again).
-       Now the camera runs on in every view:
-       - „Bilder" lets the window step aside: the gallery it was opened from
-         lies right beneath it, with the viewer and everything the page does
-         with pictures; a bar at the bottom leads back. The dialog is closed
-         for that, since a modal one lets nothing behind it be touched — the
-         close handler knows the difference.
-       - „Schlüssel" shows the key page for this find inside the window
-         (its page with ?embed=1), loaded once per find and kept: switching back
-         and forth finds it where it was. „Beenden" and a confirmed species
-         come back as a message (includes/modules.php names its type) and lead to the
-         microscope again.
-       Space shoots only in the microscope view; in the others it is the
-       page's own key. The device belongs to the microscope and goes with it. */
-    let view = 'microscope';
-    let keyPoint = 0;
-    let keyFor = 0;
+    /* ONE CLICK BETWEEN THE THREE, AND THE CAMERA RUNS ON
+       (05.11.2026: „ich muß ständig dazwischen wechseln beim schlüsseln und
+       der weg wie es heute geht ist zu umständlich" — every way led over
+       another page, and leaving the window ended the camera's session and
+       asked for the objective again).
+
+       THE WINDOW STEPS ASIDE, IT DOES NOT CLOSE. „Fund" and „Schlüssel"
+       both mean the page behind: the find's pictures with the viewer and
+       everything the page does with them, or the key in its frame there
+       (pages/finds.php). The dialog is closed for that — a modal one lets
+       nothing behind it be touched — and the close handler above knows the
+       difference: the session, the stream and the objective stay. Only the
+       arrow and Escape end the camera.
+
+       UNTIL 24.11.2026 THE KEY STOOD INSIDE THIS WINDOW, in a frame of its
+       own, and died with it: the window closed, the key's page was thrown
+       away and loaded anew the next time. It moved into the page („den
+       Schlüssel direkt aus dem Mikroskop brauchen wir dann nicht mehr … wir
+       switchen einfach nur hin und her"), and with it went the message
+       listener and the confirmed species' way through this file — the page
+       hears the key itself now (finds.js, areas).
+
+       Space shoots only while the window is in front; stepped aside it is
+       the page's own key. */
+    let view = 'microscope';    // or 'aside'
+    let pointNow = 0;           // the find the window works for
     const views = el('microscope-views');
-    const keyView = el('microscope-keyview');
-    const keyFrame = el('microscope-key-frame');
-    const body = box.querySelector('.microscope-body');
-    const headEnd = box.querySelector('.microscope-head-end');
     const backBar = el('microscope-return');
 
-    function setView(next) {
-        if (next === view || calibrating) return;
-        const was = view;
-        view = next;
-        for (const b of views.querySelectorAll('[data-view]')) {
-            const on = b.dataset.view === (next === 'pictures' ? was : next);
-            b.classList.toggle('is-active', on);
-            b.setAttribute('aria-pressed', String(on));
-        }
-        if (next === 'pictures') {
-            backBar.hidden = false;
-            hideMediumInfo();
-            box.close();
-            return;
-        }
-        backBar.hidden = true;
-        if (!box.open) box.showModal();
-        body.hidden = next !== 'microscope';
-        headEnd.hidden = next !== 'microscope';
-        if (keyView) keyView.hidden = next !== 'key';
-        if (next === 'key' && keyFrame && keyFor !== keyPoint) {
-            keyFor = keyPoint;
-            const title = el('microscope-point').dataset.title ?? '';
-            // The tool's page with the core's parameters (includes/modules.php, key_tool).
-            keyFrame.src = keyTool() + '?' + new URLSearchParams({ find: keyPoint, resume: 1, name: title, embed: 1 });
-        }
-        if (next === 'microscope') queueScaleBar();
+    /* THE SIGN THAT THE CAMERA RUNS while the window stands aside: a class
+       on the body, and the stylesheet paints it on the switch row's
+       „Mikroskop" (app.css) — the row is the page's, and so is the sign. */
+    function markLive() {
+        document.body.classList.toggle('is-microscope-live', session !== null && view === 'aside');
     }
 
-    /** Back to the microscope when the window closes for good. */
+    /** Aside for the page behind — the find itself, or its key. */
+    function stepAside(to) {
+        if (calibrating || view === 'aside') return;
+        view = 'aside';
+        backBar.hidden = false;
+        hideMediumInfo();
+        markLive();
+        box.close();
+        areas?.show(to, pointNow);
+    }
+
+    /** In front again, as it was left. */
+    function comeBack() {
+        if (view !== 'aside') return;
+        view = 'microscope';
+        backBar.hidden = true;
+        markLive();
+        if (!box.open) box.showModal();
+        queueScaleBar();
+    }
+
+    /** The window closed for good: nothing stands aside any more. */
     function endViews() {
         view = 'microscope';
         backBar.hidden = true;
-        body.hidden = false;
-        headEnd.hidden = false;
-        if (keyView) keyView.hidden = true;
-        keyFor = 0;
-        keyFrame?.removeAttribute('src');
-        for (const b of views.querySelectorAll('[data-view]')) {
-            const on = b.dataset.view === 'microscope';
-            b.classList.toggle('is-active', on);
-            b.setAttribute('aria-pressed', String(on));
-        }
+        markLive();
     }
 
     views.addEventListener('click', (e) => {
-        const b = e.target.closest('[data-view]');
-        if (b) setView(b.dataset.view);
+        const b = e.target.closest('[data-area]');
+        if (b && b.dataset.area !== 'microscope') stepAside(b.dataset.area);
     });
-    el('microscope-return-button').addEventListener('click', () => setView('microscope'));
+    /* THE WAY BACK ASKS THE BUTTON, NOT THE WINDOW: „Mikroskopieren" knows
+       which find stands in the page by now (photogallery.js), and open()
+       below takes that find over. Where it cannot answer — no find chosen
+       — the window comes back for the find it had. */
+    el('microscope-return-button').addEventListener('click', () => {
+        if (!button.hidden && !button.disabled) button.click();
+        if (view === 'aside') comeBack();
+    });
 
-    /* The key's word back (the tool's message): „Beenden" or a confirmed
-       species. Only from this origin and only about this window's find. */
-    window.addEventListener('message', (e) => {
-        if (!keyFrame || e.origin !== location.origin || e.source !== keyFrame.contentWindow) return;
-        const d = e.data;
-        if (d?.type !== 'yasaimapp-keying' || Number(d.find) !== keyPoint) return;
-        if (d.event === 'confirmed' && d.name) {
-            const p = el('microscope-point');
-            p.dataset.title = d.name;
-            p.textContent = d.name;
-            report(t('Art des Fundes: %s', d.name));
-            keyConfirmed(keyPoint, d.name);
-        }
-        setView('microscope');
-    });
+    /** The find in the window's head — and whether its key can be reached from here. */
+    function setPoint(title, pointId) {
+        // The species itself, large in the head (gallery_windows.php) — no „An „…"" around it any more.
+        el('microscope-point').textContent = title || t('Ohne Titel');
+        pointNow = pointId;
+        // The third button only where the page behind has a key area for this find.
+        const keyButton = views.querySelector('[data-area="key"]');
+        if (keyButton) keyButton.hidden = !(areas && pointId > 0 && areas.keyOffered());
+    }
 
     /**
      * Open the window for a find.
@@ -2928,21 +2923,25 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
      * @param {string} title  the find's title — the window's heading
      */
     function open(title, pointId = 0) {
-        /* „Mikroskopieren" pressed while the window stepped aside for the
-           pictures: it comes back as it was — the camera's session lives,
-           and a fresh start would ask for the objective again. */
-        if (view === 'pictures' && session && pointId === keyPoint) {
-            setView('microscope');
+        /* „Mikroskop" pressed while the window stands aside: it comes back
+           as it was — the camera's session lives, and a fresh start would
+           ask for the objective again.
+
+           FOR WHICHEVER FIND STANDS IN THE PAGE BY NOW (24.11.2026: „wenn
+           die Kamera an ist und ich wechsle zu einem anderen Fund, wird
+           dann ab da zu diesem Fund gespeichert"). Before, another find
+           chosen meanwhile ended the session and began a new one — or,
+           through the bar at the bottom, led back to the OLD find, whose
+           name stood in the head while the page showed another. The find
+           is the page's to say; the camera only follows. A still already
+           on its way keeps the find it was taken for (photogallery.js). */
+        if (view === 'aside' && session) {
+            setPoint(title, pointId);
+            comeBack();
             return;
         }
-        // The species itself, large in the head (gallery_windows.php) — no „An „…"" around it any more.
-        el('microscope-point').textContent = title || t('Ohne Titel');
-        el('microscope-point').dataset.title = title || '';
-        keyPoint = pointId;
-        // The third view exists only where a key tool is offered (gallery_windows.php).
-        const keyViewButton = views.querySelector('[data-view="key"]');
-        if (keyViewButton) keyViewButton.hidden = !(keyTool() && pointId > 0);
         endViews();
+        setPoint(title, pointId);
         report('');
         drawObjectives();
         drawMedia();

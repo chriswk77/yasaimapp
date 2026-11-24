@@ -3664,15 +3664,6 @@ const photoGallery = mountPhotoGallery({
     drawList,
     pointReady,
     status,
-    // A species confirmed in the microscope window's key (cockpit.js says why).
-    speciesConfirmed: async (id) => {
-        try {
-            const fresh = await request(`points.php?id=${id}`);
-            if (!state.points.has(id)) return;
-            state.points.set(id, fresh);
-            if (state.selectedId === id) fillDetail(fresh);
-        } catch { /* the next sync brings it */ }
-    },
     get filesOffered() { return filesOffered; },
     set filesOffered(v) { filesOffered = v; },
     get sequenceTabCount() { return sequenceTabCount; },
