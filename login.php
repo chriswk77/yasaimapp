@@ -53,64 +53,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 page_header(t('Anmelden'));
 ?>
-<div class="card-block narrow">
-    <h1><?= h(t('Anmelden')) ?></h1>
+<?php /* THE LOGIN PAGE, TIDIED (24.11.2026: „sehr unaufgeräumt, sehr
+     chaotisch"). The card holds the one thing the page is opened for —
+     address, password, go — and the way to a new account beneath a
+     hairline. „Passwort vergessen?" stands small under the field it is
+     about, where the eye already is when the password fails. Language and
+     privacy and rules are no part of the form: they sit as one quiet line UNDER the
+     card. The chosen language is the one in the text's colour, the others
+     quiet — the accent once marked the language one did NOT have, and the
+     accent is the loudest thing on the page. The sentence on how long
+     one stays signed in went: grown-ups know not to stay signed in on a
+     stranger's device. */ ?>
+<div class="login narrow">
+    <div class="card-block">
+        <h1><?= h(t('Anmelden')) ?></h1>
 
-    <?php notice('error', $errors); ?>
+        <?php notice('error', $errors); ?>
 
-    <form method="post">
-        <?= csrf_field() ?>
-        <input type="hidden" name="next" value="<?= h($next) ?>">
+        <form method="post">
+            <?= csrf_field() ?>
+            <input type="hidden" name="next" value="<?= h($next) ?>">
 
-        <div class="field">
-            <label for="email"><?= h(t('E-Mail-Adresse')) ?></label>
-            <input type="email" id="email" name="email" required autofocus
-                   autocomplete="email" value="<?= h($email) ?>">
+            <div class="field">
+                <label for="email"><?= h(t('E-Mail-Adresse')) ?></label>
+                <input type="email" id="email" name="email" required autofocus
+                       autocomplete="email" value="<?= h($email) ?>">
+            </div>
+
+            <div class="field">
+                <label for="password"><?= h(t('Passwort')) ?></label>
+                <input type="password" id="password" name="password" required
+                       autocomplete="current-password">
+                <?php if (password_reset_ready($pdo)): ?>
+                    <a class="login-forgot" href="<?= h(url('pages/password_reset.php')) ?>"><?= h(t('Passwort vergessen?')) ?></a>
+                <?php endif; ?>
+            </div>
+
+            <div class="login-go">
+                <label class="checkbox">
+                    <input type="checkbox" name="stay" value="1" checked>
+                    <span><?= h(t('Angemeldet bleiben')) ?></span>
+                </label>
+                <button class="button" type="submit"><?= h(t('Anmelden')) ?></button>
+            </div>
+        </form>
+
+        <div class="login-new">
+            <a class="button subtle" href="<?= h(url('register.php')) ?>"><?= h(t('Konto anlegen')) ?></a>
         </div>
+    </div>
 
-        <div class="field">
-            <label for="password"><?= h(t('Passwort')) ?></label>
-            <input type="password" id="password" name="password" required
-                   autocomplete="current-password">
-        </div>
-
-        <label class="checkbox">
-            <input type="checkbox" name="stay" value="1" checked>
-            <span><?= h(t('Angemeldet bleiben')) ?></span>
-        </label>
-        <p class="hint-text small">
-            <?= h(t('Gilt drei Monate und verlängert sich bei jeder Nutzung. Auf einem fremden Gerät besser abwählen.')) ?>
-        </p>
-
-        <div class="button-row">
-            <button class="button" type="submit"><?= h(t('Anmelden')) ?></button>
-        </div>
-    </form>
-
-    <?php if (password_reset_ready($pdo)): ?>
-        <p class="hint-text">
-            <?= h(t('Passwort vergessen?')) ?>
-            <a href="<?= h(url('pages/password_reset.php')) ?>"><?= h(t('Neues Passwort setzen')) ?></a>
-        </p>
-    <?php endif; ?>
-
-    <p class="hint-text" style="margin-top:1.4rem">
-        <?= h(t('Einladungscode bekommen?')) ?>
-        <a href="<?= h(url('register.php')) ?>"><?= h(t('Konto anlegen')) ?></a>
-    </p>
-
-    <?php /* The guest's language switch: whoever is not yet anyone has no
-         settings page — ?lang= lands in the session (includes/i18n.php)
-         and holds until the account's own choice takes over. The names
-         stand in THEIR OWN language on purpose: whoever needs the other
-         one cannot read this page's. */ ?>
-    <p class="hint-text small">
-        <?php foreach (LANGUAGES as $code => $name): ?>
-            <?php if ($code !== array_key_first(LANGUAGES)) echo ' · '; ?>
-            <?php if ($code === lang_current()): ?><?= h($name) ?><?php
-            else: ?><a class="lang-switch" href="?<?= h(http_build_query(array_filter(['lang' => $code, 'next' => $next]))) ?>"><?= h($name) ?></a><?php endif; ?>
-        <?php endforeach; ?>
-    </p>
+    <div class="login-foot">
+        <?php /* The guest's language switch: whoever is not yet anyone has
+             no settings page — ?lang= lands in the session
+             (includes/i18n.php) and holds until the account's own choice
+             takes over. The names stand in THEIR OWN language on purpose:
+             whoever needs the other one cannot read this page's. */ ?>
+        <span class="login-languages">
+            <?php foreach (LANGUAGES as $code => $name): ?>
+                <?php if ($code === lang_current()): ?><strong aria-current="true"><?= h($name) ?></strong><?php
+                else: ?><a class="lang-switch" href="?<?= h(http_build_query(array_filter(['lang' => $code, 'next' => $next]))) ?>" lang="<?= h($code) ?>"><?= h($name) ?></a><?php endif; ?>
+            <?php endforeach; ?>
+        </span>
+        <?php /* What happens to an address typed in here — to be read
+             BEFORE it is typed, so the link stands on the one page
+             everybody sees first (pages/privacy.php, 20.11.2026). */ ?>
+        <span class="login-legal">
+            <a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
+            <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a>
+        </span>
+    </div>
     <?php /* WHAT WAS TYPED SURVIVES THE SWITCH (24.11.2026: switching the
          language below an already filled form emptied address and
          password). The switch has to reload — every sentence comes from
@@ -145,10 +157,5 @@ page_header(t('Anmelden'));
         } catch { /* see above */ }
     }));
     </script>
-    <?php /* What happens to an address typed in here — to be read BEFORE
-         it is typed, so the link stands on the one page everybody sees
-         first (pages/privacy.php, 20.11.2026). */ ?>
-    <p class="hint-text small"><a href="<?= h(url('pages/privacy.php')) ?>"><?= h(t('Datenschutz')) ?></a>
-        · <a href="<?= h(url('pages/terms.php')) ?>"><?= h(t('Regeln')) ?></a></p>
 </div>
 <?php page_footer(); ?>

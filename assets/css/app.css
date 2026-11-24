@@ -531,6 +531,51 @@ span.button.app-tab.is-disabled:hover { background: var(--ground-3); color: var(
     margin: 3rem auto;
 }
 
+/* THE LOGIN PAGE (login.php, 24.11.2026 — the reasons stand there).
+   „Passwort vergessen?" small and quiet at the right end under its field;
+   the tick and the button share one line, the button at its right end;
+   the new account beneath a hairline; language, privacy and rules as one
+   quiet line under the card, the chosen language in the text's colour
+   and never in the accent. */
+.login-forgot {
+    display: block;
+    width: fit-content;
+    margin: .4rem 0 0 auto;
+    font-size: .8rem;
+    color: var(--text-quiet);
+    text-decoration: none;
+}
+.login-forgot:hover { color: var(--text); text-decoration: underline; }
+.login-go {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1.2rem;
+}
+.login-go .checkbox { align-items: center; }
+.login-go .checkbox input { margin: 0; }
+.login-new {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.4rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--border);
+}
+.login-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: .8rem;
+    padding: 0 .3rem;
+    font-size: .8rem;
+    color: var(--text-quiet);
+}
+.login-languages, .login-legal { display: flex; gap: .8rem; }
+.login-foot strong { font-weight: 600; color: var(--text); }
+.login-foot a { color: var(--text-quiet); text-decoration: none; }
+.login-foot a:hover { color: var(--text); text-decoration: underline; }
+
 .hint-text {
     /* NO WIDTH OF ITS OWN. I had capped this at 46rem, the page's old
        measure, out of concern for the line length — the maintainer looked at

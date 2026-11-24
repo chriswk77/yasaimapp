@@ -75,9 +75,6 @@ page_header($token !== '' ? t('Neues Passwort setzen') : t('Passwort vergessen')
                 <input type="checkbox" name="stay" value="1" checked>
                 <span><?= h(t('Angemeldet bleiben')) ?></span>
             </label>
-            <p class="hint-text small">
-                <?= h(t('Gilt drei Monate und verlängert sich bei jeder Nutzung. Auf einem fremden Gerät besser abwählen.')) ?>
-            </p>
             <div class="button-row right">
                 <button class="button" type="submit"><?= h(t('Passwort setzen')) ?></button>
             </div>

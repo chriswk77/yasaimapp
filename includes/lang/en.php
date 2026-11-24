@@ -2223,8 +2223,6 @@ return [
         => 'Invitations',
     'Einladungscode'
         => 'Invitation code',
-    'Einladungscode bekommen?'
-        => 'Got an invitation code?',
     'Einmal zurücksetzen, dann holt der Lauf oben sie mit.'
         => 'Reset once, then the run above picks them up.',
     'Ein Messpunkt liegt nicht im Bild.'
@@ -2753,8 +2751,6 @@ return [
         => 'Give the device a name so you recognize it later.',
     'Gibt ein Gast seine E-Mail-Adresse an, werden ihm seine Funde <strong>zugeschrieben, sobald er sich mit dieser Adresse anmeldet</strong> — auch Wochen später, das Konto darf neu sein. Er sieht seine Exkursionen dann unter Organisieren → Touren und darf die eigenen Funde weiter pflegen.'
         => 'If a guest gives their e-mail address, their finds are <strong>credited to them as soon as they sign in with that address</strong> — even weeks later, the account may be new. They then see their excursions under Organize → Tours and may keep maintaining their own finds.',
-    'Gilt drei Monate und verlängert sich bei jeder Nutzung. Auf einem fremden Gerät besser abwählen.'
-        => 'Lasts three months and renews with every use. Better unticked on a device that is not yours.',
     'Das gilt nur für dieses Gerät. So kannst du zum Beispiel am Handy hell und am Computer dunkel wählen.'
         => 'This applies only to this device. So you can choose light on the phone and dark on the computer, for example.',
     'Ging gerade nicht — ohne Netz bleibt die Anfrage stehen.'
