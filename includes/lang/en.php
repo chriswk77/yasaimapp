@@ -10626,6 +10626,4 @@ return [
     // Fund · Mikroskop · Schlüssel — the find's three areas (24.11.2026).
     'Bereich'
         => 'Area',
-    'Kamera aus'
-        => 'Camera off',
 ];

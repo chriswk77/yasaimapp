@@ -141,8 +141,7 @@ document.getElementById('finds-fund-actions').append(
      in den Inhalt packen, wie den Schlüssel") — its <dialog> is moved in
      here and opened with show(), so the bar and its row stay the same in
      all three. For the other two it steps aside and the camera runs on
-     (microscope.js); the row's button wears a dot while it does. The
-     camera ends with „Kamera aus" at the foot of the microscope's column.
+     (microscope.js); the row's button wears a dot while it does.
 
    THE KEY GOES ON WHERE MY WAY STANDS, AND ELSE BEGINS ONE — exactly what
    the two buttons did that the row replaces: „Zurück zum Schlüssel" showed
@@ -155,9 +154,18 @@ document.getElementById('finds-fund-actions').append(
 
    ALL THREE FOLLOW THE FIND. Another find opened is the find the key keys
    for: the frame lets the old find's page go (which saves its way, the
-   tool's own pagehide) and loads the new find's. The camera follows through
-   „Mikroskop" itself (photogallery.js: every press names the find in the
-   page). Nothing stays behind at an old find.
+   tool's own pagehide) and loads the new find's. Nothing stays behind at
+   an old find.
+
+   THE CAMERA ENDS WHEN THE FIND IS LEFT (the same day, asked whether a
+   „Kamera aus" button is needed: „die Kamera geht sie aus, wenn ich den
+   Fund verlasse … und ich dann einen anderen Fund aufrufe und dort dann
+   wieder die Mikroskopkamera aufrufe, dass sie dort dann wieder
+   eingeschaltet wird und die Bilder beim neuen Fund landen"). Back to the
+   tiles or on to another find, the page tells the window to end
+   (micro.end); „Mikroskop" at the next find starts it anew, for that find.
+   One rule instead of a button — and no camera ever runs for a find that
+   is not in sight.
 
    LOADED AHEAD ONCE THE KEY IS IN USE (keyWarm): the tool's page fetches
    its books at every start — about a megabyte — and that would be the one
@@ -293,7 +301,8 @@ function areasForFind(id) {
     areasFind = id;
     keyKnown = 0;
     waysStale = false;
-    if (area === 'microscope') micro?.aside();
+    // Another find straight from this one (the browser's back, an address): the camera was the old find's.
+    micro?.end();
     paintArea('find');
     if (keyFrame && keyFor !== id && keyFor !== 0) {
         // The old find's page goes — and saves its way on the way out (the tool's pagehide).
@@ -1361,9 +1370,9 @@ function showBrowse() {
     tools?.plates.close();
     lastKey = null;
     /* Back at the tiles the find's own view is what the next opening shows;
-       its key stays loaded, and a camera running runs on — the microscope
-       steps aside as for any other area. */
-    if (area === 'microscope') micro?.aside();
+       its key stays loaded. THE CAMERA ENDS HERE — the find is left (the
+       areas' head says why). */
+    micro?.end();
     paintArea('find');
     fund.hidden = true;
     browse.hidden = false;

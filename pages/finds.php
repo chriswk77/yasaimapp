@@ -270,8 +270,9 @@ page_header(t('Fundbrowser'), [
              find's bar with its row stays the same in all three). The
              microscope's <dialog> (gallery_windows.php) is moved in here by
              finds.js and opened IN the page with show(), as the picture
-             viewer is in its tab; its own head is not drawn. On the map it
-             stays the full-screen window it was. */ ?>
+             viewer is in its tab; its own head is not drawn. The camera
+             runs on between the find's areas and ends when the find is
+             left. On the map it stays the full-screen window it was. */ ?>
         <div class="finds-microview" id="finds-microview"></div>
         <?php if (module_first('key_tool', user_current()) !== null): ?>
         <div class="finds-keyview" id="finds-keyview" hidden>

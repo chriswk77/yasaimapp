@@ -6348,9 +6348,10 @@ body.is-microscope-live .area-switch [data-area="microscope"]::after {
     background: var(--ok);
     box-shadow: 0 0 0 2px var(--ground-2);
 }
-/* Inside a find the row leads back to the microscope; the bar at the
-   bottom is for where no row shows (gallery_windows.php). */
-body:has(#finds-fund:not([hidden])) .microscope-return { display: none !important; }
+/* In the Fundbrowser the row leads back to the microscope, and outside a
+   find no camera runs (finds.js); the bar at the bottom is for the map,
+   where no row shows (gallery_windows.php). */
+body:has(#finds-fund) .microscope-return { display: none !important; }
 /* THE KEY AND THE MICROSCOPE TAKE THE PLACE OF THE TABS AND THEIR CONTENT:
    the find's bar stays — its name, the row —, everything beneath it gives
    way to the area in sight. The key's page brings its own ground and its
@@ -6362,7 +6363,7 @@ body:has(#finds-fund:not([hidden])) .microscope-return { display: none !importan
    show(), is a box under the bar — no full screen, no backdrop, the
    window's own frame and ground taken off, as the picture viewer's in its
    tab. Its head is not drawn: the name and the row stand in the find's bar,
-   and the arrow's deed is the button at the column's foot („Kamera aus").
+   and the camera ends with the find, so the arrow has nothing left to do.
    [open] is spelled out — a closed dialog carries no hidden, and a display
    of ours would lay it over the page (trap 2). */
 .finds-microview { flex: 1; min-height: 0; display: flex; }
@@ -6382,11 +6383,10 @@ body:has(#finds-fund:not([hidden])) .microscope-return { display: none !importan
 }
 .finds-microview > .microscope-window > form { flex: 1; min-height: 0; height: auto; padding: .7rem 0 0; }
 .finds-microview .microscope-head { display: none; }
-/* The column's foot: the device and its gear, and the camera's end — last,
-   because one touches them once a session (a page is sorted by weight). */
-.microscope-foot { margin-top: auto; display: flex; flex-direction: column; gap: .7rem; padding-block: .6rem; }
-.microscope-foot .microscope-head-end { margin-left: 0; justify-content: space-between; }
-.microscope-foot #microscope-off { align-self: flex-start; }
+/* The column's head: the device and its gear, over everything they frame
+   (gallery_windows.php). The gear at the row's right end, in line with the
+   small buttons at the ends of the labels beneath. */
+.microscope-side-top .microscope-head-end { margin-left: 0; justify-content: space-between; }
 /* NO FRAME AND NO AIR AROUND IT (24.11.2026: „das Bestimmungsfenster hat
    einen Rahmen, das brauchen wir nicht. Und um den Rahmen ist noch ein
    Abstand. Da können wir noch ein bisschen Platz sparen"). The key is not a

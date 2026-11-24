@@ -327,7 +327,8 @@ function readableExposure(us) {
  *          inPage      true: the window is one of those areas — opened IN
  *                      the page with show(), its head not drawn
  *          bind(api)   the page takes { aside(), end() } to step the
- *                      window aside and to end the camera
+ *                      window aside, and to end the camera when the find
+ *                      is left
  *          ended()     the camera ended and the window closed for good
  *          show(area, pointId), keyOffered()   for a window that is NOT in
  *                      the page but stands over one with areas
@@ -2875,19 +2876,25 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
        inert, the find's bar above it alive. Everything else is the same
        window: the same session, the same shutter, the same stepping aside.
 
-       What the head held comes down into the column's foot: the device
-       with its gear, and „Kamera aus" for the arrow — with show() Escape
-       closes nothing, and changing areas must not end the camera, so the
-       end needs a button of its own. On the map nothing changes. */
+       What the head held besides the name becomes the column's heading:
+       the device with its gear, at the top.
+
+       THE CAMERA ENDS WITH THE FIND, NOT BY A BUTTON. The arrow that ended
+       it is gone with the head, and a „Kamera aus" stood in its place for
+       an hour; asked whether it is needed, the maintainer chose the rule
+       instead (24.11.2026: „die Kamera geht sie aus, wenn ich den Fund
+       verlasse. Dann könnten wir ja so ein automatisches Ausmachen und
+       bräuchten den Button nicht"). The page calls end() when the find is
+       left (finds.js); between the find's areas the camera runs on. That
+       also settles what a camera does at the NEXT find: it is switched on
+       there anew, and its pictures are that find's. On the map nothing
+       changes — there the arrow ends it. */
     const inPage = areas?.inPage === true;
     const raise = () => (inPage ? box.show() : box.showModal());
     if (inPage) {
-        const foot = el('microscope-foot');
-        foot.prepend(box.querySelector('.microscope-head-end'));
-        foot.hidden = false;
-        // Over the tiles there is no find to come back to — the bar offers the camera's end instead.
-        el('microscope-return-button').hidden = true;
-        el('microscope-return-off').hidden = false;
+        const top = el('microscope-side-top');
+        top.append(box.querySelector('.microscope-head-end'));
+        top.hidden = false;
     }
 
     /* THE SIGN THAT THE CAMERA RUNS while the window stands aside: a class
@@ -2926,19 +2933,21 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
         queueScaleBar();
     }
 
-    /** The camera's end from outside the window — the bar over the tiles, or the page. */
+    /**
+     * The camera's end, asked for by the page — the find is being left.
+     * AT ONCE, not through the close event: that one comes a moment after
+     * close(), and by then the next find may stand in the page. The
+     * handler above runs afterwards all the same and finds nothing left
+     * to do.
+     */
     function end() {
-        if (box.open) {
-            box.close();   // the close handler does the rest
-            return;
-        }
         if (calibrating) calibrateEnd();
         stop();
         endViews();
         report('');
+        if (box.open) box.close();
         areas?.ended?.();
     }
-    el('microscope-return-off').addEventListener('click', end);
     areas?.bind?.({ aside: () => stepAside(), end });
 
     /** The window closed for good: nothing stands aside any more. */
