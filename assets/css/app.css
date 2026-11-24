@@ -333,9 +333,19 @@
  * Its window and its devices' window are dialogs over the page with the
  * picture still open beneath in „Bearbeiten", and they took their colours
  * from the same tokens. While either is open the whole page wears the
- * user's theme again; closed, the grey comes back. (The keys bring their
- * own styles and never needed this.) */
-:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) {
+ * user's theme again; closed, the grey comes back.
+ *
+ * AND NOT IN THE FIND'S OTHER AREAS (24.11.2026: „wechsle ich dann … zu
+ * Mikroskop oder zu Schlüssel, bleibt die Kopfzeile in dem dunklen Grau
+ * und nicht mehr in dem eingestellten Design"). Since that day the key
+ * and the microscope are areas under the find's bar (pages/finds.php)
+ * while the tab „Bilder" stays chosen beneath them — the condition above
+ * still read „the find shows its pictures", and the bar they share kept
+ * the grey. The grey is for the picture being judged; in another area
+ * there is none in sight (data-area on the section, finds.js). The key's
+ * page in its frame is a document of its own and was never grey — only
+ * the bar above it was. */
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"]), [data-area="key"], [data-area="microscope"]))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) {
     /* LOW CONTRAST ON PURPOSE (the same day: „keine großen Kontraste auf
        der Oberfläche", then „gerade helle Farben, helle Schriften, das
        lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler", and the
@@ -359,7 +369,7 @@
     --accent-own:   var(--accent);
     color-scheme: dark !important;
 }
-:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"])))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) body {
+:root.is-editing-picture:not(:has(#finds-fund:is([hidden], :not([data-tab="pictures"]), [data-area="key"], [data-area="microscope"]))):not(:has(:is(#microscope-window, #microscope-manage-window)[open])) body {
     --accent:       color-mix(in srgb, var(--accent-own) 25%, #525252);
     --accent-light: color-mix(in srgb, var(--accent-own) 25%, #7e7e7e);
 }
