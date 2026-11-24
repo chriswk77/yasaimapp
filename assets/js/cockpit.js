@@ -62,7 +62,8 @@ import { t } from './i18n.js';
  *   gone(id)               the find went to the trash
  *   changed(point)         the find was saved — the page keeps its lists in step
  *   picturesChanged()      the Belege drew the pictures again (order, upload)
- *   mapAddress(id)         where the find is on the map
+ *   showOnMap(id)          show the find on the map — by its address, or by
+ *                          a change of area inside the desk's frame page
  *   mapBox                 the tab „Karte"'s map area (#finds-map)
  *   savedLine              where the autosave says how it went (#finds-saved)
  */
@@ -302,8 +303,8 @@ export function mountCockpit(start, host) {
         outlineNow: (point) => (outlineDraft === undefined ? (point?.outline ?? null) : outlineDraft),
         pointReady: async (point) => (point ? state.points.get(point.id) ?? null : null),
         // „Zeigen" and the like: the map is where a find has a place.
-        centreVisible: () => { location.href = host.mapAddress(openId); },
-        fitVisible: () => { location.href = host.mapAddress(openId); },
+        centreVisible: () => { host.showOnMap(openId); },
+        fitVisible: () => { host.showOnMap(openId); },
         // The window's „Schließen": asks first when something is unsaved.
         closeDetail: async () => { if (await windowApi.leaveOk()) host.leave(); },
         // A find that went to the trash: the page forgets it and goes back.

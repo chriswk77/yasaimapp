@@ -64,14 +64,28 @@ new MutationObserver((changes) => {
     }
 }).observe(document.documentElement, { attributes: true, attributeFilter: ['open'], subtree: true });
 
+/* THE DOCUMENT THAT GOES FULL. Usually this one. Inside the desk's frame
+   page (pages/shell.php) it is the page AROUND: every area there is a frame
+   with its own header and its own button, and a frame gone full by itself
+   would cover the others — one change of area later the screen would show
+   a hidden frame, that is, nothing. So the button in a frame switches the
+   frame page, and reads its state from there. (A click in a frame counts
+   for the pages around it too; the browser lets the request through.) */
+const host = (() => {
+    try {
+        if (window.top !== window && window.top.document.getElementById('shell')) return window.top.document;
+    } catch { /* a foreign page around us */ }
+    return document;
+})();
+
 function full() {
-    return !!document.fullscreenElement;
+    return !!host.fullscreenElement;
 }
 
 function sync() {
     const on = full();
     for (const b of document.querySelectorAll('[data-fullscreen]')) {
-        b.hidden = !document.fullscreenEnabled;
+        b.hidden = !host.fullscreenEnabled;
         b.classList.toggle('is-active', on);
         b.setAttribute('aria-pressed', String(on));
         const word = on ? t('Vollbild beenden') : t('Vollbild (im Vollbild: ^ statt Esc)');
@@ -82,10 +96,10 @@ function sync() {
 
 document.addEventListener('click', (e) => {
     if (!e.target.closest?.('[data-fullscreen]')) return;
-    if (full()) document.exitFullscreen?.().catch(() => {});
-    else document.documentElement.requestFullscreen?.().catch(() => {});
+    if (full()) host.exitFullscreen?.().catch(() => {});
+    else host.documentElement.requestFullscreen?.().catch(() => {});
 });
-document.addEventListener('fullscreenchange', sync);
+host.addEventListener('fullscreenchange', sync);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync);
 else sync();
 

@@ -35,13 +35,7 @@ declare(strict_types=1);
  */
 function app_tabs(string $active): void
 {
-    $tabs = [
-        'map'    => [t('Karte'), url(), 'map'],
-        'finds'  => [t('Fundbrowser'), url('pages/finds.php'), 'photo'],
-    ];
-    foreach (module_each('tabs', user_current()) as $added) {
-        $tabs += (array) $added;
-    }
+    $tabs = app_areas();
     $tabs['admin'] = [t('Verwaltung'), url('pages/administration.php'), 'gear'];
     echo '<nav class="app-tabs" aria-label="' . h(t('Bereiche')) . '">';
     foreach ($tabs as $key => [$label, $href, $symbol]) {
@@ -54,6 +48,26 @@ function app_tabs(string $active): void
         }
     }
     echo '</nav>';
+}
+
+/**
+ * THE AREAS ONE WORKS IN — the map, the Fundbrowser and whatever a module
+ * adds (hook 'tabs'): [key => [label, address, icon name]]. The header's
+ * buttons are these plus the administration (app_tabs), and the desk's
+ * frame page keeps exactly these loaded side by side (pages/shell.php) —
+ * the administration is not one of them: it is opened seldom, and a tool
+ * one leaves the work for may as well be a page of its own.
+ */
+function app_areas(): array
+{
+    $areas = [
+        'map'    => [t('Karte'), url(), 'map'],
+        'finds'  => [t('Fundbrowser'), url('pages/finds.php'), 'photo'],
+    ];
+    foreach (module_each('tabs', user_current()) as $added) {
+        $areas += (array) $added;
+    }
+    return $areas;
 }
 
 /**
@@ -385,7 +399,7 @@ function page_footer(array $options = []): void
                           'assets/js/toast.js', 'assets/js/folds.js', 'assets/js/clearable.js',
                           'assets/js/viewport.js', 'assets/js/droparea.js', 'assets/js/quietsave.js',
                           'assets/js/eszett.js', 'assets/js/headerchat.js', 'assets/js/scrollkeep.js',
-                          'assets/js/fullscreen.js'],
+                          'assets/js/fullscreen.js', 'assets/js/shellframe.js'],
                          $options['scripts'] ?? []) as $file) {
         printf('<script type="module" src="%s"></script>' . "\n", h(asset_url($file)));
     }

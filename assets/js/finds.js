@@ -57,6 +57,7 @@ import { mountBlend } from './blend.js';
 import { wordsOrSigns } from './wordsorsigns.js';
 import { personName } from './names.js';
 import { scrollRemember } from './scrollkeep.js';
+import { inShell, shellOpen, onShell } from './shellframe.js';
 
 const root = document.getElementById('finds');
 const API = root.dataset.api;
@@ -1218,7 +1219,7 @@ function onClick(e) {
     const item = e.target.closest('[data-id]');
     if (!item) return;
     const id = Number(item.dataset.id);
-    if (e.target.closest('.finds-to-map')) location.href = MAP + '?point=' + id;
+    if (e.target.closest('.finds-to-map')) showOnMap(id);
     /* ONE CLICK OPENS (15.11.2026: „Im Fund-Browser muss man
        momentan ja doppelt klicken, um den Fund zu öffnen. Das ist natürlich
        was bei Touchgeräten stört"). Until then a click only marked the tile,
@@ -1274,6 +1275,15 @@ for (const list of [grid, resultRows]) {
     list.addEventListener('keydown', onKey);
 }
 
+/* TO THE FIND ON THE MAP — the tile's sign and the find's „Zeigen". Inside
+   the desk's frame page (pages/shell.php) the map stands loaded beside this
+   page and is told to show the find (24.11.2026: „nur ein Wechsel der
+   Ansicht, nicht ein Wechsel der Seite" — it began with full screen ending
+   at every „Zeigen"); anywhere else it is the map's address as before. */
+function showOnMap(id) {
+    if (!shellOpen('map', '?point=' + id)) location.href = MAP + '?point=' + id;
+}
+
 // --- The find opened ----------------------------------------------------------
 
 function open(id) {
@@ -1316,7 +1326,14 @@ function closeNow() {
        the map is the page before — it comes back as it was left, at its
        place and zoom —, by its address when the find was opened anew (a
        link in a new tab has no page before). */
-    if (history.state?.fromMap) {
+    if (history.state?.fromMap && inShell()) {
+        /* Inside the frame page „back to the map" is a change of area: the
+           find closes to the tiles here, and the map comes into sight as
+           it was left. */
+        history.replaceState(null, '', location.pathname + location.search);
+        route();
+        shellOpen('map');
+    } else if (history.state?.fromMap) {
         const ref = document.referrer ? new URL(document.referrer) : null;
         const fromMap = ref?.origin === location.origin && !ref.pathname.includes('/pages/');
         if (fromMap && history.length > 1) history.back();
@@ -2416,6 +2433,45 @@ document.addEventListener('finds-open', (e) => {
     })();
 });
 
+/* INSIDE THE DESK'S FRAME PAGE (pages/shell.php) this page stays loaded
+   while one works on the map. Two words reach it there (shellframe.js):
+   - „go" with #fund=<id> — the map's pencil, or a point just set: the
+     find opens as if its address had been called. A find this page has
+     never heard of (set on the map a minute ago) is fetched first; the
+     list is only fetched with no find open, so an open one is closed for
+     it — asked first, as on every way out of a find.
+   - „shown" — the page is in sight again: the tiles as the server has
+     them now (listReload keeps an open find and catches up when it is
+     left). */
+onShell('go', async (address) => {
+    const hash = address.includes('#') ? address.slice(address.indexOf('#')) : '';
+    const hit = /^#fund=(\d+)((?:&\w+=\w+)*)$/.exec(hash);
+    if (!hit) return;   // „as it stands"
+    const id = Number(hit[1]);
+    if (opened === id) {
+        const wanted = new URLSearchParams(hit[2]).get('tab');
+        showArea('find');
+        if (wanted) showTab(wanted);
+        return;
+    }
+    if (opened !== null && !(await mayLeave())) return;
+    if (!byId.has(id)) {
+        if (opened !== null) {
+            cockpit?.close();
+            history.replaceState(null, '', location.pathname + location.search);
+            route();
+        }
+        await listReload();
+        if (!byId.has(id)) {
+            toast(t('Diesen Fund gibt es hier nicht mehr.'), 'error');
+            return;
+        }
+    }
+    // The page's own way in: an entry in the history, and route() by the popstate it fires.
+    location.hash = hash;
+});
+onShell('shown', () => { listReload(); });
+
 window.addEventListener('popstate', async () => {
     if (opened !== null && cockpit?.dirty() && !(await cockpit.flush()) && !(await cockpit.leaveOk())) {
         history.pushState({ fund: opened }, '', '#fund=' + opened);
@@ -2474,7 +2530,7 @@ function loadDetail(f) {
                         faceFiles = { id: current?.id ?? 0, files: list };
                         if (tab === 'text') drawFace();
                     },
-                    mapAddress: (id) => MAP + '?point=' + id,
+                    showOnMap,
                     mapBox: document.getElementById('finds-map'),
                     savedLine: document.getElementById('finds-saved'),
                     areas,

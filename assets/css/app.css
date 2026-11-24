@@ -376,6 +376,14 @@
 
 * { box-sizing: border-box; }
 
+/* THE DESK'S FRAME PAGE (pages/shell.php): every area a frame that fills
+   the window, one in sight. The others are hidden by visibility, NOT by
+   display — they keep their size, so a map or a viewer does not have to
+   measure itself anew at every showing (assets/js/shell.js). */
+.shell { position: fixed; inset: 0; background: var(--ground); }
+.shell-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.shell-frame.is-aside { visibility: hidden; }
+
 /* THE hidden ATTRIBUTE, SETTLED IN ONE LINE — the head of map.css carries
    the whole reasoning. In short: the browser hides [hidden] with the
    weakest rule there is, this makes ours the strongest instead, and

@@ -38,6 +38,7 @@ import * as chat from './chat.js';
 // is built that way is explained in its header.
 import './autoheight.js';
 import './fullscreen.js';
+import { inShell, shellOpen, onShell } from './shellframe.js';
 import './scrollkeep.js';
 // The same kind: an X in every filled text field. It skips fields that
 // already sit in a .field-with-x shell — the sidebar search wires itself.
@@ -3288,6 +3289,21 @@ function findsAddress(id, tab = null) {
     return `${start.baseUrl}pages/finds.php#fund=${id}${tab ? `&tab=${tab}` : ''}&from=map`;
 }
 
+/* TO THE FIND IN THE FUNDBROWSER — the pencil, the double click, the name
+   tag, a point just set. Inside the desk's frame page (pages/shell.php)
+   the Fundbrowser stands loaded beside the map, and the word goes up
+   instead of the page leaving (24.11.2026: „nur ein Wechsel der Ansicht,
+   nicht ein Wechsel der Seite"); anywhere else it is the address as
+   before. */
+function openFind(id, tab = null) {
+    if (!shellOpen('finds', new URL(findsAddress(id, tab), location.href).hash)) location.href = findsAddress(id, tab);
+}
+
+/** A page that is no area (the administration): the whole window goes, also out of the frame page. */
+function leaveTo(address) {
+    (inShell() ? window.top : window).location.href = address;
+}
+
 document.getElementById('move-done').addEventListener('click', () => moveMode(false));
 
 /**
@@ -4243,7 +4259,7 @@ function pointRow(point, indented = false) {
         edit.innerHTML = iconHtml('pencil');
         edit.addEventListener('click', (e) => {
             e.stopPropagation();
-            location.href = findsAddress(point.id);
+            openFind(point.id);
         });
         row.append(edit);
     }
@@ -4281,7 +4297,7 @@ function pointRow(point, indented = false) {
        Only where the pencil stands: at the desk, online, a known point. */
     row.addEventListener('dblclick', () => {
         if (GUEST || !(point.id > 0) || !deskCockpit()) return;
-        location.href = findsAddress(point.id);
+        openFind(point.id);
     });
 
     return row;
@@ -4464,7 +4480,7 @@ document.getElementById('point-peek-open').addEventListener('click', () => {
     const id = state.peekedId;
     peekHide();
     if (id === null) return;
-    if (deskCockpit()) location.href = findsAddress(id);
+    if (deskCockpit()) openFind(id);
     else selectPoint(id);
 });
 // A tap into the map walks away from the peek — nothing opens.
@@ -9204,7 +9220,7 @@ async function createPoint(lat, lon, extra = {}, message = t('Punkt angelegt.'))
            provisional one, and a point still waiting in the queue stays on
            the map with its name tag. */
         if (deskCockpit() && !response.pending && response.id > 0) {
-            location.href = findsAddress(response.id, 'text');
+            openFind(response.id, 'text');
             return true;
         }
 
@@ -13183,7 +13199,7 @@ document.getElementById('area-cancel').addEventListener('click', () => {
  * mean: they find their own way back.
  */
 function backToAdministration() {
-    location.href = (window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#areas';
+    leaveTo((window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#areas');
 }
 
 document.getElementById('area-form').addEventListener('submit', async (e) => {
@@ -14108,7 +14124,7 @@ async function windowFromUrl() {
                 // Six decimal places like the point columns — around eleven centimeters.
                 state.corners = corners.map(([lat, lon]) => [Number(lat.toFixed(6)), Number(lon.toFixed(6))]);
                 sessionStorage.setItem('map.containerFilter', JSON.stringify(state));
-                location.href = (window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#share';
+                leaveTo((window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#share');
             },
         });
         return;
@@ -14335,24 +14351,51 @@ inventoryReady.then(restoreFormState).catch((e) => {
    every reload would open the window anew. A find in a list that is
    switched off opens all the same and leaves the list's tick alone (a
    point never ticks its list, 26.09.2026). */
+function showAskedPoint(wantedPoint) {
+    const find = () => state.points.get(wantedPoint) ?? state.sharedPoints.get(wantedPoint);
+    return Promise.all([inventoryReady, sharedReady]).then(async () => {
+        /* NOT THERE YET? Inside the frame page the map stood loaded while
+           the Fundbrowser worked — a find made or moved there since is not
+           in this page's stock. Asked of the server once before saying so. */
+        if (!find() && inShell()) {
+            await reloadPoints().catch(() => {});
+        }
+        const point = find();
+        if (!point) {
+            status(t('Diesen Fund gibt es hier nicht mehr.'), true);
+            return;
+        }
+        pauseFollowing();
+        centreVisible([point.lat, point.lon], Math.max(map.getZoom(), 17));
+        selectPoint(wantedPoint);
+    }).catch((e) => console.error('The find from the Fundbrowser could not be opened:', e));
+}
 {
     const asked = new URLSearchParams(location.search);
     const wantedPoint = Number(asked.get('point'));
     if (wantedPoint) {
         asked.delete('point');
         history.replaceState(null, '', location.pathname + (asked.size ? '?' + asked : '') + location.hash);
-        Promise.all([inventoryReady, sharedReady]).then(() => {
-            const point = state.points.get(wantedPoint) ?? state.sharedPoints.get(wantedPoint);
-            if (!point) {
-                status(t('Diesen Fund gibt es hier nicht mehr.'), true);
-                return;
-            }
-            pauseFollowing();
-            centreVisible([point.lat, point.lon], Math.max(map.getZoom(), 17));
-            selectPoint(wantedPoint);
-        }).catch((e) => console.error('The find from the Fundbrowser could not be opened:', e));
+        showAskedPoint(wantedPoint);
     }
 }
+
+/* INSIDE THE DESK'S FRAME PAGE (pages/shell.php) the map stays loaded while
+   one works in the other areas. Two words reach it there (shellframe.js):
+   - „go" with ?point=<id> — the find's „Zeigen" in the Fundbrowser: the
+     same as arriving by that address, without the page loading anew;
+   - „shown" — the map is in sight again: what was changed in the
+     Fundbrowser meanwhile (a name, a position, a find deleted) is asked of
+     the server, as it is when the phone's page comes back to the front. */
+onShell('go', (address) => {
+    const wanted = Number(new URLSearchParams(address.split('#')[0]).get('point'));
+    if (wanted) showAskedPoint(wanted);
+});
+onShell('shown', () => {
+    if (GUEST || navigator.onLine === false) return;
+    // Through the latch, as every reconciling of the stock (reloadPoints, withInventory).
+    reloadPoints().catch(() => {});
+});
 
 /*
  * Find the search flap again the way it was left.
