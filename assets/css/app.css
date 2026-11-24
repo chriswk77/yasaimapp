@@ -6208,6 +6208,48 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
 /* Under the pointer the map's colour, as „Zeigen" in the find's bar. */
 .finds-tile .finds-to-map:hover { background: var(--show); }
 .finds-tile:hover .finds-to-map, .finds-tile:focus-within .finds-to-map, .finds-tile.is-active .finds-to-map { opacity: 1; }
+
+/* „BESTIMMUNG" AT A FIND (pages/identify.php, 24.11.2026): the name asked
+   for, then the Internet-Links and the finds of the species. The name's
+   head is a row, because outside a frame the way back to the find stands at
+   its right end. */
+.identify-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+.identify-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 1.15rem; }
+.identify-tabs { margin-bottom: .8rem; }
+/* „Funde" to a species (assets/js/speciesfinds.js): the Fundbrowser's tiles
+   in a grid of their own — the page scrolls, not the grid (no scroll area
+   inside a scroll area). */
+.species-finds { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: .6rem; }
+.species-finds .finds-tile { text-decoration: none; }
+.identify [data-identify-panel] > .list-label { margin: 0 0 .6rem; }
+.identify [data-identify-panel] > .species-finds + .list-label { margin-top: 1.4rem; }
+/* „Ältere Bilder" beneath them: a line per old find — day and place — and
+   its pictures small, because a find of thirty would otherwise fill the
+   screen. Air between the finds, none between a find's line and its
+   pictures: they belong together. */
+.species-older-find + .species-older-find { margin-top: 1rem; }
+.species-older-head { margin: 0; }
+.species-older-pics { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .35rem; }
+/* A photograph, not a page of a book: the ground of the theme behind it, or
+   every picture still loading would glare white. */
+.species-older-pic {
+    position: relative;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--ground-3);
+    cursor: zoom-in;
+    overflow: hidden;
+}
+/* „auto 4/3": a picture still on its way from the cloud holds a camera's box instead of standing as a hairline. */
+.species-older-pic img { display: block; height: 5.5rem; width: auto; aspect-ratio: auto 4 / 3; object-fit: cover; }
+/* The word on the picture stands ON a photograph, light or dark, in any
+   theme — so black and white are written out here, as on the tiles' count. */
+.species-older-pic span {
+    position: absolute; left: .25rem; top: .2rem;
+    padding: 0 .3rem; border-radius: 3px;
+    background: rgba(0, 0, 0, .6); color: #fff; font-size: .75rem;
+}
 .finds-tile:focus-visible, .finds-result:focus-visible { outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent); outline-offset: -2px; }
 
 /* THE SEARCH'S ANSWER: one row per find, a head that stays, the stripes

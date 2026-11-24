@@ -10865,4 +10865,26 @@ return [
         => '%d finds',
     'Erstellt am %s mit YASAIMAPP.'
         => 'Made on %s with YASAIMAPP.',
+
+    // „Bestimmung" at a find for every account: Internet-Links and finds (pages/identify.php, assets/js/speciesfinds.js, 24.11.2026).
+    'Funde (%d)'
+        => 'Finds (%d)',
+    'Funde mit Bild'
+        => 'Finds with pictures',
+    'Ältere Bilder'
+        => 'Older pictures',
+    '1 Bild'
+        => '1 picture',
+    '%d Bilder'
+        => '%d pictures',
+    'Zu dieser Art gibt es noch keinen Fund mit Bild. Weder von dir noch von deinen Freunden.'
+        => 'There is no find of this species with a picture yet. Neither from you nor from your friends.',
+    'Zurück zum Fund'
+        => 'Back to the find',
+    'Dieser Fund hat noch keinen Namen. Trag bei „Art" einen Namen ein. Dann stehen hier die Internet-Links und die Funde dazu.'
+        => 'This find has no name yet. Enter a name under “Species”. Then the web links and the finds for it appear here.',
+    '„%s" ist kein Art- oder Gattungsname, den die Listen kennen. Deshalb gibt es dazu keine Links und keine Funde.'
+        => '“%s” is not a species or genus name the lists know. So there are no links and no finds for it.',
+    'Der Fund nennt nur die Gattung. Die Funde dazu zeigen wir, sobald eine Art eingetragen ist.'
+        => 'The find names only the genus. Its finds are shown as soon as a species is entered.',
 ];
