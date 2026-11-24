@@ -162,9 +162,17 @@ function point_window_render(): void
                      species may be written; the ways walked for the find stand
                      under the field for everyone who sees it, the phone too.
                      pointwindow.js, drawKeyings. */ ?>
+                <?php /* What the button says is what its page holds: a
+                     key where a module offers one, else the Internet-Links
+                     and the finds (includes/modules.php, identify_tool) — a
+                     title promising keys over a page without any would be
+                     the first thing a beginner trips over. */
+                $keyTitle = (identify_tool(user_current())['plain'] ?? false)
+                    ? t('Bestimmung — Internet-Links und Funde zum Namen')
+                    : t('Bestimmen — mit den Schlüsseln zur Art'); ?>
                 <a class="symbol-button small detail-key" id="d-key" hidden
-                   title="<?= h(t('Bestimmen — mit den Schlüsseln zur Art')) ?>"
-                   aria-label="<?= h(t('Bestimmen — mit den Schlüsseln zur Art')) ?>"><?= icon('key') ?></a>
+                   title="<?= h($keyTitle) ?>"
+                   aria-label="<?= h($keyTitle) ?>"><?= icon('key') ?></a>
                 <div class="detail-keyings" id="d-keyings" hidden></div>
             </div>
 
@@ -652,6 +660,13 @@ function point_window_start(PDO $pdo, array $me): array
            (includes/modules.php, hook key_tool, lists the parameters the
            browser hangs on it). Null where there is none. */
         'keyTool' => module_first('key_tool', $me),
+        /* Where the find's „Bestimmung" leads — for EVERY account: that
+           tool where there is one, else the core's page with the
+           Internet-Links and the finds of the species; {url, plain}
+           (includes/modules.php, identify_tool). The button and the
+           Fundbrowser's frame go by this one; keyTool above stays the
+           question „is there a KEY" — a walk to go on with, a way to open. */
+        'identifyTool' => identify_tool($me),
         /* „Direkt teilen": to whom my finds and the ones I co-own are shown
            — the tile's ticks (index.php builds the same two keys among the
            map's others). Objects even when empty: the tile looks a find up

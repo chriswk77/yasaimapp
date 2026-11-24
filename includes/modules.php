@@ -35,6 +35,8 @@
  *         'done' | 'confirmed'  the tool is finished here, show the find
  *                               again ('confirmed' with the species' name)
  *         'saved'               the walk at the find changed on the server
+ *       Where no module answers, the find's „Bestimmung" still leads
+ *       somewhere: identify_tool() below names the core's own page.
  *
  *   walk_writer(array $user): bool
  *       may this account store a walk at a find (includes/point_keyings.php)
@@ -139,4 +141,36 @@ function module_first(string $hook, mixed ...$arguments): mixed
         }
     }
     return null;
+}
+
+/**
+ * WHERE THE FIND'S „BESTIMMUNG" LEADS, for this account (24.11.2026: the
+ * button at the find „ist ja viel mehr Bestimmung" and is there for
+ * everybody). A module's key tool where one answers for the account (hook
+ * key_tool above) — else the core's own page with the Internet-Links and
+ * the finds of the species (pages/identify.php), which reads the same
+ * parameters, so the frame in the Fundbrowser loads either the same way.
+ *
+ * ONE FUNCTION FOR EVERY PLACE THAT ASKS — the button in the find's bar,
+ * the frame under it, the row in the microscope's head, the key symbol
+ * behind „Art" —, or one of them would show a button that leads nowhere.
+ *
+ * 'plain' says which of the two it is: the core's page keys nothing, so
+ * there is no walk to go on with and no way to open, and its content IS
+ * the find's name — the Fundbrowser loads it anew when the name changed.
+ *
+ * Null for a guest: he has no finds to compare with, and the button was
+ * never his.
+ *
+ * @return ?array{url: string, plain: bool}
+ */
+function identify_tool(?array $user): ?array
+{
+    if ($user === null) {
+        return null;
+    }
+    $tool = module_first('key_tool', $user);
+    return is_array($tool) && isset($tool['url'])
+        ? ['url' => (string) $tool['url'], 'plain' => false]
+        : ['url' => url('pages/identify.php'), 'plain' => true];
 }

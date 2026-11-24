@@ -131,12 +131,18 @@ page_header(t('Fundbrowser'), [
                      The two buttons beside „Fund" show only where their
                      area can work — finds.js mirrors the point window's own
                      „Mikroskopieren" and „Schlüsseln", which keep deciding
-                     that and stay in the page unseen. */ ?>
+                     that and stay in the page unseen.
+
+                     THE THIRD IS CALLED „BESTIMMUNG" AND IS EVERYBODY'S
+                     (24.11.2026; it was „Schlüssel" and stood only where a
+                     module offers a key tool): identify_tool() names where
+                     it leads — the module's tool, else the core's page with
+                     the Internet-Links and the finds of the species. */ ?>
                 <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
                     <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
                     <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
-                    <?php if (module_first('key_tool', user_current()) !== null): ?>
-                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
+                    <?php if (identify_tool(user_current()) !== null): ?>
+                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
                     <?php endif; ?>
                 </div>
                 <?php /* FULL SCREEN FROM THE FIND'S BAR TOO (24.11.2026: „der
@@ -266,15 +272,16 @@ page_header(t('Fundbrowser'), [
                 <aside class="finds-face" id="finds-face" aria-label="<?= h(t('Bilder, Dateien und Sequenzen des Fundes')) ?>"></aside>
             </div>
         </div>
-        <?php /* THE KEY FOR THIS FIND, under the find's bar — the key tool's
-             page itself, without its header bar (its address with embed=1;
-             includes/modules.php, key_tool). It takes the place of the
-             tabs and their content while the area „Schlüssel" shows
+        <?php /* THE „BESTIMMUNG" FOR THIS FIND, under the find's bar — the
+             page identify_tool() names (includes/modules.php: a module's key
+             tool, else the core's pages/identify.php), without its header
+             bar (its address with embed=1). It takes the place of the
+             tabs and their content while the area „Bestimmung" shows
              (data-area on the section, app.css), and STAYS LOADED while
              the find stays: back from the microscope or from the pictures,
-             the key stands where it was left. Only where a tool is offered
-             to this account — without one neither the frame nor the
-             button above exists, and finds.js steps over both. */ ?>
+             a key stands where it was left. Not for a guest — without the
+             page neither the frame nor the button above exists, and
+             finds.js steps over both. */ ?>
         <?php /* THE MICROSCOPE, AN AREA LIKE THE KEY (24.11.2026: „momentan
              ist das Mikroskop ja ein Overlay-Modal. Das könnten wir dann
              quasi in den Inhalt packen, wie den Schlüssel" — so that the
@@ -285,9 +292,9 @@ page_header(t('Fundbrowser'), [
              runs on between the find's areas and ends when the find is
              left. On the map it stays the full-screen window it was. */ ?>
         <div class="finds-microview" id="finds-microview"></div>
-        <?php if (module_first('key_tool', user_current()) !== null): ?>
+        <?php if (identify_tool(user_current()) !== null): ?>
         <div class="finds-keyview" id="finds-keyview" hidden>
-            <iframe id="finds-key-frame" title="<?= h(t('Schlüssel')) ?>"></iframe>
+            <iframe id="finds-key-frame" title="<?= h(t('Bestimmung')) ?>"></iframe>
         </div>
         <?php endif; ?>
     </section>

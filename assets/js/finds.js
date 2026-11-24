@@ -129,14 +129,18 @@ document.getElementById('finds-fund-actions').append(
    DECIDING, and the row mirrors them; app.css hides them here. The map's
    point window keeps both as they were. */
 
-// --- Fund · Mikroskop · Schlüssel ---------------------------------------------
+// --- Fund · Mikroskop · Bestimmung --------------------------------------------
 
 /* THE FIND'S THREE AREAS, ONE CLICK APART AND NOTHING LOADED ANEW
    (pages/finds.php says what was asked for, 24.11.2026). How they live:
 
    - „Fund" is this page as it stands: the tabs, the pictures, the viewer.
-   - „Schlüssel" is the key tool's page in the frame under the bar
-     (#finds-keyview, its address with embed=1). It takes the place of the
+   - „Bestimmung" (the area 'key'; the button was called „Schlüssel" until
+     it became everybody's the same day) is a page in the frame under the
+     bar (#finds-keyview, its address with embed=1): a module's key tool
+     where one answers for the account, else the core's own page with the
+     Internet-Links and the finds of the species — START.identifyTool says
+     which (includes/modules.php, identify_tool). It takes the place of the
      tabs and their content; switching away only hides it, so it stands
      where it was left — the open couplet, the scrolled portrait.
    - „Mikroskop" is the microscope's window, standing IN the page under
@@ -186,6 +190,7 @@ const areaSources = {
 let area = 'find';       // 'find', 'key' or 'microscope'
 let areasFind = 0;       // the find the areas stand at
 let keyFor = 0;          // the find whose key stands loaded in the frame
+let keyName = '';        // the find's name that page was loaded with
 let keyWarm = false;     // the key was used on this page: the next find's is loaded ahead
 let keyKnown = 0;        // the find whose ways are known by now (keyingsDrawn)
 let keyWaiting = [];     // whoever waits for that word
@@ -241,14 +246,28 @@ function paintArea(next) {
 
 /** Load the key tool's page for a find into the frame — my way, or the one asked for. */
 function loadKey(id, params = null) {
-    if (!keyFrame || !START.keyTool) return;
+    if (!keyFrame || !START.identifyTool) return;
     keyFor = id;
     keyWarm = true;
-    const name = document.getElementById('d-title')?.value.trim() ?? '';
+    const name = findName();
+    keyName = name;
     const mine = areaSources.keyBack && !areaSources.keyBack.hidden ? { find: id, resume: 1, name } : { find: id, name };
-    // The tool's page with the core's parameters (includes/modules.php, key_tool).
-    keyFrame.src = `${START.keyTool.url}?` + new URLSearchParams({ ...(params ?? mine), embed: 1 });
+    /* The page with the core's parameters (includes/modules.php: key_tool
+       lists them, identify_tool says whose page it is — a module's key
+       tool, else the core's own with the Internet-Links and the finds). */
+    keyFrame.src = `${START.identifyTool.url}?` + new URLSearchParams({ ...(params ?? mine), embed: 1 });
 }
+
+/** The find's name as it stands in the field „Art". */
+const findName = () => document.getElementById('d-title')?.value.trim() ?? '';
+
+/**
+ * THE CORE'S PAGE IS ABOUT THE NAME, so a name changed since it was loaded
+ * makes it stale: the links and the finds of the old species would stand
+ * under the new one. A key tool takes the name only as where to begin and
+ * keeps its walk — its page is never reloaded for a name.
+ */
+const keyStale = () => START.identifyTool?.plain === true && keyName !== findName();
 
 /** Once the find's ways are known — or after four seconds, whichever comes first. */
 function keyingsKnown(id) {
@@ -291,6 +310,8 @@ async function showArea(next) {
             await keyingsKnown(id);
             if (current?.id !== id) return;
             if (keyFor !== id) loadKey(id);
+        } else if (keyStale()) {
+            loadKey(id);
         }
         keyFrame.focus();
         return;

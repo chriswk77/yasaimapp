@@ -1893,7 +1893,11 @@ export function mountPointWindow(host) {
     async function drawKeyingsNow(point, force) {
         if (!keyButton || !keyingsBox) return;
         const id = point?.id ?? null;
-        keyButton.hidden = !(start.keyTool && id > 0 && !fields.title.disabled && !GUEST);
+        /* THE BUTTON IS EVERYBODY'S (24.11.2026): start.identifyTool names a
+           page for every account — a module's key tool, else the core's
+           Internet-Links and finds. What is the KEY's alone keeps asking
+           start.keyTool below: the way back into a walk, a way to open. */
+        keyButton.hidden = !(start.identifyTool && id > 0 && !fields.title.disabled && !GUEST);
         if (id === keyingsShown && !force) return;
         // A way still unsaved belongs to the find that is leaving — it goes first.
         if (id !== wayPoint) {
@@ -2051,8 +2055,8 @@ export function mountPointWindow(host) {
         if (!(id > 0)) return;
         await saveWay();
         if (host.beforeLeave && !(await host.beforeLeave())) return;
-        if (!start.keyTool) return;
-        location.href = `${start.keyTool.url}?` + new URLSearchParams({ find: id, name: fields.title.value.trim() });
+        if (!start.identifyTool) return;
+        location.href = `${start.identifyTool.url}?` + new URLSearchParams({ find: id, name: fields.title.value.trim() });
     });
 
     // ---------------------------------------------------------------------------

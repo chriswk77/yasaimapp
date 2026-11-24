@@ -268,11 +268,11 @@ function gallery_windows_render(): void
                     <button type="button" class="button subtle small is-active" data-area="microscope" aria-pressed="true"><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
                     <?php /* The third only where the page behind has a key area
                          for this find (the host's areas.keyOffered) — on the
-                         map there is none, and without a key tool
-                         (includes/modules.php, key_tool) the button does not
-                         exist at all. */ ?>
-                    <?php if (module_first('key_tool', user_current()) !== null): ?>
-                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
+                         map there is none, and for a guest
+                         (includes/modules.php, identify_tool) the button does
+                         not exist at all. */ ?>
+                    <?php if (identify_tool(user_current()) !== null): ?>
+                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
                     <?php endif; ?>
                 </div>
                 <?php /* THE DEVICE IN THE HEAD (04.11.2026: „Die

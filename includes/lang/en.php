@@ -10887,4 +10887,6 @@ return [
         => '“%s” is not a species or genus name the lists know. So there are no links and no finds for it.',
     'Der Fund nennt nur die Gattung. Die Funde dazu zeigen wir, sobald eine Art eingetragen ist.'
         => 'The find names only the genus. Its finds are shown as soon as a species is entered.',
+    'Bestimmung — Internet-Links und Funde zum Namen'
+        => 'Identification — web links and finds for the name',
 ];
