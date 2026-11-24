@@ -113,7 +113,9 @@ document.getElementById('finds-fund-actions').append(
     ...[document.getElementById('d-photo-microscope'), document.getElementById('d-key-back'),
         document.getElementById('d-key')].filter(Boolean),
     document.getElementById('d-center'), document.getElementById('d-delete'),
-    document.getElementById('d-facts-toggle'));
+    document.getElementById('d-facts-toggle'),
+    // Full screen last, at the bar's very end — where the page's own header has it (pages/finds.php).
+    document.getElementById('finds-fullscreen'));
 /* MIKROSKOPIEREN AND SCHLÜSSELN STAND IN THE BAR UNSEEN. On 20.11.2026 the
    two buttons moved up here out of the pictures' rail and from behind „Art"
    („oben in der Kopfzeile … den Button mikroskopieren und einen Button
@@ -569,12 +571,20 @@ const pictureCount = document.getElementById('finds-picture-count');
    Symbol mittig setzen zum Zuklappen und wenn es zugeklappt ist, dann
    natürlich einen Handle-Balken oben hin, den man mit der Maus überfahren
    kann zum Aufklappen oder draufklicken kann, um es offen zu lassen").
-   What folds is the find's bar and its tabs — everything above the tabs'
-   line. Folded, a thin bar stands at the top: the pointer over it lays the
+   Folded, a thin bar stands at the top: the pointer over it lays the
    head OVER the content (is-head-peek — the content keeps its place, so no
    picture or plate is fitted anew for a glance), and it folds again once
    the pointer has left the head; a click (a tap on a touch screen) opens it
-   for good. Kept per device (settings findHeadFolded). */
+   for good. Kept per device (settings findHeadFolded).
+
+   WHAT FOLDS IS THE FIND'S BAR, AND IN ALL THREE AREAS ALIKE (24.11.2026).
+   Until then the tabs folded with it — everything above the tabs' line —,
+   and the sign stood on that line; the microscope and the key have no
+   tabs, so their head could not fold at all („wenn wir alle drei irgendwie
+   gleich machen wollen, dürften wir bei Fund die Tab-Leiste nicht mit
+   einbeziehen zum Zuklappen, sondern nur die Kopfzeile. Und dann würde ich
+   in allen drei Modi anbieten, die Kopfzeile einzuklappen"). The sign now
+   stands on the bar's own lower edge, and the tabs stay where they are. */
 const fundEl = document.getElementById('finds-fund');
 const fundBarEl = document.getElementById('finds-fund-bar');
 const headFoldBtn = document.createElement('button');
@@ -583,7 +593,7 @@ headFoldBtn.className = 'finds-head-fold';
 headFoldBtn.title = t('Kopf einklappen');
 headFoldBtn.setAttribute('aria-label', t('Kopf einklappen'));
 headFoldBtn.innerHTML = iconHtml('fold-triangle');
-tabBar.append(headFoldBtn);
+fundBarEl.append(headFoldBtn);
 const headHandle = document.createElement('button');
 headHandle.type = 'button';
 headHandle.className = 'finds-head-handle';
@@ -604,15 +614,15 @@ function headPeek() {
     if (!fundEl.classList.contains('is-head-folded') || fundEl.classList.contains('is-head-peek')) return;
     fundEl.classList.add('is-head-peek');
     // The content steps up by exactly the head's height, so it stays where it was.
-    fundEl.style.setProperty('--head-peek', fundBarEl.offsetHeight + tabBar.offsetHeight + 'px');
+    fundEl.style.setProperty('--head-peek', fundBarEl.offsetHeight + 'px');
 }
 function headPeekEnd(e) {
-    if ([headHandle, fundBarEl, tabBar].some((n) => n.contains(e.relatedTarget))) return;
+    if ([headHandle, fundBarEl].some((n) => n.contains(e.relatedTarget))) return;
     clearTimeout(headPeekTimer);
     headPeekTimer = setTimeout(() => fundEl.classList.remove('is-head-peek'), 250);
 }
 headHandle.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') headPeek(); });
-for (const n of [headHandle, fundBarEl, tabBar]) {
+for (const n of [headHandle, fundBarEl]) {
     n.addEventListener('pointerenter', () => { if (fundEl.classList.contains('is-head-peek')) clearTimeout(headPeekTimer); });
     n.addEventListener('pointerleave', headPeekEnd);
 }

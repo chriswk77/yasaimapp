@@ -139,6 +139,17 @@ page_header(t('Fundbrowser'), [
                     <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Schlüssel')) ?></button>
                     <?php endif; ?>
                 </div>
+                <?php /* FULL SCREEN FROM THE FIND'S BAR TOO (24.11.2026: „der
+                     Wechsel in den Vollbildmodus ist aber momentan nur aus der
+                     Yasai-Map Hauptkopfzeile möglich. Nicht aus der
+                     Fundkopfzeile"). With a find open the page's own header
+                     steps aside and this bar is the head — and the button
+                     went with the header. The same button, by its
+                     attribute: fullscreen.js serves every [data-fullscreen]
+                     and shows it only where the browser can. finds.js puts
+                     it at the bar's very end. */ ?>
+                <button type="button" class="symbol-button small fullscreen-button" id="finds-fullscreen" data-fullscreen hidden
+                        title="<?= h(t('Vollbild')) ?>" aria-label="<?= h(t('Vollbild')) ?>" aria-pressed="false"><?= icon('fullscreen', ['class' => 'when-off']) ?><?= icon('fullscreen-exit', ['class' => 'when-on']) ?></button>
             </div>
         </div>
         <?php /* THE FIND'S TABS, EACH WITH THE WHOLE WIDTH

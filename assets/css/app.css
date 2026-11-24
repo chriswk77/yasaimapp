@@ -6356,8 +6356,9 @@ body:has(#finds-fund) .microscope-return { display: none !important; }
    the find's bar stays — its name, the row —, everything beneath it gives
    way to the area in sight. The key's page brings its own ground and its
    own scrolling, so its frame is the one scroll area there (trap 4). */
-.finds-fund[data-area="key"] > :not(.finds-fund-bar, .finds-keyview) { display: none !important; }
-.finds-fund[data-area="microscope"] > :not(.finds-fund-bar, .finds-microview) { display: none !important; }
+/* The folded head's handle is spared — it is the bar's stand-in (the head folds, below). */
+.finds-fund[data-area="key"] > :not(.finds-fund-bar, .finds-head-handle, .finds-keyview) { display: none !important; }
+.finds-fund[data-area="microscope"] > :not(.finds-fund-bar, .finds-head-handle, .finds-microview) { display: none !important; }
 .finds-fund:not([data-area="microscope"]) > .finds-microview { display: none; }
 /* THE MICROSCOPE IN THE PAGE (pages/finds.php): its <dialog>, opened with
    show(), is a box under the bar — no full screen, no backdrop, the
@@ -6422,11 +6423,15 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 
 .finds-fund-body { flex: 1; min-height: 0; display: flex; padding-top: .9rem; }
 /* THE HEAD FOLDS (finds.js, headFold; 09.11.2026). The small
-   sign in the middle of the tabs' line folds it; folded, a thin bar at the
-   top unfolds it — the pointer over it lays the head over the content for
-   a look (is-head-peek: the content steps up by the head's height, so it
-   stays where it was), a click keeps it open. */
+   sign in the middle of the bar's lower edge folds it; folded, a thin bar
+   at the top unfolds it — the pointer over it lays the head over the
+   content for a look (is-head-peek: the bar takes no room then, so the
+   content stays where it was), a click keeps it open.
+   ONLY THE FIND'S BAR FOLDS, the same in all three areas (24.11.2026,
+   finds.js says why): the tabs stay, and the sign moved from their line
+   onto the bar. */
 .finds-tabs { position: relative; }
+.finds-fund-bar { position: relative; }
 .finds-head-fold {
     position: absolute;
     left: 50%;
@@ -6464,22 +6469,22 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 .finds-fund.is-head-folded > .finds-head-handle:hover { color: var(--text); }
 .finds-head-handle .icon { transform: rotate(90deg); }
 .finds-fund.is-head-folded .finds-head-fold { display: none; }
-.finds-fund.is-head-folded:not(.is-head-peek) > :is(.finds-fund-bar, .finds-tabs) { display: none; }
+.finds-fund.is-head-folded:not(.is-head-peek) > .finds-fund-bar { display: none; }
+/* Folded, the tabs' air above was air under the bar — the thin handle needs less. */
+.finds-fund.is-head-folded > .finds-tabs { margin-top: .3rem; }
 /* OVER EVERYTHING IN THE FIND (09.11.2026: under „Übersicht"
-   the tabs could not be reached): the point window standing in that tab
+   the head could not be reached): the point window standing in that tab
    brings its map stacking along — #detail, z-index 1100, a flex item, so it
    counts — and lay over a head at 30. 1200 clears it; dialogs stand in
-   the top layer above all of this anyway. */
-.finds-fund.is-head-peek > :is(.finds-fund-bar, .finds-tabs) { position: relative; z-index: 1200; }
-/* Peeking, the tabs' air above is padding on their own ground, not a gap
-   through which the content would show. */
-.finds-fund.is-head-peek > .finds-tabs {
-    margin-top: 0;
-    padding-top: 1rem;
-    background: var(--ground);
+   the top layer above all of this anyway.
+   AND IT TAKES NO ROOM WHILE IT PEEKS: the margin beneath it takes its
+   own height back (--head-peek, finds.js), so whatever follows — the
+   tabs, the key, the microscope — keeps its place under it. */
+.finds-fund.is-head-peek > .finds-fund-bar {
+    z-index: 1200;
+    margin-bottom: calc(-1 * var(--head-peek, 0px));
     box-shadow: 0 .5rem 1rem rgb(0 0 0 / .35);
 }
-.finds-fund.is-head-peek > .finds-fund-body { margin-top: calc(-1 * var(--head-peek, 0px)); }
 /* Indented a little under the tabs at the desk, as the identification
    module's tabs are (.keys-species — 15.10.2026). */
 @media (min-width: 861px) {
