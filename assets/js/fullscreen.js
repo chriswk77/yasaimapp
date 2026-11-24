@@ -27,6 +27,26 @@
  * „^" at either of the two places. The overview leaves dead keys alone for
  * the same reason.
  *
+ * FULL SCREEN OUTLIVES A CHANGE OF PAGE AS FAR AS A BROWSER LETS IT
+ * (24.11.2026: „wenn ich beim Fund aus dem Vollbildmodus … auf Fundpunkt
+ * klicke, also dass die Karte geladen wird, wird die Karte nicht im
+ * Vollbildmodus geladen, sondern es wird umgeschaltet zur normalen
+ * Ansicht"). Two rules of every browser stand against it and no page can
+ * lift them: loading another page ENDS full screen, and a page may only
+ * ASK for it inside a click or a key press of the user — never by itself
+ * on loading. So the wish is carried over (sessionStorage, this tab only):
+ * the page that loads next takes the FIRST click or key press, whatever
+ * it is for, as the moment to go full again. One sees the browser's frame
+ * for as long as one does not touch the page, and not longer.
+ *
+ * The wish ends when full screen is left on purpose — the button, Escape —
+ * and it must NOT end when the browser ends full screen because the page
+ * is going: that exit is told apart by the page's own farewell
+ * (beforeunload, pagehide) just before it. Only the top document
+ * remembers: a page in a frame (the key beside a find) loads this file
+ * too, is never the full-screen document itself and would otherwise ask
+ * in vain and forget the wish for everybody.
+ *
  * Loaded on every page: page_footer() and a side-effect import in map.js.
  */
 
@@ -68,6 +88,54 @@ document.addEventListener('click', (e) => {
 document.addEventListener('fullscreenchange', sync);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', sync);
 else sync();
+
+// --- The wish outlives the page (the head says why) ----------------------------
+
+const WISH = 'fullscreenWanted';
+const wish = {
+    get: () => { try { return sessionStorage.getItem(WISH) === '1'; } catch { return false; } },
+    set: (on) => {
+        try {
+            if (on) sessionStorage.setItem(WISH, '1');
+            else sessionStorage.removeItem(WISH);
+        } catch { /* no storage: full screen ends with the page, as it always did */ }
+    },
+};
+if (window.parent === window) {
+    let leaving = 0;   // when the page last said farewell
+    const farewell = () => { leaving = Date.now(); };
+    window.addEventListener('beforeunload', farewell);
+    window.addEventListener('pagehide', farewell);
+    document.addEventListener('fullscreenchange', () => {
+        if (full()) wish.set(true);
+        /* Left on purpose — unless the page is going: a farewell a moment
+           ago means the browser took full screen away, not the user. (A
+           farewell that was called off — „Seite verlassen?" answered with
+           no — is old by the time anybody presses Escape.) */
+        else if (Date.now() - leaving > 1500) wish.set(false);
+    });
+    if (wish.get() && !full() && document.fullscreenEnabled) {
+        /* The first click or key press on the new page. In the capture
+           phase, so a part of the page that stops its events cannot keep
+           it away; the click itself goes on to whatever it was meant for.
+           Escape is no wish for full screen, and browsers do not count it
+           as one either. */
+        const again = (e) => {
+            if (e.type === 'keydown' && (e.key === 'Escape' || e.metaKey || e.ctrlKey || e.altKey)) return;
+            if (full() || !wish.get()) return done();
+            // Refused (a key the browser does not count)? The next one asks again.
+            document.documentElement.requestFullscreen?.().catch(() => {});
+        };
+        const done = () => {
+            window.removeEventListener('click', again, true);
+            window.removeEventListener('keydown', again, true);
+            document.removeEventListener('fullscreenchange', done);
+        };
+        window.addEventListener('click', again, true);
+        window.addEventListener('keydown', again, true);
+        document.addEventListener('fullscreenchange', done);
+    }
+}
 
 /** The key under Escape — „^", dead or not, at either of its two reported places. */
 export function caretKey(e) {
