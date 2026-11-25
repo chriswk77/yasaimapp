@@ -10526,6 +10526,10 @@ return [
         => 'soft edge',
     'Entf'
         => 'Del',
+    'Enter'
+        => 'Enter',
+    'gebogene Länge abschließen'
+        => 'finish the curved length',
     'gewählte Stelle löschen'
         => 'delete the chosen spot',
     'neue Ellipse'

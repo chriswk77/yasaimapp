@@ -6763,6 +6763,16 @@ export function mountPhotoWindow(host) {
             if (claim()) drawingsHide(!drawingsHidden);
             return;
         }
+        /* ENTER CLOSES THE POLYLINE IN PROGRESS (25.11.2026: „vielleicht
+           auch mit einer Taste, mit Enter oder so"). Claimed only while a
+           run has points, so Enter stays the browser's everywhere else —
+           and prevented, because the tool's own button still holds the
+           focus after the click that armed it, and Enter there would press
+           it and lay the tool down. */
+        if (k === 'Enter' && !developMode && measureMode === 'path' && measurePoints.length > 0) {
+            if (claim()) pathFinish();
+            return;
+        }
         if (!developMode) {
             const mode = RAIL_KEYS[k];
             if (mode === undefined) return;
@@ -6854,6 +6864,8 @@ export function mountPhotoWindow(host) {
             out.push({ title: t('Messen'), rows: [['1', t('Strecke')], ['2', t('Gebogene Länge')], ['3', t('Länge × Breite')],
                 ['4', t('Länge × Breite, gebogen')], ['5', t('Zystide in Teilen')], ['Q', t('Text')], ['W', t('Pfeil')],
                 ['R', t('Poren zählen')], ['6', t('Lamellen zählen')], ['T', t('Bildausschnitt')], ['A', t('Auswählen')]].filter(offered) });
+            // Enter belongs to the polyline (photoKeys) — named where that tool is offered.
+            if (offered(['2'])) out[out.length - 1].rows.push([t('Enter'), t('gebogene Länge abschließen')]);
             return out;
         }
         out.push({ title: t('Bearbeiten'), rows: [[t('O halten'), t('das Original zeigen')], ['R', t('Zuschneiden, Drehen')],
@@ -9785,6 +9797,7 @@ export function mountPhotoWindow(host) {
                                   //   m, across, centre, base, startAngle, …}
     let suppressClick   = false;  // the click that trails a finished drag
     let pressAt         = null;   // where the last press on the picture began, to tell a pan's click
+    let pressCoarse     = false;  // whether that press was a finger or a pen — its aim is wider (pathReach)
 
     /** The current-image factor for a measure's stored space. */
     function measureAcross(m) {
@@ -10542,10 +10555,18 @@ export function mountPhotoWindow(host) {
         drawOverlay();
     }
 
-    /** Close the polyline in progress — from the double tap or any mode
-     *  change (Escape takes back its last point instead, escapeStep).
-     *  Fewer than two points is no run and falls away quietly; the MODE
-     *  stays armed, runs come in series. */
+    /** Close the polyline in progress — from a second click on its last
+     *  point, the double tap, Enter or any mode change (Escape takes back
+     *  its last point instead, escapeStep). Fewer than two points is no run
+     *  and falls away quietly; the MODE stays armed, runs come in series. */
+    /* HOW NEAR „THE SAME POINT AGAIN" IS, in the picture's own units: six
+       screen pixels under a mouse — what the double click's two clicks lie
+       apart at most —, eighteen under a finger, which covers the mark it
+       aims at. Counted on the screen and not in the picture, so it is the
+       same reach at every magnification. */
+    function pathReach() {
+        return screenUnits(pressCoarse ? 18 : 6);
+    }
     function pathFinish() {
         if (measureMode !== 'path') return;
         // A polyline drawn INTO a cutout belongs to its rectangle, not to
@@ -14795,10 +14816,24 @@ export function mountPhotoWindow(host) {
         }
         if (measurePoints.length === 0 && frameRect === null) frameJustDone = null;
 
-        /* The polyline grows tap by tap until the double tap closes it;
-           the text mode wants exactly one tap — where the words go — and
-           the writing begins right there. */
+        /* The polyline grows tap by tap; the text mode wants exactly one
+           tap — where the words go — and the writing begins right there.
+           THE LAST POINT CLICKED AGAIN CLOSES THE RUN (25.11.2026: „auch
+           abschließen, wenn man den gleichen Punkt nochmal klickt … für ein
+           Touchscreen sehr sinnvoll"). A double tap needs two taps in quick
+           succession on one spot, which a finger rarely manages; the second
+           click here may come whenever it likes. It sets no point — the
+           run ends where the last one stands —, and the double click falls
+           out of the same rule: its second click is this one, and what
+           arrives as dblclick afterwards finds nothing left to close. On a
+           run of ONE point the second click does nothing, because a single
+           point is no length; it stays and waits for the next. */
         if (measureMode === 'path') {
+            const last = measurePoints[measurePoints.length - 1];
+            if (last && Math.hypot(last[0] - p[0], last[1] - p[1]) <= pathReach()) {
+                if (measurePoints.length >= 2) pathFinish();
+                return;
+            }
             measurePoints.push(p);
             drawOverlay();
             return;
@@ -15088,7 +15123,10 @@ export function mountPhotoWindow(host) {
        twitch. */
 
     photoFrame.addEventListener('pointerdown', (e) => {
-        if (e.isPrimary) pressAt = [e.clientX, e.clientY];
+        if (e.isPrimary) {
+            pressAt = [e.clientX, e.clientY];
+            pressCoarse = e.pointerType !== 'mouse';
+        }
     }, true);
 
     photoFrame.addEventListener('pointerdown', (e) => {
@@ -15351,9 +15389,12 @@ export function mountPhotoWindow(host) {
         measureEnd();
     });
 
-    /* The double tap closes the polyline. Its two single clicks have
-       already appended the same point twice — the duplicate is dropped
-       before finishing, or every run would end in a zero-length tail. */
+    /* The double tap closes the polyline. Since 25.11.2026 its second click
+       has usually done so already (the click handler above), and this
+       finds nothing in progress. It still closes what that rule let pass:
+       two clicks the system took for a double click although they lie
+       farther apart than pathReach — their second point is a duplicate in
+       all but name and is dropped, or the run would end in a tiny tail. */
     photoFrame.addEventListener('dblclick', (e) => {
         if (photoChrome(e)) return;
         if (measureMode !== 'path') return;
@@ -15363,6 +15404,8 @@ export function mountPhotoWindow(host) {
             const [ax, ay] = measurePoints[n - 2], [bx, by] = measurePoints[n - 1];
             if (Math.hypot(ax - bx, ay - by) < screenUnits(6)) measurePoints.pop();
         }
+        // One point alone is the run the second click left waiting — it stays, as it does there.
+        if (measurePoints.length === 1) return;
         pathFinish();
     }, true);
 
@@ -16647,19 +16690,27 @@ export function mountPhotoWindow(host) {
     }
 
     /** The steps inside a cystidium's frame, in the order of its method: what
-     *  to tap, said in plain words, and with which tool. THE LENGTH IS
-     *  STRAIGHT (05.11.2026: „bei der Messung der Längen brauche
-     *  ich keine Polylinie") — base and tip, two taps, as the books measure
-     *  a cystidium; the cutout tool keeps its bent length for the ascus. */
+     *  to tap, said in plain words, and with which tool. THE LENGTH WAS
+     *  STRAIGHT FOR EVERY CYSTIDIUM (05.11.2026: „bei der Messung der
+     *  Längen brauche ich keine Polylinie") — base and tip, two taps, as
+     *  the books measure one. HEBELOMA'S IS TRACED AGAIN since 25.11.2026
+     *  („bei Hebeloma die Länge der Zystide auch wieder als Polylinie
+     *  gestalten"): its cystidia bend, and the polyline lost what spoke
+     *  against it the day a second click on its last point began to close
+     *  it — base, tip and the tip once more are a straight length still.
+     *  Conocybe's stays the straight one. Nothing else had to learn it:
+     *  cystidValues reads a traced length as the paraphysis's, and the
+     *  layer's switch reads it from end to end where that is wanted. */
     function cystidSteps(profile) {
         const length = { mode: 'line', word: t('die Länge'),
             say: t('Jetzt die Länge: Klicke auf die Basis, dann auf die Spitze.') };
+        const traced = { mode: 'path', word: t('die Länge'),
+            say: t('Jetzt die Länge: Klicke in kleinen Schritten entlang der gedachten Mittellinie. Am Ende ein Doppelklick.') };
         /* THE PARAPHYSIS'S LENGTH IS BENT (18.11.2026: „Länge mal Breite
            gebogen … plus Kopfdurchmesser") — it curves as an ascus does, so
-           it is traced, unlike a cystidium's straight base-to-tip. */
+           it is traced. */
         if (profile === 'paraphysis') return [
-            { mode: 'path', word: t('die Länge'),
-              say: t('Jetzt die Länge: Klicke in kleinen Schritten entlang der gedachten Mittellinie. Am Ende ein Doppelklick.') },
+            traced,
             { mode: 'line', word: t('die Breite'), say: t('Jetzt die Breite: Klicke unterhalb des Kopfs auf beide Ränder.') },
             { mode: 'line', word: t('der Kopf'), say: t('Jetzt der Kopf: Klicke an seiner breitesten Stelle auf beide Ränder.') },
         ];
@@ -16670,7 +16721,7 @@ export function mountPhotoWindow(host) {
             { mode: 'line', word: t('das Köpfchen'), say: t('Jetzt das Köpfchen: Klicke an seiner breitesten Stelle auf beide Ränder.') },
             { mode: 'line', word: t('der Hals'), say: t('Jetzt der Hals: Klicke dort, wo er aus dem Bauch kommt, dann dort, wo das Köpfchen beginnt.') },
         ] : [
-            length,
+            traced,
             { mode: 'line', word: 'A', say: t('Jetzt A: Klicke an der breitesten Stelle des Kopfs, nahe der Spitze, auf beide Ränder.') },
             { mode: 'line', word: 'M', say: t('Jetzt M: Klicke an der schmalsten Stelle in der Mitte auf beide Ränder.') },
             { mode: 'line', word: 'B', say: t('Jetzt B: Klicke an der breitesten Stelle im unteren Drittel auf beide Ränder.') },

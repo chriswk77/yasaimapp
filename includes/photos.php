@@ -1382,7 +1382,9 @@ function photo_measures_write(array $d): ?array
            measure with „more than two", so every cystidium failed to save,
            and it would have dropped the method besides. */
         /* AND THE PARAPHYSIS since 18.11.2026 (three measures: bent length,
-           breadth, head). A method missing here is a method that never
+           breadth, head) — and Hebeloma's length may be traced as well
+           since 25.11.2026; a line or a polyline, each part is taken as it
+           comes. A method missing here is a method that never
            saves — whoever adds one to CYSTID_PROFILES adds it here too. */
         $profile = $type === 'rect' && in_array($m['profile'] ?? null, ['hebeloma', 'conocybe', 'paraphysis'], true)
             ? $m['profile'] : null;
