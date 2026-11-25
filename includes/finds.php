@@ -197,6 +197,40 @@ function finds_overview(PDO $pdo, int $userId): array
     return $out;
 }
 
+/**
+ * WHICH TILES STAND ON THE FIND BOOK — the green dot in the Fundbrowser's
+ * tiles (finds.js, publishMark; 25.11.2026: „einen Punkt setzen bei den
+ * Funden, die veröffentlicht wurden"). Each own find with a released plate
+ * gets `publish`: 'shown' when the site shows it, 'waiting' while a
+ * photographer's consent is missing — green and orange in the tile.
+ *
+ * ONLY FOR AN ACCOUNT WITH A FIND BOOK (publication_site_label): since
+ * migration 0201 every old plate counts as released, so without the book
+ * nearly every tile would carry a dot that means nothing. Asked here and
+ * not in finds_overview(), which the species' finds read as well
+ * (species_finds.php) and which knows the account only by its id.
+ *
+ * @param list<array> $finds finds_overview()'s tiles
+ * @return list<array>
+ */
+function finds_publish_marks(PDO $pdo, array $me, array $finds): array
+{
+    require_once __DIR__ . '/plate_publish.php';
+    require_once __DIR__ . '/publication.php';
+    if ($finds === [] || publication_site_label($pdo, $me) === null) {
+        return $finds;
+    }
+    $own = array_map(static fn(array $f): int => $f['id'], array_filter($finds, static fn(array $f): bool => $f['own']));
+    $state = plate_publish_points($pdo, (int) $me['id'], $own);
+    foreach ($finds as &$f) {
+        if (isset($state[$f['id']])) {
+            $f['publish'] = $state[$f['id']];
+        }
+    }
+    unset($f);
+    return $finds;
+}
+
 /** One tile's data out of a point row (own query or a road's prepared point). */
 function finds_tile(array $p, bool $own, ?string $owner, int $ownerId): array
 {

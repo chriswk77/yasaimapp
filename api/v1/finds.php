@@ -36,6 +36,6 @@ if ($id > 0) {
    is fetched when one turns to it (api/v1/archive_finds.php). */
 require_once __DIR__ . '/../../includes/picture_archives.php';
 json_response([
-    'finds' => finds_overview($pdo, (int) $me['id']),
+    'finds' => finds_publish_marks($pdo, $me, finds_overview($pdo, (int) $me['id'])),
     'archive' => archives_ready($pdo) ? archives_count($pdo, (int) $me['id']) : 0,
 ]);

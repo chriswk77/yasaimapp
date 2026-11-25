@@ -6185,6 +6185,21 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
     font-size: .75rem;
     font-variant-numeric: tabular-nums;
 }
+/* PUBLISHED on the find book (finds.js, publishMark): a dot in the top
+   left corner, green when it stands on the site, orange while a
+   photographer's consent is missing — meaning colours, as on the button in
+   the find's head. A dark ring keeps it readable on any photo. */
+.finds-tile-publish {
+    position: absolute;
+    left: .4rem;
+    top: .4rem;
+    width: .7rem;
+    height: .7rem;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .55);
+}
+.finds-tile-publish.is-shown { background: var(--ok); }
+.finds-tile-publish.is-waiting { background: var(--warn); }
 .finds-tile-name,
 .finds-tile-meta,
 .finds-tile-owner { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
