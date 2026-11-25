@@ -441,6 +441,17 @@ function photo_window_render(): void
                  JUMPS between the first and the second tap. A calibration
                  whose target moves mid-gesture measures garbage. */ ?>
             <p class="photo-frame-hint" id="photo-frame-hint" hidden></p>
+            <?php /* THE HELP BAND (25.11.2026): the sentences that say HOW a
+                 tool is used slide down from the picture's upper edge instead
+                 of standing in its middle — open for whoever is new, folded
+                 to a lip for whoever knows, and then one pointer's rest away.
+                 The pill above keeps what one operates. photowindow.js
+                 (helpSync) fills it from the pill's marked sentences. */ ?>
+            <div class="photo-help" id="photo-help" hidden>
+                <p class="photo-help-band" id="photo-help-band"></p>
+                <button type="button" class="photo-help-lip" id="photo-help-lip"
+                        aria-controls="photo-help-band" aria-expanded="true"><?= icon('question') ?><span><?= h(t('Hilfe')) ?></span></button>
+            </div>
             <?php /* Which QUALITY a cloud recording shows — „Vorschaubild"
                  until the original is loaded (28.08.2026: „das
                  wird momentan nicht richtig kommuniziert"). Voucher photos

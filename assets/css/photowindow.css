@@ -1430,6 +1430,76 @@
     text-align: center;
     pointer-events: none;
 }
+/* THE HELP BAND AND ITS LIP (photowindow.js, helpSync — 25.11.2026). The
+   sentences that say HOW a tool is used left the pill for a band at the
+   picture's upper edge; the pill keeps what one operates.
+
+   THE BOX IS AS TALL AS THE BAND, AND THE LIP HANGS AT ITS LOWER EDGE
+   (top: 100%). Folded, the whole box is pushed up by its own height — the
+   band is gone and the lip stands exactly at the picture's edge, whatever
+   the sentence's length and however often it wraps. No height is measured
+   for the fold, and none can go stale.
+
+   Literal colours like the pill's, and for the same reason. Nothing here
+   takes a tap but the lip — the band only while the pointer called it
+   down (is-peek), where it has to hold the hover. */
+.photo-help {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    transform: translateY(-100%);
+    transition: transform .2s ease;
+    pointer-events: none;
+}
+.photo-help.is-open { transform: none; }
+.photo-help-band {
+    margin: 0;
+    padding: .45rem 1rem;
+    background: rgba(0, 0, 0, .72);
+    color: #fff;
+    font-size: .85rem;
+    text-align: center;
+}
+.photo-help.is-peek .photo-help-band { pointer-events: auto; }
+.photo-help-lip {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    height: 1.5rem;
+    padding: 0 .7rem;
+    /* A fine frame on the three free sides: over a dark picture — or the
+       black beside a letterboxed one — the lip's ground alone is invisible. */
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-top: 0;
+    border-radius: 0 0 var(--radius) var(--radius);
+    background: rgba(0, 0, 0, .65);
+    color: #fff;
+    font: inherit;
+    font-size: .78rem;
+    cursor: pointer;
+    pointer-events: auto;
+}
+.photo-help-lip:hover { background: rgba(0, 0, 0, .85); }
+@media (prefers-reduced-motion: reduce) {
+    .photo-help { transition: none; }
+}
+/* THE PILL STANDS UNDER LIP AND BAND — helpSync says how far down that is
+   (zero where no help is up). And where the band exists, the sentences it
+   shows are not drawn a second time in the pill; a pill that holds
+   nothing else is not drawn at all. `has-band` is set by the script, so a
+   page still open from before the band keeps its sentences. */
+.photo-frame-hint { top: calc(.8rem + var(--photo-help-drop, 0px)); }
+.photo-frame-hint.has-band .photo-hint-words,
+.photo-frame-hint.has-band.is-words-only { display: none; }
+/* A button that followed a sentence stands first now. */
+.photo-frame-hint.has-band > .photo-hint-words:first-child + button { margin-left: 0; }
+
 /* The cutout offer's buttons (map.js frameOffer) sit IN the hint, so
    they share its literal palette — token buttons would take the theme's
    surface onto a bar that is deliberately black in every theme. And
@@ -1722,6 +1792,9 @@
        in at 44 beside them and showed it („angleichen"). */
     .photo-frame-hint button,
     .photo-frame-hint input[type=text] { min-height: 44px; }
+    /* The lip is hit with a thumb as well; it is the only way to the help
+       where nothing hovers. */
+    .photo-help-lip { height: 44px; padding: 0 1rem; }
     .photo-box-size button { min-width: 44px; }
     /* The statistics' tabs are hit with a thumb in the drawer too. */
     .photo-stats-tabs button { min-height: 44px; }

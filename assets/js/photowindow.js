@@ -9231,8 +9231,113 @@ export function mountPhotoWindow(host) {
        silently. An absolutely positioned line moves no layout. */
     function calibrationHint(text) {
         const hint = document.getElementById('photo-frame-hint');
-        hint.textContent = text;
+        hint.textContent = '';
+        if (text !== '') hint.append(hintWords(text));
         hint.hidden = text === '';
+    }
+
+    /* THE HELP IS A BAND AT THE PICTURE'S UPPER EDGE (25.11.2026, after two
+       drafts in the browser: „Die Leiste gefällt mir eigentlich ganz gut,
+       denn man könnte sie dauerhaft anzeigen lassen, indem man sie quasi
+       aufklappt durch einen Klick oder nur auffährt durch Überfahren. Wenn
+       man schnell mal nicht weiter weiß, kann man sie schnell kurz
+       auffahren. Wenn man gerade ganz neu dabei ist, kann man es ja
+       aufgeklappt lassen"). Until then every sentence about HOW a tool is
+       used stood in the pill in the middle of the picture for as long as
+       the tool was armed — over the very thing one measures, and for the
+       hundredth spore as for the first.
+
+       WHAT GOES UP THERE AND WHAT STAYS. A sentence that says how — where
+       to click, how a run ends — is help and wears `photo-hint-words`
+       (hintWords). What one OPERATES stays in the pill, in sight and in
+       reach: the way out („Abbrechen", „Fertig"), a measure's mark, the
+       method of the special measurements, the frame's size. So does a
+       sentence that names a STATE one has to act on („Für den Rahmen
+       braucht das Bild zuerst einen Maßstab.", „Hier fehlt noch die
+       Breite.") — folded away it would leave a tool that does nothing and
+       says nothing.
+
+       THE PILL IS STILL WRITTEN AS BEFORE — seven places build it, each
+       clearing only what it wrote itself, and each recognises its own by a
+       class inside. None of them had to learn about the band: an observer
+       reads the marked sentences out of the pill whenever it changes, the
+       stylesheet hides them there, and a pill left with nothing but
+       sentences is not drawn at all (`is-words-only`). The eighth place to
+       write into the pill inherits all of it by marking its sentence.
+
+       OPEN IS THE STATE ONE STARTS WITH (settings, `photoHelpOpen`): whoever
+       is new reads on as before. A click on the lip folds it away; folded,
+       the pointer over the lip brings it down for as long as it rests
+       there. NOTHING COMES DOWN BY ITSELF — whoever folded it chose a free
+       picture, and a band that drops with every tool taken up would be
+       the old pill with a detour.
+
+       IT LIES OVER THE PICTURE AND MOVES NO LAYOUT (the rule of 28.08.2026
+       above), and standing open it swallows no tap: pointer-events are the
+       lip's alone, and the band's only while it was called down by the
+       pointer — there it must hold the hover, because the lip travels down
+       with it, out from under the pointer, and would otherwise close what
+       it has just opened, for ever. */
+    function hintWords(text) {
+        const span = document.createElement('span');
+        span.className = 'photo-hint-words';
+        span.textContent = text;
+        return span;
+    }
+    const helpBox = document.getElementById('photo-help');
+    let helpPeek = false;
+    const helpPinned = () => settings.get('photoHelpOpen', true) !== false;
+    function helpSync() {
+        if (helpBox === null) return;
+        const hint = document.getElementById('photo-frame-hint');
+        const band = document.getElementById('photo-help-band');
+        const lip = document.getElementById('photo-help-lip');
+        const words = hint.hidden ? [] : [...hint.querySelectorAll('.photo-hint-words')]
+            .map(w => w.textContent.trim()).filter(w => w !== '');
+        const text = words.join(' ');
+        hint.classList.toggle('is-words-only', words.length > 0
+            && [...hint.children].every(c => c.classList.contains('photo-hint-words')));
+        if (band.textContent !== text) band.textContent = text;
+        helpBox.hidden = text === '';
+        if (text === '') helpPeek = false;
+        const pinned = helpPinned();
+        helpBox.classList.toggle('is-open', pinned || helpPeek);
+        helpBox.classList.toggle('is-peek', !pinned && helpPeek);
+        lip.setAttribute('aria-expanded', String(pinned));
+        lip.title = pinned ? t('Hilfe einklappen') : t('Hilfe aufgeklappt lassen');
+        /* The pill stands UNDER lip and band, never behind them. */
+        hint.parentElement.style.setProperty('--photo-help-drop', text === '' ? '0px'
+            : (lip.offsetHeight + (pinned || helpPeek ? band.offsetHeight : 0)) + 'px');
+    }
+    if (helpBox !== null) {
+        const hint = document.getElementById('photo-frame-hint');
+        const lip = document.getElementById('photo-help-lip');
+        /* Only a page that HAS the band hides the sentences in the pill — a
+           page still open from before the deployment has none, and would
+           otherwise lose its hints to the new stylesheet. */
+        hint.classList.add('has-band');
+        new MutationObserver(helpSync).observe(hint,
+            { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
+        new ResizeObserver(helpSync).observe(document.getElementById('photo-help-band'));
+        // The press must not take the focus (and with it the keys) from the picture.
+        lip.addEventListener('pointerdown', (e) => e.preventDefault());
+        lip.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settings.set('photoHelpOpen', !helpPinned());
+            helpPeek = false;
+            helpSync();
+        });
+        helpBox.addEventListener('pointerenter', (e) => {
+            if (e.pointerType !== 'mouse' || helpPinned()) return;
+            helpPeek = true;
+            helpSync();
+        });
+        helpBox.addEventListener('pointerleave', () => {
+            if (!helpPeek) return;
+            helpPeek = false;
+            helpSync();
+        });
+        helpSync();
     }
 
     /* FREE MEASURING WEARS A COLOUR OF ITS OWN (17.11.2026: „was
@@ -10647,8 +10752,10 @@ export function mountPhotoWindow(host) {
         const count = fr.m.inner?.length ?? 0;
         const hint = document.getElementById('photo-frame-hint');
         hint.textContent = '';
-        const say = (text) => {
-            const span = document.createElement('span');
+        /* How-to goes up into the help band (hintWords); a step that is
+           MISSING is a state and stays in the line beside its button. */
+        const say = (text, help = true) => {
+            const span = help ? hintWords(text) : document.createElement('span');
             span.textContent = text;
             hint.append(span);
         };
@@ -10667,7 +10774,7 @@ export function mountPhotoWindow(host) {
                missing step is offered, never armed unasked. */
             const step = cystidSteps(fr.m.profile)[count];
             if (!fr.armed && measureMode === null) {
-                say(t('Hier fehlt noch: %s', step.word));
+                say(t('Hier fehlt noch: %s', step.word), false);
                 offer(t('Weiter messen'), () => { frameArm(step.mode); frameOffer(); });
             } else {
                 frameArm(step.mode);
@@ -10684,7 +10791,7 @@ export function mountPhotoWindow(host) {
                No „Fertig" beside it any more (07.10.2026) — without a
                breadth the measure is not done, and a click beside it closes
                the offer anyway (measureDeselect). */
-            say(t('Hier fehlt noch die Breite.'));
+            say(t('Hier fehlt noch die Breite.'), false);
             offer(t('Breite messen'), () => { frameArm('line'); frameOffer(); });
         } else if (count === 0) {
             /* THE LENGTH IS ALWAYS THE POLYLINE (07.10.2026: „wenn
@@ -14643,7 +14750,7 @@ export function mountPhotoWindow(host) {
      */
     function photoChrome(e) {
         return e.target instanceof Element
-            && e.target.closest('.photo-frame-hint') !== null;
+            && e.target.closest('.photo-frame-hint, .photo-help') !== null;
     }
 
     /* A CLICK ON AN EMPTY PLACE PUTS THE TOOL DOWN (12.11.2026:
@@ -14658,7 +14765,7 @@ export function mountPhotoWindow(host) {
        one. A press that moved (a pan, a drag) is no click on a place. */
     const MEASURE_CONTROLS = 'button, a[href], input, select, textarea, label, summary, [contenteditable], [data-grip], '
         + '[role="button"], [role="tab"], [role="slider"], [role="menuitem"], [role="option"], [role="radio"], '
-        + '[role="checkbox"], [role="switch"], [role="link"], .photo-scalebar, .photo-frame-hint';
+        + '[role="checkbox"], [role="switch"], [role="link"], .photo-scalebar, .photo-frame-hint, .photo-help';
     let measureDownAt = null;
     document.addEventListener('pointerdown', (e) => { measureDownAt = [e.clientX, e.clientY]; }, true);
     document.addEventListener('click', (e) => {
@@ -15511,6 +15618,7 @@ export function mountPhotoWindow(host) {
         const hint = document.getElementById('photo-frame-hint');
         hint.textContent = '';
         const say = document.createElement('span');
+        say.className = 'photo-hint-words';
         say.textContent = t('Schreibe jetzt. Mit Enter beginnt eine neue Zeile.');
         hint.append(say);
         for (const [words, keep] of [[t('Fertig'), true], [t('Abbrechen'), false]]) {
@@ -15913,7 +16021,8 @@ export function mountPhotoWindow(host) {
                     : t('Ziehe den Rahmen auf. Er rastet in runden Maßen ein.');
         hint.textContent = '';
         const say = document.createElement('span');
-        say.className = 'photo-box-say';
+        // The missing scale is a state, not help: it stays in the line.
+        say.className = chosen === null && photoUmPerPx() === null ? 'photo-box-say' : 'photo-box-say photo-hint-words';
         say.textContent = words;
         hint.append(say);
         hint.hidden = false;
@@ -16408,7 +16517,7 @@ export function mountPhotoWindow(host) {
                         : t('Klicke in das Teilstück, um zu zählen; ein Klick auf einen Punkt nimmt ihn zurück. Die Kanten des Teilstücks lassen sich an ihren Punkten ziehen. Drehen am Kreis, verschieben durch Ziehen neben dem Teilstück. Ein Klick auf den Stielansatz setzt das Teilstück neu.');
         hint.textContent = '';
         const say = document.createElement('span');
-        say.className = 'photo-sector-say';
+        say.className = 'photo-sector-say photo-hint-words';
         /* THE WHOLE CAP OR A PART OF IT (18.11.2026: „Ganzer Hut
            würde bedeuten, wir lassen das Tortenstück Zeichnen weg … auch bei
            einem normalen Hut … wo wir den Stiel abgeschnitten haben. Dann
@@ -16650,8 +16759,7 @@ export function mountPhotoWindow(host) {
                 markPanelFor = key;
                 hint.textContent = '';
                 hint.append(cystidRow());
-                const text = document.createElement('span');
-                text.textContent = measureModeHint('cystid');
+                const text = hintWords(measureModeHint('cystid'));
                 hint.append(text);
                 hint.hidden = false;
                 return;
@@ -16811,7 +16919,7 @@ export function mountPhotoWindow(host) {
            nicht mehr"). */
         hint.append(row);
         if (aiming) {
-            const text = document.createElement('span');
+            const text = hintWords('');
             text.textContent = !scaleMayEdit()
                 ? measureModeHint(measureMode) + ' ' + t('Das gilt nur für dich und wird nicht gespeichert.')
                 : measureModeHint(measureMode);
