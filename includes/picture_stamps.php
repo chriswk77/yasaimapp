@@ -2,10 +2,10 @@
 /**
  * THE FIND'S PLACE AND NAME INSIDE ITS PICTURES (05.10.2026).
  *
- * Finn had asked him how a picture can be told to belong to a find. His
- * camera has no GPS; for years he tracked his walks with a second app and
- * matched the pictures to the track by their clocks — „das war immer recht
- * nervig". Now every picture is filed to a find in YASAIMAPP anyway, and
+ * The question was how a picture can be told to belong to a find. A
+ * camera without GPS meant, for years, tracking the walks with a second
+ * app and matching the pictures to the track by their clocks — „das war
+ * immer recht nervig". Now every picture is filed to a find in YASAIMAPP anyway, and
  * the find knows where it is: „dann könnten ja auch die Funddaten GPS mit
  * in die Bilddaten genommen werden. Damit hat man schon mal alles in einer
  * Datei." And the name: „Fundnummer nein, aber GPS und Name ja. Sobald der
