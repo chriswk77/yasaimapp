@@ -28,10 +28,22 @@
  *   find's „Zeigen"). Every other way simply happens INSIDE its frame, and
  *   this file sees the result when the frame has loaded: another area's
  *   page arrived → that area takes the address, and the frame goes back to
- *   its own page; a page that is no area at all (the administration, the
- *   help, the login after the session ran out) → the whole window goes
- *   there. Slower than a message, never wrong — so no place in the pages
- *   has to know about this one to stay correct.
+ *   its own page; a page that is no area at all (the help, the login
+ *   after the session ran out) → the whole window goes there. Slower than
+ *   a message, never wrong — so no place in the pages has to know about
+ *   this one to stay correct.
+ *
+ * - A TOOL IS NOT KEPT (the administration; 'tool' in the areas' list,
+ *   pages/shell.php says why it is in the frame at all). Its frame is made
+ *   when it is asked for — never ahead — and removed when one leaves it;
+ *   the next visit loads it anew. And leaving it makes every area OLD
+ *   (stale): the one one goes to is loaded anew at once, the others behind
+ *   it, one after the other. That is what the change of page did before
+ *   this page existed — whoever came back from the administration got a
+ *   fresh map —, and it is the only rule that is never wrong: what a tool
+ *   changes reaches the areas by many roads (a form, a request, the
+ *   browser's storage, its cache of tiles and outlines), and watching them
+ *   all to save one loading would miss one some day.
  *
  * THE MESSAGES, all of type 'yasaimapp-shell', same origin only:
  *   frame → here   { event: 'open', area, address }  show that area, at that
@@ -50,7 +62,11 @@ const STORE = 'shell.at.';
 const frames = new Map();   // area → its <iframe>
 const ready = new Set();    // areas whose page has run its scripts
 const home = new Map();     // area → the last address of its OWN page, to go back to after straying
+const stale = new Set();    // areas loaded before a tool was used: to be loaded anew
 let active = null;
+
+/** A tool (the administration): loaded when asked for, let go when left — the head says why. */
+const isTool = (key) => AREAS[key]?.tool === true;
 
 /** '/map/' and '/map/index.php' are one page. */
 const plain = (pathname) => pathname.replace(/index\.php$/, '');
@@ -85,8 +101,47 @@ function make(key, address) {
     frame.addEventListener('load', () => guard(key));
     frame.src = address;
     frames.set(key, frame);
+    stale.delete(key);
     box.append(frame);
     return frame;
+}
+
+/** One leaves a tool: its frame goes, and whatever stands loaded beside it is old from here on. */
+function leaveTool(key) {
+    frames.get(key)?.remove();
+    frames.delete(key);
+    ready.delete(key);
+    home.delete(key);
+    // Not where it stood: the next visit is a new one. (A reload WHILE in it finds its address — pagehide below.)
+    try { sessionStorage.removeItem(STORE + key); } catch { /* then it was never kept */ }
+    for (const k of frames.keys()) stale.add(k);
+}
+
+/**
+ * Load an old area anew — at the address asked for, else where it stands.
+ *
+ * NEVER BY reload() ALONE WHERE AN ADDRESS IS ASKED FOR, and never by
+ * replace() alone: an address that differs only behind the # is a step
+ * inside the document and loads nothing, so the hash is set first and the
+ * page loaded anew after it; an address with another query is a loading by
+ * itself.
+ */
+function freshen(key, address = null) {
+    stale.delete(key);
+    ready.delete(key);
+    const frame = frames.get(key);
+    const url = address ? new URL(address, areaUrl(key)) : null;
+    try {
+        const loc = frame.contentWindow.location;
+        if (url && plain(url.pathname) + url.search !== plain(loc.pathname) + loc.search) {
+            loc.replace(url.href);
+            return;
+        }
+        if (url && url.hash !== loc.hash) loc.replace(url.href);
+        loc.reload();
+    } catch {
+        frame.src = url?.href ?? home.get(key) ?? AREAS[key].url;   // a frame that strayed out of reach
+    }
 }
 
 /** The frame has loaded something — its own page, or it strayed (the head says how that happens). */
@@ -97,7 +152,16 @@ function guard(key) {
         loc = frame.contentWindow.location;
         if (loc.href === 'about:blank') return;
     } catch {
-        return;   // another origin: nothing of ours to put right
+        /* ANOTHER ORIGIN IN THE FRAME — a form whose answer sends the
+           browser to a foreign service (a cloud's consent page), and such
+           pages refuse to stand in a frame: one would look at an empty
+           area. Which address it was cannot be read from here, so the area
+           goes back to its own page. The forms that lead out say so
+           themselves (target="_top", includes/cloud_content.php) and never
+           get here; this is the net under the ones nobody thought of. */
+        ready.delete(key);
+        frame.src = home.get(key) ?? AREAS[key].url;
+        return;
     }
     const at = areaOf(loc);
     if (at === key) {
@@ -113,7 +177,8 @@ function guard(key) {
         return;
     }
     const address = addressOf(loc);
-    frame.contentWindow.location.replace(home.get(key) ?? AREAS[key].url);
+    // A tool is let go by show() anyway; an area goes back to its own page.
+    if (!isTool(key)) frame.contentWindow.location.replace(home.get(key) ?? AREAS[key].url);
     show(at, address);
 }
 
@@ -141,8 +206,11 @@ function title() {
  */
 function show(key, address = null, entry = true) {
     if (!AREAS[key]) return;
+    if (active && active !== key && isTool(active)) leaveTool(active);
     if (!frames.has(key)) {
         make(key, address ? new URL(address, areaUrl(key)).href : remembered(key) ?? AREAS[key].url);
+    } else if (stale.has(key)) {
+        freshen(key, address);
     } else if (address) {
         go(key, address);
     }
@@ -179,13 +247,23 @@ window.addEventListener('message', (e) => {
 
 /* THE OTHERS IN THE BACKGROUND, one after the other and only once the area
    in sight has run: it is the one somebody waits for, and three pages
-   starting at once would each be slower. */
+   starting at once would each be slower. First the areas that are old (a
+   tool was used), then the ones not loaded yet.
+
+   NOTHING BEHIND A TOOL: while the administration is in sight, whatever
+   was loaded now would be old the moment one leaves it. And a tool itself
+   is never loaded ahead. */
 let resting = null;
 function loadTheRest() {
     clearTimeout(resting);
     resting = setTimeout(() => {
-        if (!ready.has(active)) return;
-        const next = KEYS.find((key) => !frames.has(key));
+        if (!ready.has(active) || isTool(active)) return;
+        const old = [...stale].find((key) => frames.has(key) && key !== active);
+        if (old) {
+            freshen(old);
+            return;
+        }
+        const next = KEYS.find((key) => !isTool(key) && !frames.has(key));
         if (next) make(next, remembered(next) ?? AREAS[next].url);
     }, 1200);
 }

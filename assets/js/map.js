@@ -3299,9 +3299,12 @@ function openFind(id, tab = null) {
     if (!shellOpen('finds', new URL(findsAddress(id, tab), location.href).hash)) location.href = findsAddress(id, tab);
 }
 
-/** A page that is no area (the administration): the whole window goes, also out of the frame page. */
-function leaveTo(address) {
-    (inShell() ? window.top : window).location.href = address;
+/* TO THE ADMINISTRATION, at one of its tabs ('#areas'). Inside the desk's
+   frame page it is shown there (25.11.2026 — until then it was no part of
+   that page, and the whole window left for it, full screen with it);
+   anywhere else it is the address as before. */
+function openAdministration(hash) {
+    if (!shellOpen('admin', hash)) location.href = (window.START_DATA?.baseUrl ?? '') + 'pages/administration.php' + hash;
 }
 
 document.getElementById('move-done').addEventListener('click', () => moveMode(false));
@@ -13199,7 +13202,7 @@ document.getElementById('area-cancel').addEventListener('click', () => {
  * mean: they find their own way back.
  */
 function backToAdministration() {
-    leaveTo((window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#areas');
+    openAdministration('#areas');
 }
 
 document.getElementById('area-form').addEventListener('submit', async (e) => {
@@ -14124,7 +14127,7 @@ async function windowFromUrl() {
                 // Six decimal places like the point columns — around eleven centimeters.
                 state.corners = corners.map(([lat, lon]) => [Number(lat.toFixed(6)), Number(lon.toFixed(6))]);
                 sessionStorage.setItem('map.containerFilter', JSON.stringify(state));
-                leaveTo((window.START_DATA?.baseUrl ?? '') + 'pages/administration.php#share');
+                openAdministration('#share');
             },
         });
         return;

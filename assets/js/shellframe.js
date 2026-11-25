@@ -21,10 +21,14 @@
  * with the same buttons as when it is a page of its own; they are ordinary
  * links. A click on a link that leads to ANOTHER AREA is handed up as
  * shellOpen — that is what makes the header's buttons change the view
- * instead of the page. A link to a page that is no area (the
- * administration, the help) takes the whole window, and so does a form
- * posted to one (the door). Links within the page itself, new tabs and
- * downloads are left alone, and so is a click somebody already answered.
+ * instead of the page; the administration counts as one here (the frame
+ * page treats it as a tool — loaded when asked for, let go when left —,
+ * which is its business, not a page's). A link to a page that is no area
+ * (the help) takes the whole window, and so does a form posted to one (the
+ * door). A link to a FOREIGN site without a tab of its own takes the whole
+ * window too: most sites refuse to stand in a frame, and one would look at
+ * an empty area. Links within the page itself, new tabs and downloads are
+ * left alone, and so is a click somebody already answered.
  *
  * A PAGE IN A FRAME OF A FRAME counts too — the key beside a find stands in
  * the Fundbrowser's frame, which stands in the frame page: its links to a
@@ -52,6 +56,14 @@ export function inShell() {
 export function shellOpen(area, address = '') {
     const page = shell();
     if (!page) return false;
+    /* An area the frame page does not have (a frame page still open from
+       before a deployment that added one): „no" — and the caller goes
+       there by its address, which the frame page then sorts out. */
+    try {
+        if (!(area in JSON.parse(page.document.getElementById('shell').dataset.areas))) return false;
+    } catch {
+        return false;
+    }
     page.postMessage({ type: TYPE, event: 'open', area, address }, location.origin);
     return true;
 }
@@ -76,7 +88,12 @@ if (inShell()) {
         const link = e.target.closest?.('a[href]');
         if (!link || link.hasAttribute('download') || link.target === '_blank') return;
         const url = new URL(link.href, location.href);
-        if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) return;
+        if (!/^https?:$/.test(url.protocol)) return;
+        if (url.origin !== location.origin) {
+            e.preventDefault();
+            page.location.href = url.href;
+            return;
+        }
         const area = areaOf(url);
         /* Within this page: the browser's own business — unless this page
            is not an area's own (the key in the Fundbrowser's frame) and the

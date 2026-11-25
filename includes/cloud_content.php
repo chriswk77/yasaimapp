@@ -595,7 +595,8 @@ function cloud_move_window_render(PDO $pdo, int $userId, string $from, string $t
     $list     = cloud_pictures_list($held, true);
     ?>
 <dialog class="form-window cloud-move-window pinned-footer" id="cloud-move-window">
-    <form method="post" action="<?= h($target) ?>">
+    <?php /* target="_top" for the reason at „Verbinden": the answer is the new cloud's consent page. */ ?>
+    <form method="post" action="<?= h($target) ?>" target="_top">
         <?= csrf_field() ?>
         <input type="hidden" name="section" value="cloud">
         <input type="hidden" name="action" value="move_start">
@@ -862,7 +863,13 @@ $connectedKey = array_key_first($connections);
                         </div>
                     </form>
                 <?php elseif (cloud_provider_usable($key)): ?>
-                    <form method="post" action="<?= h($target) ?>" class="button-row right">
+                    <?php /* target="_top": THIS FORM'S ANSWER LEADS TO THE
+                         PROVIDER (cloud_consent_redirect), and a consent page
+                         refuses to stand in a frame. Inside the desk's frame
+                         page (pages/shell.php) the administration is one —
+                         so the whole window goes, as it always did where
+                         there is no frame. */ ?>
+                    <form method="post" action="<?= h($target) ?>" class="button-row right" target="_top">
                         <?= csrf_field() ?>
                         <input type="hidden" name="section" value="cloud">
                         <input type="hidden" name="action" value="connect">

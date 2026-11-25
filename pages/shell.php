@@ -26,10 +26,25 @@
  * app looks exactly as it did. The buttons' clicks are caught in the frame
  * (assets/js/shellframe.js) and handed up here instead of leaving.
  *
- * THE ADMINISTRATION IS NOT AN AREA („da die Verwaltung nicht oft genutzt
- * wird, würde ich die Verwaltung erstmal ausschließen aus diesem
- * Allesladen"): its button, like the help and the door, leaves this page —
- * an ordinary change of page, as before.
+ * THE ADMINISTRATION IS IN THE FRAME TOO, BUT ONLY WHEN IT IS ASKED FOR
+ * (25.11.2026). It was left out at first, for fear it would be loaded
+ * with everything else („da die Verwaltung nicht oft genutzt wird, würde
+ * ich die Verwaltung erstmal ausschließen aus diesem Allesladen") — and
+ * then leaving it out cost the one thing this page is for: its button
+ * changed the page, and full screen was gone („du kannst in den Rahmen ja
+ * nachträglich die Verwaltung reinladen, oder?"). So it is a TOOL
+ * (app_tools(), 'tool' below): never loaded ahead, a frame only from the
+ * click on, and that frame is let go when one leaves it. Two reasons for
+ * letting it go instead of keeping it like an area:
+ *
+ *   - what one does there changes what the areas show — lists and Mappen,
+ *     the theme, the language, what lies on the device —, so after a visit
+ *     the areas are loaded anew, exactly as the change of page did before;
+ *   - and what the areas do changes what IT shows (the trash, the points
+ *     table), so the next visit starts fresh as well.
+ *
+ * The help and the door still leave this page — an ordinary change of
+ * page, as before.
  *
  * AT THE DESK ONLY. The phone's pages stay pages: three of them loaded at
  * once are a quarter gigabyte (measured that day in a fresh Chrome: map
@@ -37,8 +52,9 @@
  * which a desk carries and a phone should not. A guest has no areas to walk
  * between and is sent to the map.
  *
- * assets/js/shell.js does the work; app_areas() (includes/page.php) says
- * which areas there are — the list the header's buttons are drawn from.
+ * assets/js/shell.js does the work; app_areas() and app_tools()
+ * (includes/page.php) say which there are — the lists the header's buttons
+ * are drawn from.
  */
 
 declare(strict_types=1);
@@ -60,6 +76,9 @@ foreach (app_areas() as $key => [$label, $href]) {
     if ($href !== null) {
         $areas[$key] = ['label' => $label, 'url' => $href];
     }
+}
+foreach (app_tools() as $key => [$label, $href]) {
+    $areas[$key] = ['label' => $label, 'url' => $href, 'tool' => true];
 }
 
 page_header('YASAIMAPP', ['full' => true]);

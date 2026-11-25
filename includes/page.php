@@ -35,8 +35,7 @@ declare(strict_types=1);
  */
 function app_tabs(string $active): void
 {
-    $tabs = app_areas();
-    $tabs['admin'] = [t('Verwaltung'), url('pages/administration.php'), 'gear'];
+    $tabs = app_areas() + app_tools();
     echo '<nav class="app-tabs" aria-label="' . h(t('Bereiche')) . '">';
     foreach ($tabs as $key => [$label, $href, $symbol]) {
         $inner = icon($symbol) . '<span>' . h($label) . '</span>';
@@ -53,10 +52,8 @@ function app_tabs(string $active): void
 /**
  * THE AREAS ONE WORKS IN — the map, the Fundbrowser and whatever a module
  * adds (hook 'tabs'): [key => [label, address, icon name]]. The header's
- * buttons are these plus the administration (app_tabs), and the desk's
- * frame page keeps exactly these loaded side by side (pages/shell.php) —
- * the administration is not one of them: it is opened seldom, and a tool
- * one leaves the work for may as well be a page of its own.
+ * buttons are these plus the tools below (app_tabs), and the desk's frame
+ * page keeps exactly these loaded side by side (pages/shell.php).
  */
 function app_areas(): array
 {
@@ -68,6 +65,18 @@ function app_areas(): array
         $areas += (array) $added;
     }
     return $areas;
+}
+
+/**
+ * THE TOOLS ONE LEAVES THE WORK FOR — the administration, in the same shape
+ * as app_areas(). A button in the header like the areas, but not a place
+ * one stays in: the desk's frame page loads a tool only when it is asked
+ * for and lets it go when one leaves it (pages/shell.php says why), where
+ * an area is loaded ahead and kept.
+ */
+function app_tools(): array
+{
+    return ['admin' => [t('Verwaltung'), url('pages/administration.php'), 'gear']];
 }
 
 /**
