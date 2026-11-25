@@ -34,6 +34,8 @@
  * line for line. A word changes in both files.
  */
 
+import { t } from './i18n.js';
+
 // The German word as it is stored → [international, short form].
 const WORDS = {
     // Picture names (photos.php, PHOTO_TITLES_MICRO) and measuring layers (photowindow.js, MEASURE_COLUMNS).
@@ -115,3 +117,69 @@ export function vocabStored(typed) {
 
 /** A name made of words joined by „ · " („Sporen · Keimporus", „Sporen · Auswertung"), each word shown as vocab() shows it. */
 export const vocabPhrase = (name) => String(name ?? '').split(' · ').map(vocab).join(' · ');
+
+/* --- THE PLATE SPEAKS ENGLISH ----------------------------------------------
+ *
+ * 25.11.2026: „Da ich weitestgehend eine englischsprachige Tafel will, können
+ * wir die deutschen Makrobezeichnungen, wenn wir sie als Label in der Tafel
+ * anzeigen … übersetzt anzeigen lassen, und auch in der Verteilung steht ja
+ * Breite und Länge, das dann bitte auch in Englisch."
+ *
+ * ONLY ON THE PLATE. In the app the macro names stay national (the head of
+ * this file says why), and the photo window's own distribution keeps the
+ * app's language; a plate is the one thing that travels, so it alone wears
+ * English whatever the page speaks. Stored is still the German word — the
+ * plate only draws it differently.
+ *
+ * THE MACRO NAMES (photos.php, PHOTO_TITLES_MACRO): in the words of an
+ * English description — „Habit" for the find in its place, „Hymenophore"
+ * for the underside, whether gills, tubes or spines. A word the table does
+ * not know (one of one's own) stands as typed, as everywhere. „Velum",
+ * „Detail" and „Habitat" are the same word in both languages and need no
+ * row; „Sklerotium" gets its Latin form here, where nobody has to tell a
+ * macro picture from a micro one.
+ */
+const PLATE_MACRO = {
+    'Belegfoto': 'Voucher',
+    'Hauptmotiv': 'Habit',
+    'Kollektion': 'Collection',
+    'Studio': 'Studio',
+    'Größenvergleich': 'Scale',
+    'Standort': 'Site',
+    'Hutoberseite': 'Pileus',
+    'Unterseite': 'Hymenophore',
+    'Schnittbild': 'Section',
+    'Stielbasis': 'Stipe base',
+    'Makrochemie': 'Macrochemistry',
+    'Sporenpulver': 'Spore print',
+    'Makrochemie SPP': 'Macrochemistry spore print',
+    'Exsikkat': 'Exsiccatum',
+    'Sklerotium': 'Sclerotium',
+};
+const PLATE_FORMS = new Map(Object.entries(PLATE_MACRO).map(([german, shown]) => [key(german), shown]));
+
+/** A picture name or layer as the PLATE's label writes it: the micro words as vocabLabel(), the macro words in English. */
+export function plateWord(word, short) {
+    return FORMS.has(key(word)) ? vocabLabel(word, short) : (PLATE_FORMS.get(key(word)) ?? String(word ?? '').trim());
+}
+
+/* The plate's own sentences — the distribution's axes and spread line, a
+   cystidium's parts among the values. Anything else goes through the app's
+   catalog as before (t()). */
+const PLATE_SENTENCES = {
+    'Länge µm': 'Length µm',
+    'Breite µm': 'Width µm',
+    'N = %d · Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d': 'N = %d · spread length ± %d %%, width ± %d %% · outliers %d',
+    'Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d': 'Spread length ± %d %%, width ± %d %% · outliers %d',
+    'Köpfchen': 'Capitulum',
+    'Hals': 'Neck',
+    'Kopf': 'Head',
+};
+
+/** t() for what the plate draws: its own English where PLATE_SENTENCES has it, the app's catalog otherwise. */
+export function plateT(text, ...args) {
+    const english = PLATE_SENTENCES[text];
+    if (english === undefined) return t(text, ...args);
+    let auto = 0;
+    return english.replace(/%%|%[sd]/g, (whole) => (whole === '%%' ? '%' : String(args[auto++] ?? '')));
+}

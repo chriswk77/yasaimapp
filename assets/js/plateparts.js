@@ -12,7 +12,7 @@
 
 import { t } from './i18n.js';
 import { mediaLabel } from './media.js';
-import { vocab, vocabLabel, vocabShortens } from './vocabulary.js';
+import { vocab, vocabShortens, plateWord, plateT } from './vocabulary.js';
 import { iconHtml } from './icons.js';
 import { developEmpty, developRenderer, geoSet, geoView, aiPatchesFor } from './develop.js';
 import {
@@ -478,7 +478,7 @@ export function mediaGeometry(cell, W, H, mm, label, bar) {
 export const labelShortens = (name) => vocabShortens(name);
 /** A name as the label writes it: international, short where the cell asks and a short form exists. */
 export function labelWord(name, short) {
-    return vocabLabel(name, short);
+    return plateWord(name, short);
 }
 
 export function pictureLabel(pic, cell) {
@@ -752,9 +752,9 @@ export const PART_GAP = .5;
 export function valuesRows(item, rows, pics = null) {
     const name = typeof item.mark === 'string'
         ? `${vocab(item.layer)} (${item.mark === '' ? t('ohne Merkmal') : vocab(item.mark)})` : vocab(item.layer);
-    const lines = valueLines(rows).filter(l => item.lines.includes(l.key));
+    const lines = valueLines(rows, plateT).filter(l => item.lines.includes(l.key));
     // Spread and outliers after the classic lines — without N, the Q line has it (spreadText).
-    const spread = item.lines.includes('spread') ? spreadText(rows, false) : '';
+    const spread = item.lines.includes('spread') ? spreadText(rows, false, plateT) : '';
     if (spread) lines.push({ text: spread });
     /* THE NAME IS A COLUMN OF ITS OWN (09.11.2026: „wenn dieser
        Name eingeblendet wird, würde ich das Design der unteren Zeilen so
@@ -887,7 +887,7 @@ export function blockPlotInner(block, rows, W, H, mm) {
        platzieren und hätte n"). On unless the block says no; the plot
        gives up a line of its height for it. Its type is the plot's, made
        smaller only where the cell is too narrow for the line. */
-    const line = block.spread !== false ? spreadText(dots) : '';
+    const line = block.spread !== false ? spreadText(dots, true, plateT) : '';
     if (!line) return plotInner(dots, W, H, mm, plotInk(block));
     const ink = plotInk(block);
     const font = Math.min(2.6 * mm, .94 * W / (mediaCanvas().measureText(line).width / 100));
@@ -919,7 +919,7 @@ export function plotEvenSize(block, rows, mm, { width = null, height = null } = 
     if (dots.length < 2 || (width == null) === (height == null)) return null;
     const font = 2.6 * mm;
     const k = font / 9;
-    const lineH = block?.spread !== false && spreadText(dots) ? 2.6 * mm * 1.7 : 0;
+    const lineH = block?.spread !== false && spreadText(dots, true, plateT) ? 2.6 * mm * 1.7 : 0;
     // Positive while the length's axis is the finer one; it falls as the box grows taller, rises as it grows wider.
     const gap = (W, H) => {
         const s = plotPxPerUm(dots, W, H - lineH, font);
@@ -942,7 +942,7 @@ export function plotEvenSize(block, rows, mm, { width = null, height = null } = 
 /** The plot's inner SVG for a cell W × H pixels, its type in millimetres. */
 export function plotInner(rows, W, H, mm, ink = PLOT_INK) {
     // The page's type for the plot too — an SVG drawn as an image knows no stylesheet.
-    return `<g font-family="${PAGE_FONT}">${plotSvg(rows, ink, { W, H, font: 2.6 * mm, dot: .8 * mm })}</g>`;
+    return `<g font-family="${PAGE_FONT}">${plotSvg(rows, ink, { W, H, font: 2.6 * mm, dot: .8 * mm, tr: plateT })}</g>`;
 }
 
 /**

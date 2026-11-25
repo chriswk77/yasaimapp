@@ -199,7 +199,7 @@ export const CYSTID_PROFILES = {
         stacked: true,
     },
     conocybe: {
-        parts: [{ key: 'L' }, { key: 'V' }, { key: 'C', word: () => t('Köpfchen') }, { key: 'N', word: () => t('Hals') }],
+        parts: [{ key: 'L' }, { key: 'V' }, { key: 'C', word: (tr = t) => tr('Köpfchen') }, { key: 'N', word: (tr = t) => tr('Hals') }],
         ratios: [],
         breadth: 'V',
     },
@@ -213,7 +213,7 @@ export const CYSTID_PROFILES = {
        THREE PLACES KNOW THE METHODS: here, its twin in includes/measures.php,
        and the cleaner in includes/photos.php that lets a method be saved. */
     paraphysis: {
-        parts: [{ key: 'L' }, { key: 'B' }, { key: 'K', word: () => t('Kopf') }],
+        parts: [{ key: 'L' }, { key: 'B' }, { key: 'K', word: (tr = t) => tr('Kopf') }],
         ratios: [],
         breadth: 'B',
     },
@@ -421,7 +421,7 @@ const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
  * Each pool is averaged against ITSELF, and a missing pool simply leaves
  * its part of the sentence out.
  */
-export function valueLines(rows) {
+export function valueLines(rows, tr = t) {
     if (rows.length === 0) return [];
     if (rows.length === 1) {
         const r = rows[0];
@@ -429,13 +429,13 @@ export function valueLines(rows) {
         if (profile?.stacked) {
             // One cystidium, stacked: its length, then each part, then each ratio, a line each.
             const parts = profile.parts.filter(p => p.word && p.key !== profile.breadth && r.parts[p.key] > 0)
-                .map(p => ({ key: 'range', quiet: false, text: `${p.word()} ${umText(r.parts[p.key])} µm` }));
+                .map(p => ({ key: 'range', quiet: false, text: `${p.word(tr)} ${umText(r.parts[p.key])} µm` }));
             const ratios = Object.entries(r.ratios).map(([w, v]) => ({ key: 'range', quiet: true, text: `${w} ≈ ${qText(v)}` }));
             return [{ key: 'range', quiet: false, text: `L ${umText(r.L)}${r.B != null ? ` × ${umText(r.B)}` : ''} µm` }, ...parts, ...ratios];
         }
         // One cystidium: its parts and ratios in the same line, plainly.
         const parts = profile ? profile.parts.filter(p => p.word && p.key !== profile.breadth && r.parts[p.key] > 0)
-            .map(p => ` · ${p.word()} ${umText(r.parts[p.key])}`).join('') : '';
+            .map(p => ` · ${p.word(tr)} ${umText(r.parts[p.key])}`).join('') : '';
         const ratios = profile ? Object.entries(r.ratios).map(([w, v]) => ` · ${w} ≈ ${qText(v)}`).join('') : '';
         return [{ key: 'range', quiet: false, text: `${umText(r.L)}${r.B != null ? ` × ${umText(r.B)}` : ''} µm`
             + (r.Q != null ? ` · Q ≈ ${qText(r.Q)}` : '') + parts + ratios }];
@@ -451,7 +451,7 @@ export function valueLines(rows) {
     if (Qs.length >= 2) bits.push(`Q = ${qText(Math.min(...Qs))} – ${qText(Math.max(...Qs))}`);
     else if (Qs.length === 1) bits.push(`Q ≈ ${qText(Qs[0])}`);
     bits.push(`N = ${Ls.length}${Bs.length && Bs.length !== Ls.length ? '/' + Bs.length : ''}`);
-    const cystid = cystidLines(rows, dims);
+    const cystid = cystidLines(rows, dims, tr);
     /* THE LENGTH NAMED TOO where the parts stand one under the other
        (08.11.2026: „für die Länge auch noch ein L vorne dran") —
        among A, M and B a bare number would be the one line without a name. */
@@ -472,14 +472,14 @@ export function valueLines(rows) {
    shows Q shows the ratios: „A 3,8 – 8,0 · M 3,4 – 6,9 · B 5,8 – 13,2",
    „A/M 0,81 – 1,43 · A/B …", „Köpfchen 4,5 – 6,5 µm · Hals 2 – 4 µm".
    The length and the belly stand in the first line already. */
-function cystidLines(rows, dims) {
+function cystidLines(rows, dims, tr = t) {
     const out = { range: [], qn: [], mean: '', meanLines: [] };
     const profiles = [...new Set(rows.map(r => r.profile).filter(p => CYSTID_PROFILES[p]))];
     for (const name of profiles) {
         const profile = CYSTID_PROFILES[name];
         const mine = rows.filter(r => r.profile === name);
         const named = profile.parts.filter(p => p.word && p.key !== profile.breadth);
-        const parts = named.map(p => [p.word(), mine.map(r => r.parts[p.key]).filter(v => v > 0)]).filter(([, vs]) => vs.length);
+        const parts = named.map(p => [p.word(tr), mine.map(r => r.parts[p.key]).filter(v => v > 0)]).filter(([, vs]) => vs.length);
         const ratios = profile.ratios.map(([a, b]) => [`${a}/${b}`, mine.map(r => r.ratios[`${a}/${b}`]).filter(v => v > 0)]).filter(([, vs]) => vs.length);
         const span = ([w, vs]) => (vs.length >= 2 ? `${w} = ${qText(Math.min(...vs))} – ${qText(Math.max(...vs))}` : `${w} ≈ ${qText(vs[0])}`);
         if (profile.stacked) {
@@ -725,13 +725,13 @@ export function cloudSpread(rows) {
  * Verteilung einblenden mit n") — the values' Q line says N already, and a
  * distribution standing alone on a plate needs its own.
  */
-export function spreadText(rows, withCount = true) {
+export function spreadText(rows, withCount = true, tr = t) {
     const s = cloudSpread(rows);
     if (!s) return '';
     const L = Math.round(s.length), B = Math.round(s.breadth);
     return withCount
-        ? t('N = %d · Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d', s.n, L, B, s.far)
-        : t('Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d', L, B, s.far);
+        ? tr('N = %d · Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d', s.n, L, B, s.far)
+        : tr('Streuung Länge ± %d %%, Breite ± %d %% · Ausreißer %d', L, B, s.far);
 }
 
 /**
@@ -849,7 +849,7 @@ export function plotPxPerUm(rows, W, H, font = 9) {
  * @param {{L: number, B: number}[]} rows  two or more, each with a breadth
  * @param {{axis: string, quiet: string, accent: string, dot?: string}} ink
  */
-export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {}) {
+export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3, tr = t } = {}) {
     const { k, left, right, top, bottom, titleSize, Ls, Bs, mx, my, ellipses, x0, x1, y0, y1 } = plotFrame(rows, W, H, font);
     const X = v => left + (v - x0) / (x1 - x0) * (W - left - right);
     const Y = v => H - bottom - (v - y0) / (y1 - y0) * (H - top - bottom);
@@ -869,7 +869,7 @@ export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {})
         + label(left - 3 * k, Y(Math.min(...Bs)) + 3 * k, umText(Math.min(...Bs)), 'end')
         + label(left - 3 * k, Y(Math.max(...Bs)) + 3 * k, umText(Math.max(...Bs)), 'end')
         + `<text x="${W - right}" y="${H - bottom - 2.5 * k}" font-size="${titleSize}" fill="${ink.quiet}"
-             text-anchor="end">${t('Länge µm')}</text>`
+             text-anchor="end">${tr('Länge µm')}</text>`
         /* At the breadth axis' top end, in the strip over the data, on one
            line with the „68 %" opposite — with its unit like the length's
            (09.11.2026: „bei der Breite sollten wir auch noch µm
@@ -879,7 +879,7 @@ export function plotSvg(rows, ink, { W = 220, H = 150, font = 9, dot = 3 } = {})
            ending before it: „Breite µm" is wider than the margin the
            numbers leave and would run out of the picture on the left. */
         + `<text x="${left - 2 * k}" y="${top - 5 * k}" font-size="${titleSize}" fill="${ink.quiet}"
-             text-anchor="start">${t('Breite µm')}</text>`
+             text-anchor="start">${tr('Breite µm')}</text>`
         + `<line x1="${X(mx)}" y1="${top}" x2="${X(mx)}" y2="${H - bottom}"
              stroke="${ink.quiet}" stroke-dasharray="${3 * k} ${3 * k}" stroke-width="${.7 * k}"/>`
         + `<line x1="${left}" y1="${Y(my)}" x2="${W - right}" y2="${Y(my)}"
