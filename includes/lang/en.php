@@ -10889,4 +10889,42 @@ return [
         => 'The find names only the genus. Its finds are shown as soon as a species is entered.',
     'Bestimmung — Internet-Links und Funde zum Namen'
         => 'Identification — web links and finds for the name',
+
+    // A PLATE ON THE PUBLIC SITE (plate_window.php, plates.js publishDraw, plate_publish.php, 25.11.2026)
+    'Veröffentlichen'
+        => 'Publish',
+    'Tafel veröffentlichen'
+        => 'Publish the plate',
+    'Auf %s zeigen?'
+        => 'Show on %s?',
+    'der öffentlichen Seite'
+        => 'the public site',
+    'Lizenz %s: Jeder darf die Tafel mit deinem Namen weitergeben, aber nicht verkaufen.'
+        => 'Licence %s: anyone may pass the plate on with your name, but not sell it.',
+    'Bilder von anderen auf dieser Tafel'
+        => 'Pictures by others on this plate',
+    'Hake jeden an, der einverstanden ist. Vorher geht die Tafel nicht hinaus.'
+        => 'Tick everyone who agrees. Until then the plate does not go out.',
+    '%s ist einverstanden'
+        => '%s agrees',
+    'Zusatz zur Lizenz'
+        => 'Addition to the licence',
+    'z. B. Foto unten links mit freundlicher Genehmigung'
+        => 'e.g. photo bottom left by kind permission',
+    'Noch nicht zu sehen: %s muss erst einverstanden sein.'
+        => 'Not visible yet: %s has to agree first.',
+    'Veröffentlicht. Änderungen erscheinen innerhalb einer Stunde.'
+        => 'Published. Changes appear within an hour.',
+    'Die Tafel wird veröffentlicht. Sie erscheint innerhalb einer Stunde.'
+        => 'The plate is being published. It appears within an hour.',
+    'Die Tafel wird nicht mehr veröffentlicht. Sie verschwindet innerhalb einer Stunde.'
+        => 'The plate is no longer published. It disappears within an hour.',
+    'Zusatz gespeichert.'
+        => 'Addition saved.',
+    'Der Zusatz ist zu lang.'
+        => 'The addition is too long.',
+    'Auf der Tafel sind Bilder von anderen. Bestätige erst, dass sie einverstanden sind.'
+        => 'The plate carries pictures by others. Confirm first that they agree.',
+    'Veröffentlichen gibt es hier nicht.'
+        => 'Publishing is not available here.',
 ];

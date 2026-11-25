@@ -150,6 +150,34 @@ function plate_window_render(): void
                             <button type="button" class="button subtle small" id="plate-note-bigger" title="<?= h(t('Größer')) ?>">A+</button>
                         </div>
                     </div>
+                    <?php /* ON THE PUBLIC SITE (plate_publish.php, 25.11.2026: „eine
+                         Option veröffentlichen … Beim Veröffentlichen setze ich
+                         dort die Lizenz"). Only for the account that owns the
+                         site, on its own plate — plates.js shows the section
+                         when the server sent a `publish` with the plate. The
+                         other photographers stand as ticks of their own: a
+                         friend's picture is his, and the plate goes out only
+                         when each of them is confirmed. Every change is sent at
+                         once and answered with a toast. */ ?>
+                    <section class="plate-publish" id="plate-publish" hidden>
+                        <h3 class="plate-side-title"><?= h(t('Veröffentlichen')) ?></h3>
+                        <fieldset class="field question plate-ticks">
+                            <legend id="plate-publish-question"></legend>
+                            <label class="choice-row"><input type="checkbox" id="plate-publish-on"><span><?= h(t('Tafel veröffentlichen')) ?></span></label>
+                            <p class="hint-text small" id="plate-publish-licence"></p>
+                        </fieldset>
+                        <fieldset class="field question plate-ticks" id="plate-publish-others" hidden>
+                            <legend><?= h(t('Bilder von anderen auf dieser Tafel')) ?></legend>
+                            <div id="plate-publish-people"></div>
+                            <p class="hint-text small"><?= h(t('Hake jeden an, der einverstanden ist. Vorher geht die Tafel nicht hinaus.')) ?></p>
+                        </fieldset>
+                        <div class="field question">
+                            <label class="plate-question" for="plate-publish-note"><?= h(t('Zusatz zur Lizenz')) ?></label>
+                            <input type="text" id="plate-publish-note" maxlength="500"
+                                   placeholder="<?= h(t('z. B. Foto unten links mit freundlicher Genehmigung')) ?>">
+                        </div>
+                        <p class="plate-publish-state" id="plate-publish-state" aria-live="polite"></p>
+                    </section>
                 </div>
             </aside>
         </div>

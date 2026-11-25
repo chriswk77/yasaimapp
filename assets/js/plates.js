@@ -182,6 +182,8 @@ export function mountPlates(host) {
     let plates = [];          // the find's plates as the server gave them
     let ready = false;        // the migration is in
     let cloudReady = false;   // a drawn page has a cloud to go to (plates.php GET, plate_images.php)
+    // plate id → where it stands on the public site (plate_publish.php) — sent only to the site's owner, for his own plates.
+    const publishOf = new Map();
 
     // The open plate.
     let plate = null;         // {id, mine, maker, …} or a new one's {id: null}
@@ -351,6 +353,7 @@ export function mountPlates(host) {
         ready = answer?.ready === true;
         cloudReady = answer?.cloud === true;
         plates = answer?.plates ?? [];
+        for (const p of plates) if (p.publish) publishOf.set(p.id, p.publish);
         drawRow();
     }
 
@@ -562,6 +565,7 @@ export function mountPlates(host) {
         zoomSync();
         win.classList.toggle('is-reading', !editable);
         deleteBtn.hidden = !editable || plate.id === null;
+        publishDraw();
         note.textContent = plate.may_edit ? '' : t('Tafel von %s — nur zum Ansehen.', personName(plate.maker));
         stripDraw();
         /* IN THE PAGE OR OVER IT (host.inPage, the Fundbrowser's tab
@@ -902,6 +906,9 @@ export function mountPlates(host) {
                 });
                 const saved = answer.plate;
                 plate = saved;
+                // Its pictures may have changed whose they are — the section says it anew.
+                if (saved.publish) publishOf.set(saved.id, saved.publish);
+                publishDraw();
                 savedJson = JSON.stringify(bare(saved.layout));
                 failedJson = null;
                 /* THE SERVER'S SHAPE IS THE TRUTH from here: it dropped what it
@@ -1142,6 +1149,68 @@ export function mountPlates(host) {
             render();
         });
     }
+
+    /* ON THE PUBLIC SITE (plate_publish.php, 25.11.2026: „eine Option
+       veröffentlichen … Beim Veröffentlichen setze ich dort die Lizenz. Und
+       wenn dort Bilder drauf sind von Freunden, dann kann ich das natürlich
+       vorher klären"). The section stands only where the server sent a
+       `publish` with the plate — the site's owner, his own plate, the
+       migration in. Every change goes to the server at once; the server
+       refuses a release while somebody's picture is not confirmed, and the
+       box goes back to what it says. The site takes it up within the hour
+       (its cron job). */
+    const publishBox = document.getElementById('plate-publish');
+    const publishOn = document.getElementById('plate-publish-on');
+    const publishNote = document.getElementById('plate-publish-note');
+    const publishPeople = document.getElementById('plate-publish-people');
+    function publishDraw() {
+        const st = plate?.id && plate.mine ? publishOf.get(plate.id) : null;
+        publishBox.hidden = !st || !editable;
+        if (publishBox.hidden) return;
+        document.getElementById('plate-publish-question').textContent = t('Auf %s zeigen?', st.site || t('der öffentlichen Seite'));
+        publishOn.checked = st.published;
+        document.getElementById('plate-publish-licence').textContent =
+            t('Lizenz %s: Jeder darf die Tafel mit deinem Namen weitergeben, aber nicht verkaufen.', st.licence);
+        document.getElementById('plate-publish-others').hidden = st.others.length === 0;
+        publishPeople.replaceChildren(...st.others.map(o => {
+            const l = document.createElement('label');
+            l.className = 'choice-row';
+            const tick = document.createElement('input');
+            tick.type = 'checkbox';
+            tick.value = String(o.id);
+            tick.checked = o.cleared;
+            tick.addEventListener('change', () => publishSend(t('Gespeichert.')));
+            const words = document.createElement('span');
+            words.textContent = t('%s ist einverstanden', personName(o.name));
+            l.append(tick, words);
+            return l;
+        }));
+        if (document.activeElement !== publishNote) publishNote.value = st.note;
+        const waiting = st.others.filter(o => !o.cleared).map(o => personName(o.name));
+        document.getElementById('plate-publish-state').textContent = !st.published ? ''
+            : waiting.length > 0 ? t('Noch nicht zu sehen: %s muss erst einverstanden sein.', waiting.join(', '))
+            : t('Veröffentlicht. Änderungen erscheinen innerhalb einer Stunde.');
+    }
+    async function publishSend(said) {
+        const id = plate?.id;
+        if (!id) return;
+        const cleared = [...publishPeople.querySelectorAll('input:checked')].map(x => Number(x.value));
+        try {
+            const answer = await host.request('plates.php', {
+                method: 'POST',
+                body: JSON.stringify({ action: 'publish', id, on: publishOn.checked, note: publishNote.value, cleared }),
+            });
+            publishOf.set(id, answer.publish);
+            toast(said, 'success');
+        } catch (e) {
+            toast(e.message || t('Das ließ sich nicht speichern.'), 'error');
+        }
+        if (plate?.id === id) publishDraw();
+    }
+    publishOn.addEventListener('change', () => publishSend(publishOn.checked
+        ? t('Die Tafel wird veröffentlicht. Sie erscheint innerhalb einer Stunde.')
+        : t('Die Tafel wird nicht mehr veröffentlicht. Sie verschwindet innerhalb einer Stunde.')));
+    publishNote.addEventListener('change', () => publishSend(t('Zusatz gespeichert.')));
 
     /* --- Drawing ---------------------------------------------------------- */
     /** The page's height on the screen: as large as the stage lets an A4

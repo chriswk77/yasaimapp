@@ -73,6 +73,24 @@ function public_site_load(): bool
 }
 
 /**
+ * Whether this account owns the site — the one whose finds it shows. Only
+ * he sees the plate window's „Veröffentlichen" (plate_publish.php).
+ */
+function public_site_may(?array $user): bool
+{
+    return $user !== null && public_site_load() && (int) OWNER_ID === (int) ($user['id'] ?? 0);
+}
+
+/** The site's address as the plate window names it („wkpilz.de"), or its name. */
+function public_site_label(): string
+{
+    if (!public_site_load()) {
+        return '';
+    }
+    return defined('SITE_DOMAIN') ? (string) SITE_DOMAIN : (defined('SITE_NAME') ? (string) SITE_NAME : '');
+}
+
+/**
  * One slice of the refresh (the site's sync_run): the missing plate pictures
  * as far as $seconds reach, then — when none is missing — the site's
  * finds.json. Null where there is no site.
