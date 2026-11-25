@@ -13259,10 +13259,11 @@ export function mountPhotoWindow(host) {
            THE WINDING LINE FOR WHAT WINDS (22.11.2026, the same day): asci,
            paraphyses, marginal hairs and every hypha and the mycelium got
            „Gebogene Länge"; the excipulum the box „falls man Zellengrößen
-           messen will". The paraphyses LOST „Zystide in Teilen" (since
-           25.11.2026 „Sondermessungen") on that call — its method
-           „Paraphyse" stays in the tool for whoever measures one on
-           another layer. */
+           messen will". The paraphyses lost „Zystide in Teilen" on that
+           call, and GOT IT BACK on 25.11.2026, renamed „Sondermessungen"
+           („Ja, die Paraphysen bekommen natürlich das Werkzeug"): its
+           method „Paraphyse" — breadth and head — is the one measure the
+           bent line cannot give them. */
         const table = {
             // Spores and conidia: straight and bent — the bent one for the allantoid spore (18.11.2026).
             Sporen: ['rect', 'cutout', 'line'],
@@ -13278,7 +13279,7 @@ export function mountPhotoWindow(host) {
             Velum: ['rect', 'cutout'],
             Asci: ['cutout', 'path'],
             Excipulum: ['rect', 'line'],   // the box for the size of its cells
-            Paraphysen: ['cutout', 'path'],
+            Paraphysen: ['cutout', 'cystid', 'path'],   // „Sondermessungen" with the method „Paraphyse"
             Randhaare: ['cutout', 'line', 'path'],
             'Hyphen hymenial': hyphae, 'Hyphen Hutdeckschicht': hyphae, 'Hyphen Stiel': hyphae,
             'Hyphen Kontext': hyphae, Myzel: hyphae,
