@@ -58,7 +58,10 @@ function user_photo_directory_create(int $userId): string
 {
     $path = user_photo_directory($userId);
     if (!is_dir($path) && !mkdir($path, 0775, true) && !is_dir($path)) {
-        throw new RuntimeException(t('Verzeichnis lässt sich nicht anlegen: %s', $path));
+        /* The path goes to the log, never to the user: it is the server's
+           inside (error_for_user() in helpers.php). */
+        error_log('Karte: Verzeichnis lässt sich nicht anlegen: ' . $path);
+        throw new RuntimeException(t('Ein Ordner auf dem Server lässt sich nicht anlegen.'));
     }
 
     $lock = user_root() . '/.htaccess';

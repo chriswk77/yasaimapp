@@ -57,5 +57,5 @@ try {
             json_error(t('Methode nicht unterstützt.'), 405);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }

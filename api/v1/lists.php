@@ -22,7 +22,7 @@ switch ($method) {
         try {
             $id = list_create($pdo, $userId, $input);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage(), 409);
+            json_error(error_for_user($e), 409);
         }
         $lists = lists_load($pdo, $userId);
         $fresh = array_values(array_filter($lists, static fn(array $l) => $l['id'] === $id));
@@ -37,7 +37,7 @@ switch ($method) {
         try {
             $updated = list_update($pdo, $userId, $id, $input);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage(), 409);
+            json_error(error_for_user($e), 409);
         }
         if (!$updated) {
             json_error(t('Liste nicht gefunden oder nichts zu ändern.'), 404);
@@ -49,7 +49,7 @@ switch ($method) {
         try {
             $result = list_delete($pdo, $userId, $id);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage(), 409);
+            json_error(error_for_user($e), 409);
         }
         if ($result === null) {
             json_error(t('Liste nicht gefunden.'), 404);

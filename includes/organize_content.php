@@ -396,7 +396,7 @@ function organize_process(PDO $pdo, int $userId): array
                         (string) ($_POST['action'] ?? '')));
         }
     } catch (InvalidArgumentException $e) {
-        $result['error'][] = $e->getMessage();
+        $result['error'][] = error_for_user($e);
     }
 
     return $result;

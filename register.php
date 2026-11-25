@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // straight to the map as ever.
             redirect_to('pages/onboarding.php');
         } catch (RuntimeException $e) {
-            $errors[] = $e->getMessage();
+            $errors[] = error_for_user($e);
         }
     }
 }

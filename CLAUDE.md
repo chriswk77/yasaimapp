@@ -629,6 +629,18 @@ build every page. From `includes/helpers.php` come `h()`, which guards
 every output, `url()`, which builds every path, and `csrf_field()` /
 `csrf_check()` for every form.
 
+**A FAILURE TELLS THE USER `error_for_user($e)`, NEVER `$e->getMessage()`**
+(25.11.2026, with the repository public). PDOException IS a
+RuntimeException, so every `catch (RuntimeException $e)` that answered with
+the message used to hand SQL to the browser, and every `catch (Throwable)`
+the server's file and line. `error_for_user()` in helpers.php lets through
+only our own sentences, thrown with t(), and answers everything else with
+„Es ist ein Fehler aufgetreten." while the detail goes to the log. A
+provider's refusal goes through `cloud_refused()` (cloud.php): the message
+keeps the provider's text for code and log, the user reads who and the
+code. Only the administration's own tools keep the raw message — their
+reader is the operator. `tests/errors.php` is the tripwire.
+
 A tool in the administration lives as `includes/<name>_content.php` with
 `<name>_process()` **before** any output and `<name>_render()` after it.
 Because on a page with tabs every submit reaches all of them, each form

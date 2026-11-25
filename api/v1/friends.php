@@ -57,7 +57,7 @@ try {
         default   => throw new InvalidArgumentException(t('Unbekannte Aktion.')),
     };
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 
 // What is still open afterwards — so the badge can redraw itself without

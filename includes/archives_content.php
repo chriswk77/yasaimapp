@@ -72,9 +72,9 @@ function archives_process(PDO $pdo, int $userId): array
                 break;
         }
     } catch (InvalidArgumentException $e) {
-        $state['error'][] = $e->getMessage();
+        $state['error'][] = error_for_user($e);
     } catch (RuntimeException $e) {
-        $state['error'][] = t('Der Ordner liess sich nicht lesen: %s', $e->getMessage());
+        $state['error'][] = t('Der Ordner liess sich nicht lesen: %s', error_for_user($e));
     }
     return $state;
 }

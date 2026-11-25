@@ -422,7 +422,7 @@ function backup_run(PDO $pdo, int $userId, float $deadline): array
         }
         $there = storage_folder_files($s, $folderId);
     } catch (RuntimeException $e) {
-        $result['error'] = $e->getMessage();
+        $result['error'] = error_for_user($e);
         return $result;
     }
 
@@ -463,7 +463,7 @@ function backup_run(PDO $pdo, int $userId, float $deadline): array
             // The month stays open and comes again next time; one unwilling
             // month must not stop the other eleven.
             error_log('backup_run (' . $userId . ' ' . $key . '): ' . $e->getMessage());
-            $result['error'] ??= $e->getMessage();
+            $result['error'] ??= error_for_user($e);
             $result['open']++;
             continue;
         }

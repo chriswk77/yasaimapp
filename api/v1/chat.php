@@ -116,7 +116,7 @@ if ($friendId > 0) {
             try {
                 $message = friend_chat_write($pdo, $userId, $friendId, (string) ($input['text'] ?? ''));
             } catch (InvalidArgumentException $e) {
-                json_error($e->getMessage(), 422);
+                json_error(error_for_user($e), 422);
             }
             json_response(['message' => $message]);
 
@@ -156,7 +156,7 @@ switch ($method) {
         try {
             $message = chat_write($pdo, $userId, $containerId, (string) ($input['text'] ?? ''));
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage(), 422);
+            json_error(error_for_user($e), 422);
         }
         json_response(['message' => $message]);
 

@@ -93,7 +93,7 @@ switch ($action) {
                 : (string) storage_path_ensure($s, $home['folderid'], explode('/', $dir));
             $way = cloud_upload_target($s, $folder, $name, $type, $size, $mtime);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         json_response($way + ['folderid' => $folder, 'dir' => $dir]);
         break;
@@ -128,7 +128,7 @@ switch ($action) {
             }
             $home = point_files_home($pdo, $s, $userId, $point);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         $type = (string) ($_POST['type'] ?? '');
         $pdo->prepare('INSERT INTO map_point_files
@@ -153,7 +153,7 @@ switch ($action) {
                 }
             }
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         json_response(['files' => point_files_list($pdo, $userId, $id)]);
         break;
@@ -163,7 +163,7 @@ switch ($action) {
         try {
             json_response(point_file_way($storageOf($file), $file) + ['name' => (string) $file['name']]);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         break;
 
@@ -181,7 +181,7 @@ switch ($action) {
         try {
             json_response(['name' => (string) $file['name'], 'text' => point_file_text($storageOf($file), $file)]);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         break;
 

@@ -77,7 +77,7 @@ function excursions_process(PDO $pdo, int $userId): array
                 break;
         }
     } catch (InvalidArgumentException $e) {
-        $result['error'][] = $e->getMessage();
+        $result['error'][] = error_for_user($e);
     }
 
     return $result;

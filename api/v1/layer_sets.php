@@ -82,5 +82,5 @@ try {
     }
     json_response(['set' => layer_set_save($pdo, $userId, $pointId, $layers)]);
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }

@@ -32,7 +32,7 @@ function given_process(PDO $pdo, int $userId): array
         container_leave($pdo, $userId, (int) ($_POST['container'] ?? 0));
         $state['message'] = t('Du siehst die Liste nicht mehr. Punkte, die du hineingesetzt hattest, liegen jetzt in einer eigenen Liste.');
     } catch (InvalidArgumentException $e) {
-        $state['error'][] = $e->getMessage();
+        $state['error'][] = error_for_user($e);
     }
     return $state;
 }

@@ -70,7 +70,7 @@ try {
             json_error(t('Unbekannte Aktion.'), 422);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 } catch (RuntimeException $e) {
     // The photographer's cloud would not take the patches — nothing was kept, the next change tries again.
     error_log('picture_edits.php: ' . $e->getMessage());

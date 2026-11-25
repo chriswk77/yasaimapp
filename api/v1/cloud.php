@@ -167,7 +167,7 @@ switch ($action) {
                 (string) $home, true);
         } catch (RuntimeException $e) {
             // 502: not our mistake, the provider could not deliver.
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
 
         json_response($way + [
@@ -204,7 +204,7 @@ switch ($action) {
             try {
                 $there = storage_file_meta($s, $fileid);
             } catch (RuntimeException $e) {
-                json_error($e->getMessage(), 502);
+                json_error(error_for_user($e), 502);
             }
             if ($there === null) {
                 json_error(t('Die Aufnahme ist in der Cloud nicht angekommen.'), 409);
@@ -487,7 +487,7 @@ switch ($action) {
             try {
                 $patches = develop_patches_decode($input['patches'], $develop, $versions ?: null);
             } catch (InvalidArgumentException $e) {
-                json_error($e->getMessage());
+                json_error(error_for_user($e));
             }
         }
         if ($hasTitle && !column_exists($pdo, 'map_cloud_files', 'title')) {
@@ -509,7 +509,7 @@ switch ($action) {
             try {
                 $scale = photo_scale_write($input['scale']);
             } catch (InvalidArgumentException $e) {
-                json_error($e->getMessage());
+                json_error(error_for_user($e));
             }
         }
         $measures = null;
@@ -520,7 +520,7 @@ switch ($action) {
             try {
                 $measures = photo_measures_write($input['measures']);
             } catch (InvalidArgumentException $e) {
-                json_error($e->getMessage());
+                json_error(error_for_user($e));
             }
         }
 
@@ -659,7 +659,7 @@ switch ($action) {
             // nobody believes a deletion that did not happen.
             storage_picture_delete($pdo, $actor, $at, (string) $row['fileid']);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
 
         /* „DAS WIRD DANN BEI ALLEN MIT AUS DER CLOUD GELÖSCHT"

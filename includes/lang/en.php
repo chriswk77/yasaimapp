@@ -3835,8 +3835,6 @@ return [
         => 'pCloud did not accept the file.',
     'pCloud ist auf diesem Server nicht eingerichtet.'
         => 'pCloud is not set up on this server.',
-    'pCloud lehnt ab (%d): %s'
-        => 'pCloud refuses (%d): %s',
     'pCloud nennt keine Adresse für die Vorschau.'
         => 'pCloud names no address for the preview.',
     'pCloud nennt keine Dateikennung.'
@@ -10665,8 +10663,6 @@ return [
         => 'Google does not answer. Try again later.',
     'Google antwortet unverständlich.'
         => 'Google gives an answer that cannot be read.',
-    'Google lehnt ab (%s): %s'
-        => 'Google refuses (%s): %s',
     'Google nennt kein Zugriffstoken.'
         => 'Google names no access token.',
     'Google hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'
@@ -10675,8 +10671,6 @@ return [
         => 'Google Drive does not answer. Try again later.',
     'Google Drive antwortet unverständlich.'
         => 'Google Drive gives an answer that cannot be read.',
-    'Google Drive lehnt ab (%s): %s'
-        => 'Google Drive refuses (%s): %s',
     'Google Drive nennt für „%s" keine Ordnerkennung.'
         => 'Google Drive names no folder id for "%s".',
     'Google Drive nimmt die Datei gerade nicht an.'
@@ -10685,16 +10679,14 @@ return [
         => 'Google Drive names no file id.',
     'Google Drive hat %d von %d Bytes angenommen.'
         => 'Google Drive took %d of %d bytes.',
-    'Google Drive öffnet keine Hochlade-Sitzung (%s): %s'
-        => 'Google Drive opens no upload session (%s): %s',
+    'Google Drive öffnet keine Hochlade-Sitzung (%s).'
+        => 'Google Drive opens no upload session (%s).',
     'OneDrive ist auf diesem Server nicht eingerichtet.'
         => 'OneDrive is not set up on this server.',
     'Microsoft antwortet nicht. Später noch einmal versuchen.'
         => 'Microsoft does not answer. Try again later.',
     'Microsoft antwortet unverständlich.'
         => 'Microsoft gives an answer that cannot be read.',
-    'Microsoft lehnt ab (%s): %s'
-        => 'Microsoft refuses (%s): %s',
     'Microsoft nennt kein Zugriffstoken.'
         => 'Microsoft names no access token.',
     'Microsoft hat kein Dauer-Token ausgestellt. Bitte noch einmal verbinden und der Abfrage erneut zustimmen.'
@@ -10703,8 +10695,6 @@ return [
         => 'OneDrive does not answer. Try again later.',
     'OneDrive antwortet unverständlich.'
         => 'OneDrive gives an answer that cannot be read.',
-    'OneDrive lehnt ab (%s): %s'
-        => 'OneDrive refuses (%s): %s',
     'In OneDrive liegt schon eine Datei namens „%s", wo ein Ordner gebraucht wird.'
         => 'In OneDrive there is already a file called "%s" where a folder is needed.',
     'OneDrive nennt für „%s" keine Ordnerkennung.'
@@ -10729,8 +10719,6 @@ return [
         => 'This S3 endpoint is not on the public internet and is not contacted.',
     'Der S3-Speicher antwortet nicht. Ist der Endpunkt richtig?'
         => 'The S3 storage does not answer. Is the endpoint right?',
-    'Der S3-Speicher lehnt ab (%s): %s'
-        => 'The S3 storage refuses (%s): %s',
     'Der S3-Speicher antwortet unverständlich.'
         => 'The S3 storage gives an answer that cannot be read.',
     'Der S3-Speicher hat %d von %d Bytes angenommen.'
@@ -10739,12 +10727,12 @@ return [
         => 'The folder path is too long for an S3 key.',
     'pCloud nennt keine Kennung für den App-Ordner.'
         => 'pCloud names no id for the app folder.',
-    'pCloud gibt das Bild nicht heraus: %s'
-        => 'pCloud does not hand out the picture: %s',
+    'pCloud gibt das Bild nicht heraus (%s).'
+        => 'pCloud does not hand out the picture (%s).',
     'pCloud gibt keine Vorschau heraus (HTTP %d)'
         => 'pCloud hands out no preview (HTTP %d)',
-    'pCloud gibt die Datei nicht heraus: %s'
-        => 'pCloud does not hand out the file: %s',
+    'pCloud gibt die Datei nicht heraus (%s).'
+        => 'pCloud does not hand out the file (%s).',
     '%s ist verbunden — als %s.'
         => '%s is connected — as %s.',
     '%s ist verbunden.'
@@ -10805,8 +10793,14 @@ return [
         => 'This import does not exist (any more).',
     'Dieses Format gibt es nicht.'
         => 'This format does not exist.',
-    'Verzeichnis lässt sich nicht anlegen: %s'
-        => 'Folder cannot be created: %s',
+    'Ein Ordner auf dem Server lässt sich nicht anlegen.'
+        => 'A folder on the server cannot be created.',
+    'Der S3-Speicher'
+        => 'The S3 storage',
+    '%s lehnt ab (%s).'
+        => '%s refuses (%s).',
+    'Der Speicher ist voll: %s nimmt nichts mehr an.'
+        => 'The storage is full: %s takes nothing more.',
     'Diese Artenliste trägt noch Funde. Erst die Funde verschieben oder den Haken „Artenliste" herausnehmen, dann lässt sie sich löschen.'
         => 'This species list still holds finds. Move the finds first or take out the tick "Artenliste", then it can be deleted.',
     'Autolisten brauchen Migration 0052 — die ist hier noch nicht eingespielt.'

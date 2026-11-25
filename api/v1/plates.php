@@ -97,7 +97,7 @@ if (($input['action'] ?? '') === 'image') {
         $answer = plate_image_store($pdo, $userId, (int) ($input['id'] ?? 0), (int) ($input['page'] ?? 0),
             (string) ($input['hash'] ?? ''), (string) file_get_contents($file['tmp_name']));
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     } catch (RuntimeException $e) {
         error_log('plate image: ' . $e->getMessage());
         json_error(t('Die Cloud hat die Seite gerade nicht angenommen.'), 502);
@@ -113,7 +113,7 @@ if (($input['action'] ?? '') === 'publish') {
         $state = plate_publish_set($pdo, $userId, (int) ($input['id'] ?? 0), (bool) ($input['on'] ?? false),
             (string) ($input['note'] ?? ''), is_array($input['cleared'] ?? null) ? $input['cleared'] : []);
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
     json_response(['publish' => $state + ['site' => public_site_label()]]);
 }
@@ -128,7 +128,7 @@ if (($input['action'] ?? '') === 'crop_rename') {
         $changed = plates_crop_rename($pdo, $userId, $pointId, (string) ($input['layer'] ?? ''),
             (string) ($input['from'] ?? ''), (string) ($input['to'] ?? ''));
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
     json_response(['changed' => $changed, 'plates' => plates_for_point($pdo, $userId, $pointId)]);
 }
@@ -150,6 +150,6 @@ try {
     $since = is_string($input['since'] ?? null) ? $input['since'] : null;
     $plate = plate_save($pdo, $userId, $pointId, $id > 0 ? $id : null, $input['layout'] ?? null, $since);
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 json_response(['plate' => $plate], $id > 0 ? 200 : 201);

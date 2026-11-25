@@ -65,5 +65,5 @@ try {
     $result     = list_share_save($pdo, $userId, $listId, $recipients);
     json_response($result + list_share_overview($pdo, $userId, $listId));
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }

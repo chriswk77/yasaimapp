@@ -228,7 +228,10 @@ function archive_directory(int $archiveId): string
 {
     $dir = PROJECT_PATH . '/data/picture_archives/' . $archiveId;
     if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
-        throw new RuntimeException(t('Verzeichnis lässt sich nicht anlegen: %s', $dir));
+        /* The path goes to the log, never to the user: it is the server's
+           inside (error_for_user() in helpers.php). */
+        error_log('Karte: Verzeichnis lässt sich nicht anlegen: ' . $dir);
+        throw new RuntimeException(t('Ein Ordner auf dem Server lässt sich nicht anlegen.'));
     }
     return $dir;
 }
@@ -696,8 +699,11 @@ function archive_addresses(array $link, string $fileId, string $size): array
     [$status, $body] = offline_map_http("$api/getpublinkdownload?code=$code&fileid=$file");
     $d = json_decode($body, true);
     if ($status !== 200 || !is_array($d) || ($d['result'] ?? -1) !== 0 || empty($d['hosts'])) {
-        throw new RuntimeException(t('pCloud gibt das Bild nicht heraus: %s',
-            is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
+        throw new ProviderRefused(
+            sprintf('pCloud gibt das Bild nicht heraus: %s',
+                is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"),
+            t('pCloud gibt das Bild nicht heraus (%s).', is_array($d) ? (string) ($d['result'] ?? '?') : "HTTP $status")
+        );
     }
     $out = [];
     foreach (array_slice($d['hosts'], 0, 3) as $host) {
@@ -743,7 +749,7 @@ function archive_scan(PDO $pdo, array $archive): array
         $reading = archive_index_from_tree($tree, archive_lexicon($pdo, archive_candidates($tree), (int) $archive['user_id']), archive_names($pdo, (int) $archive['user_id']));
     } catch (RuntimeException $e) {
         $pdo->prepare("UPDATE map_picture_archives SET status = 'failed', error = ?, scanned_at = NOW() WHERE id = ?")
-            ->execute([mb_substr($e->getMessage(), 0, 500), $id]);
+            ->execute([mb_substr(error_for_user($e), 0, 500), $id]);
         throw $e;
     }
     $pdo->beginTransaction();

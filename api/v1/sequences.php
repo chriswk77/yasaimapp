@@ -52,9 +52,9 @@ switch ($action) {
         try {
             $rows = sequence_create($pdo, $userId, $pointId, $input);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage(), 422);
+            json_error(error_for_user($e), 422);
         } catch (RuntimeException $e) {
-            json_error($e->getMessage(), 503);
+            json_error(error_for_user($e), 503);
         }
         /* A JOINT LIST READS IT IN ITS CHAT (joint lists, step 2): a
            voucher hung on is a change like any other. */

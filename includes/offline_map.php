@@ -97,8 +97,11 @@ function offline_map_file_url(string $link, bool $renew = false): string
     [$status, $body] = offline_map_http('https://' . $publink['api'] . '/getpublinkdownload?code=' . rawurlencode($publink['code']));
     $d = json_decode($body, true);
     if ($status !== 200 || !is_array($d) || ($d['result'] ?? -1) !== 0 || empty($d['hosts'])) {
-        throw new RuntimeException(t('pCloud gibt die Datei nicht heraus: %s',
-            is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"));
+        throw new ProviderRefused(
+            sprintf('pCloud gibt die Datei nicht heraus: %s',
+                is_array($d) ? (string) ($d['error'] ?? $d['result'] ?? '') : "HTTP $status"),
+            t('pCloud gibt die Datei nicht heraus (%s).', is_array($d) ? (string) ($d['result'] ?? '?') : "HTTP $status")
+        );
     }
     $url = 'https://' . $d['hosts'][0] . $d['path'];
     $until = strtotime((string) ($d['expires'] ?? '')) ?: time() + 3600;

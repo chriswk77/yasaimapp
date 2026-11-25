@@ -113,7 +113,7 @@ function friends_process(PDO $pdo, int $userId): array
                 break;
         }
     } catch (InvalidArgumentException $e) {
-        $state['error'][] = $e->getMessage();
+        $state['error'][] = error_for_user($e);
     }
 
     return $state;

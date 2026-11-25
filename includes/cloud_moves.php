@@ -567,17 +567,17 @@ function cloud_move_one(PDO $pdo, array $move, array $item, callable $carry, cal
     } catch (CloudMoveBlocked $e) {
         $pdo->prepare('UPDATE map_cloud_move_items SET attempts = GREATEST(attempts - 1, 0), tried_at = NULL WHERE id = ?')
             ->execute([$itemId]);
-        $pdo->prepare('UPDATE map_cloud_moves SET problem = ? WHERE id = ?')->execute([$note($e->getMessage()), $moveId]);
+        $pdo->prepare('UPDATE map_cloud_moves SET problem = ? WHERE id = ?')->execute([$note(error_for_user($e)), $moveId]);
         return 'blocked';
     } catch (CloudMoveStuck $e) {
         $pdo->prepare('UPDATE map_cloud_move_items SET status = "stuck", error = ? WHERE id = ?')
-            ->execute([$note($e->getMessage()), $itemId]);
+            ->execute([$note(error_for_user($e)), $itemId]);
         return 'stuck';
     } catch (RuntimeException $e) {
         error_log('cloud_move_one (' . $item['kind'] . ' ' . (int) $item['row_id'] . '): ' . $e->getMessage());
         $pdo->prepare(
             'UPDATE map_cloud_move_items SET error = ?, status = IF(attempts >= ?, "stuck", "waiting") WHERE id = ?'
-        )->execute([$note($e->getMessage()), CLOUD_MOVES_MAX_ATTEMPTS, $itemId]);
+        )->execute([$note(error_for_user($e)), CLOUD_MOVES_MAX_ATTEMPTS, $itemId]);
         return (int) $pdo->query('SELECT status = "stuck" FROM map_cloud_move_items WHERE id = ' . $itemId)->fetchColumn() === 1
             ? 'stuck' : 'failed';
     }

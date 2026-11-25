@@ -46,7 +46,7 @@ if ($method === 'DELETE') {
     try {
         container_leave($pdo, $userId, $containerId);
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
     json_response(['left' => $containerId]);
 }
@@ -72,7 +72,7 @@ try {
             : (string) $input['own_name']);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 
 // The name back as it now stands — trimmed and cut, and null where it was

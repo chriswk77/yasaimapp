@@ -73,6 +73,6 @@ if ($change === []) {
 try {
     $answer = archive_audience_set($pdo, $userId, $friend, $change);
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 404);
+    json_error(error_for_user($e), 404);
 }
 json_response(['friend' => $friend ?? 0, 'answer' => $answer]);

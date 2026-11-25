@@ -38,7 +38,7 @@ try {
 } catch (RuntimeException $e) {
     // 502: it is not us who did something wrong, but the service behind
     // could not deliver.
-    json_error($e->getMessage(), 502);
+    json_error(error_for_user($e), 502);
 }
 
 $pdo->prepare(

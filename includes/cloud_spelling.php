@@ -99,7 +99,7 @@ function cloud_spelling_tree(array $s): array
     }
     $d = json_decode($answer, true);
     if (!is_array($d) || (int) ($d['result'] ?? -1) !== 0 || !is_array($d['metadata'] ?? null)) {
-        throw new RuntimeException(t('pCloud lehnt ab (%d): %s', (int) ($d['result'] ?? -1), (string) ($d['error'] ?? t('ohne Angabe'))));
+        throw cloud_refused('pCloud', (string) (int) ($d['result'] ?? -1), (string) ($d['error'] ?? ''));
     }
     return $d['metadata'];
 }

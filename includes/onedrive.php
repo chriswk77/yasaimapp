@@ -105,8 +105,7 @@ function onedrive_token_call(array $parameters): array
         throw new RuntimeException(t('Microsoft antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
-        throw new RuntimeException(t('Microsoft lehnt ab (%s): %s',
-            (string) $d['error'], (string) ($d['error_description'] ?? t('ohne Angabe'))));
+        throw cloud_refused('Microsoft', (string) $d['error'], (string) ($d['error_description'] ?? ''));
     }
     return $d;
 }
@@ -241,8 +240,7 @@ function onedrive_call(string $access, string $method, string $url, ?array $body
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(t('OneDrive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
+        throw cloud_refused('OneDrive', (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? ''));
     }
     return $d;
 }
@@ -422,8 +420,7 @@ function onedrive_upload_bytes(
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(t('OneDrive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
+        throw cloud_refused('OneDrive', (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? ''));
     }
 
     $fileid = (string) ($d['id'] ?? '');

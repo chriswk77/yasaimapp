@@ -895,14 +895,10 @@ function pcloud_call(string $host, string $method, array $parameters): array
     }
 
     if ((int) ($d['result'] ?? -1) !== 0) {
-        // The provider's own wording goes along: "Invalid 'code' provided" says
-        // more than any sentence written here — and the number makes it
-        // findable in pCloud's documentation.
-        throw new RuntimeException(t(
-            'pCloud lehnt ab (%d): %s',
-            (int) ($d['result'] ?? -1),
-            (string) ($d['error'] ?? t('ohne Angabe'))
-        ));
+        // The provider's own wording goes along into the log: "Invalid 'code'
+        // provided" says more than any sentence written here — and the number,
+        // which the user sees too, makes it findable in pCloud's documentation.
+        throw cloud_refused('pCloud', (string) (int) ($d['result'] ?? -1), (string) ($d['error'] ?? ''));
     }
 
     return $d;
@@ -2028,11 +2024,7 @@ function pcloud_upload_bytes(
 
     $d = json_decode($answer, true);
     if (!is_array($d) || (int) ($d['result'] ?? -1) !== 0) {
-        throw new RuntimeException(t(
-            'pCloud lehnt ab (%d): %s',
-            (int) ($d['result'] ?? -1),
-            (string) ($d['error'] ?? t('ohne Angabe'))
-        ));
+        throw cloud_refused('pCloud', (string) (int) ($d['result'] ?? -1), (string) ($d['error'] ?? ''));
     }
 
     $meta   = ($d['metadata'] ?? [])[0] ?? [];
@@ -2621,7 +2613,7 @@ function pcloud_thumb_link(
         // and telling them apart by looking at a grey tile is impossible —
         // which cost an evening of guessing.
         error_log('getthumblink (' . $fileid . '): ' . $e->getMessage());
-        $problem = $e->getMessage();
+        $problem = error_for_user($e);
         return null;
     }
 
@@ -3248,6 +3240,28 @@ function cloud_full_error(string $message): bool
 {
     return preg_match('/storage quota has been exceeded|storageQuotaExceeded|quotaLimitReached'
         . '|insufficientStorage|over quota|\\(2008\\)|QuotaExceeded|storage_cap_exceeded/i', $message) === 1;
+}
+
+/**
+ * A provider's „no", built once for all four (25.11.2026).
+ *
+ * THE MESSAGE KEEPS EVERYTHING, IN ONE FIXED SHAPE — „<who> lehnt ab
+ * (<code>): <text>" —, because code reads it: the „(404)" and
+ * „(itemNotFound)" checks in gdrive.php and onedrive.php, cloud_full_error()
+ * above. It is German on purpose and stays so: the log and the
+ * administration read it, the user never does.
+ *
+ * THE USER GETS WHO AND THE CODE — „Google Drive lehnt ab (403)." — and
+ * nothing of the provider's free text (ProviderRefused, error_for_user()
+ * in helpers.php). A full store is the one refusal the user can act on, so
+ * it is said in words.
+ */
+function cloud_refused(string $who, string $code, string $text): ProviderRefused
+{
+    $detail = sprintf('%s lehnt ab (%s): %s', $who, $code, $text !== '' ? $text : 'ohne Angabe');
+    return new ProviderRefused($detail, cloud_full_error($detail)
+        ? t('Der Speicher ist voll: %s nimmt nichts mehr an.', t($who))
+        : t('%s lehnt ab (%s).', t($who), $code));
 }
 
 /**

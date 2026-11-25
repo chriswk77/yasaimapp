@@ -67,7 +67,7 @@ function cloud_return_connected(PDO $pdo, int $userId, string $provider, string 
         cloud_move_begin($pdo, $userId, (string) $move['from'], $provider);
     } catch (Throwable $e) {
         $pdo->prepare('DELETE FROM map_cloud_accounts WHERE user_id = ? AND provider = ?')->execute([$userId, $provider]);
-        cloud_return('error', t('Der Umzug ließ sich nicht beginnen: %s', $e->getMessage()), $target);
+        cloud_return('error', t('Der Umzug ließ sich nicht beginnen: %s', error_for_user($e)), $target);
     }
     cloud_return('success', t('%s ist jetzt deine Cloud. Deine Bilder ziehen jetzt aus %s um.',
         cloud_move_name($provider), cloud_move_name((string) $move['from'])), $target);
@@ -175,5 +175,5 @@ try {
     cloud_return_connected($pdo, $userId, 'pcloud', connected_said('pCloud', $who['email']), $move, $target);
 
 } catch (Throwable $e) {
-    cloud_return('error', $e->getMessage(), $target);
+    cloud_return('error', error_for_user($e), $target);
 }

@@ -36,6 +36,6 @@ try {
         json_response(['mapping' => null]);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 json_error(t('Methode nicht unterstützt.'), 405);

@@ -26,7 +26,7 @@ if ($actor !== null) {
     try {
         excursion_guest_api($pdo, $actor, $method, $input);
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
 }
 
@@ -277,7 +277,7 @@ try {
             json_error(t('Methode nicht unterstützt.'), 405);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 
 /** Bring the sync's time value into the database format. */

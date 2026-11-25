@@ -58,7 +58,7 @@ foreach ($lists as $listId) {
         $stmt = $pdo->prepare('SELECT name FROM map_lists WHERE id = ? AND user_id = ?');
         $stmt->execute([$listId, $userId]);
         $name = $stmt->fetchColumn();
-        $failed[] = ($name !== false ? '„' . $name . '": ' : '') . $e->getMessage();
+        $failed[] = ($name !== false ? '„' . $name . '": ' : '') . error_for_user($e);
     }
 }
 

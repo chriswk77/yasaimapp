@@ -399,7 +399,7 @@ function import_process(PDO $pdo, int $userId): array
                         (import_sources()[$source]['read'])($target);
                     } catch (Throwable $e) {
                         unlink($target);
-                        $failed[] = t('„%s": %s', $name, $e->getMessage());
+                        $failed[] = t('„%s": %s', $name, error_for_user($e));
                         continue;
                     }
                     /* THE SAME FILE TWICE IS NO QUESTION
@@ -622,7 +622,7 @@ function import_process(PDO $pdo, int $userId): array
                 break;
         }
     } catch (InvalidArgumentException | RuntimeException $e) {
-        $state['error'][] = $e->getMessage();
+        $state['error'][] = error_for_user($e);
         // Do not leave an unreadable or unrecognized file lying around — it
         // would produce the same error on every page build, with no way
         // out. When applying, though, only on the RuntimeException (file
@@ -711,7 +711,7 @@ function import_render(PDO $pdo, int $userId, array $state): void
                     count($waiting));
                 $previewShown = true;
             } catch (RuntimeException $e) {
-                notice('error', [$e->getMessage()], true);
+                notice('error', [error_for_user($e)], true);
                 @unlink($path);
             }
         } else {

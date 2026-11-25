@@ -103,8 +103,8 @@ function share_process(PDO $pdo, int $userId): array
                         // One key with both pieces instead of a glued-on
                         // prefix — a translation may need the name elsewhere.
                         $result['error'][] = $name !== false
-                            ? t('„%s“: %s', $name, $e->getMessage())
-                            : $e->getMessage();
+                            ? t('„%s“: %s', $name, error_for_user($e))
+                            : error_for_user($e);
                     }
                 }
                 break;
@@ -137,7 +137,7 @@ function share_process(PDO $pdo, int $userId): array
                 break;
         }
     } catch (InvalidArgumentException $e) {
-        $result['error'][] = $e->getMessage();
+        $result['error'][] = error_for_user($e);
     }
 
     return $result;

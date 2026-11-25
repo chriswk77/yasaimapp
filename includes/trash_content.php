@@ -38,7 +38,7 @@ function trash_process(PDO $pdo, int $userId): ?array
         try {
             $ok = joint_filing_restore($pdo, $userId, $point, $list);
         } catch (InvalidArgumentException $e) {
-            return ['error', $e->getMessage()];
+            return ['error', error_for_user($e)];
         }
         return $ok
             ? ['success', t('Zurückgeholt — der Punkt liegt wieder in der Liste, bei allen beim nächsten Abgleich.')]

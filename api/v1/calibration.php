@@ -62,7 +62,7 @@ if (in_array($manage, ['preset_forget', 'device_forget', 'preset_rename', 'devic
             }
         }
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage());
+        json_error(error_for_user($e));
     }
     if (!$done) {
         json_error(str_starts_with($manage, 'preset') ? t('Diese Vorlage gibt es nicht mehr.') : t('Dieses Gerät gibt es nicht mehr.'), 404);
@@ -97,7 +97,7 @@ switch ((string) ($_GET['action'] ?? $_POST['action'] ?? '')) {
                 max(0, (int) ($_POST['size'] ?? 0)), (int) ($_POST['mtime'] ?? 0) ?: null);
         } catch (RuntimeException $e) {
             // 502: not our mistake, the provider could not deliver.
-            json_error($e->getMessage(), 502);
+            json_error(error_for_user($e), 502);
         }
         json_response($way + ['folderid' => (string) $folder['folderid']]);
         break;
@@ -157,7 +157,7 @@ switch ((string) ($_GET['action'] ?? $_POST['action'] ?? '')) {
             $pdo->commit();
         } catch (InvalidArgumentException $e) {
             $pdo->rollBack();
-            json_error($e->getMessage());
+            json_error(error_for_user($e));
         } catch (Throwable $e) {
             $pdo->rollBack();
             throw $e;

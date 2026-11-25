@@ -91,5 +91,5 @@ try {
             json_error(t('Diese Methode kennt der Endpunkt nicht.'), 405);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }

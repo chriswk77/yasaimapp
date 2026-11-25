@@ -32,7 +32,7 @@ if ($ready && $_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect_to('index.php');
         }
     } catch (InvalidArgumentException $e) {
-        $errors[] = $e->getMessage();
+        $errors[] = error_for_user($e);
     }
 }
 $account = $ready && $token !== '' ? password_reset_account($pdo, $token) : null;

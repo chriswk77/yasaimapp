@@ -34,7 +34,7 @@ switch ($method) {
         try {
             $id = area_create($pdo, $userId, $input);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage());
+            json_error(error_for_user($e));
         }
         $all = areas_load($pdo, $userId);
         $fresh = array_values(array_filter($all, static fn(array $g) => $g['id'] === $id));
@@ -49,7 +49,7 @@ switch ($method) {
         try {
             $ok = area_update($pdo, $userId, $id, $input);
         } catch (InvalidArgumentException $e) {
-            json_error($e->getMessage());
+            json_error(error_for_user($e));
         }
         if (!$ok) {
             json_error(t('Gebiet nicht gefunden oder nichts zu ändern.'), 404);

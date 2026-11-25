@@ -209,6 +209,87 @@ function json_error(string $message, int $status = 400): never
     json_response(['error' => $message], $status);
 }
 
+// ---------------------------------------------------------------------------
+// What a failure may tell the user
+// ---------------------------------------------------------------------------
+
+/**
+ * A provider said no — with a detail for us and a short line for the user.
+ *
+ * THE DETAIL STAYS THE MESSAGE, because code reads it: gdrive.php looks
+ * for „(404)", onedrive.php for „(itemNotFound)", cloud_full_error() for
+ * the provider's words about a full store. The user gets only `said` —
+ * who refused and the provider's code, which is findable in its
+ * documentation and enough to ask with. The provider's free text stays in
+ * the log (25.11.2026, on the way to a public repository: „direkte
+ * Fehlermeldung, warum etwas wie falsch gelaufen ist, sind natürlich
+ * Sicherheitsrisiken").
+ */
+class ProviderRefused extends RuntimeException
+{
+    public function __construct(string $detail, public readonly string $said)
+    {
+        parent::__construct($detail);
+    }
+}
+
+/**
+ * The text of a failure that may go to the user.
+ *
+ * THE RULE: only what we said ourselves, on purpose, in the user's words.
+ * That is a RuntimeException, InvalidArgumentException or DomainException
+ * thrown with t() at its throw site — „Die Gruppe braucht einen Namen.".
+ * Everything else is the machine talking, and it talks about our insides:
+ *
+ * - PDOException IS a RuntimeException, which is why every `catch
+ *   (RuntimeException $e)` used to hand SQL to the browser — table names,
+ *   column names, „Duplicate entry '…' for key '…'".
+ * - an Error (TypeError, ValueError, …) names the file and line on the
+ *   server.
+ * - UnexpectedValueException comes from the directory iterators with the
+ *   path in it.
+ *
+ * Those are logged with file and line and answered with one plain
+ * sentence. AS A SECOND NET, a message of our own that still carries the
+ * server's path or an SQLSTATE goes the same way: a throw site that
+ * builds its sentence from a path is a mistake, and this catches it
+ * before the user sees it.
+ *
+ * A wrapper that only repeats its cause (`new CloudMoveBlocked($e->
+ * getMessage(), 0, $e)`) is judged by that cause, so a provider's refusal
+ * keeps its short line through the wrapping.
+ *
+ * THE ADMINISTRATION'S OWN TOOLS keep showing getMessage(): the operator
+ * of the installation reads them, and there the detail is the help.
+ */
+function error_for_user(Throwable $e): string
+{
+    $cause = $e->getPrevious();
+    if ($cause !== null && $cause->getMessage() === $e->getMessage()) {
+        return error_for_user($cause);
+    }
+    if ($e instanceof ProviderRefused) {
+        // Logged HERE and not where it is thrown: many a refusal is
+        // expected and answered in code (a 404 that means „not there yet").
+        error_log('Karte: ' . $e->getMessage());
+        return $e->said;
+    }
+
+    $message = $e->getMessage();
+    $ours = ($e instanceof RuntimeException || $e instanceof InvalidArgumentException || $e instanceof DomainException)
+        && !$e instanceof PDOException
+        && !$e instanceof UnexpectedValueException
+        && $message !== ''
+        && !str_contains($message, 'SQLSTATE')
+        && !(defined('PROJECT_PATH') && PROJECT_PATH !== '' && str_contains($message, PROJECT_PATH));
+    if ($ours) {
+        return $message;
+    }
+
+    error_log('Karte: ' . get_class($e) . ': ' . $message . ' in ' . $e->getFile() . ':' . $e->getLine());
+    return function_exists('t') ? t('Es ist ein Fehler aufgetreten.') : 'Es ist ein Fehler aufgetreten.';
+}
+
 /**
  * Read the JSON body of a request. The PWA sends JSON, the classic forms
  * send fields — both should be able to talk to the same endpoints.

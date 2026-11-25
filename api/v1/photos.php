@@ -31,7 +31,7 @@ if ($actor !== null) {
     try {
         excursion_guest_photos_api($pdo, $actor, $method, $input);
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
 }
 
@@ -181,7 +181,7 @@ try {
                 try {
                     $patches = develop_patches_decode($input['patches'], $develop, $versions ?: null);
                 } catch (InvalidArgumentException $e) {
-                    json_error($e->getMessage());
+                    json_error(error_for_user($e));
                 }
             }
             if ($hasScale && !column_exists($pdo, 'map_photos', 'scale')) {
@@ -203,7 +203,7 @@ try {
                 try {
                     $scale = photo_scale_write($input['scale']);
                 } catch (InvalidArgumentException $e) {
-                    json_error($e->getMessage());
+                    json_error(error_for_user($e));
                 }
             }
             $measures = null;
@@ -214,7 +214,7 @@ try {
                 try {
                     $measures = photo_measures_write($input['measures']);
                 } catch (InvalidArgumentException $e) {
-                    json_error($e->getMessage());
+                    json_error(error_for_user($e));
                 }
             }
 
@@ -393,10 +393,10 @@ try {
             json_error(t('Methode nicht unterstützt.'), 405);
     }
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 } catch (RuntimeException $e) {
     // Disk full, directory not writable — nothing the user could do
     // differently, but also nothing they should accept in silence.
     error_log('Foto-Upload gescheitert: ' . $e->getMessage());
-    json_error($e->getMessage(), 500);
+    json_error(error_for_user($e), 500);
 }

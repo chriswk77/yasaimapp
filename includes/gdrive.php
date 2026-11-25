@@ -117,8 +117,7 @@ function gdrive_token_call(array $parameters): array
         throw new RuntimeException(t('Google antwortet unverständlich.'));
     }
     if (isset($d['error'])) {
-        throw new RuntimeException(t('Google lehnt ab (%s): %s',
-            (string) $d['error'], (string) ($d['error_description'] ?? t('ohne Angabe'))));
+        throw cloud_refused('Google', (string) $d['error'], (string) ($d['error_description'] ?? ''));
     }
     return $d;
 }
@@ -267,8 +266,7 @@ function gdrive_call(string $access, string $method, string $url, ?array $body =
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(t('Google Drive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
+        throw cloud_refused('Google Drive', (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? ''));
     }
     return $d;
 }
@@ -508,8 +506,7 @@ function gdrive_upload_bytes(
     }
     if (isset($d['error'])) {
         $e = is_array($d['error']) ? $d['error'] : ['message' => (string) $d['error']];
-        throw new RuntimeException(t('Google Drive lehnt ab (%s): %s',
-            (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? t('ohne Angabe'))));
+        throw cloud_refused('Google Drive', (string) ($e['code'] ?? '?'), (string) ($e['message'] ?? ''));
     }
 
     $fileid = (string) ($d['id'] ?? '');
@@ -778,8 +775,11 @@ function gdrive_upload_session(string $access, string $folderId, string $name, s
     if ($status !== 200 || $location === '') {
         $d = json_decode((string) $response, true);
         $e = is_array($d['error'] ?? null) ? $d['error'] : ['message' => (string) ($d['error'] ?? '')];
-        throw new RuntimeException(t('Google Drive öffnet keine Hochlade-Sitzung (%s): %s',
-            (string) ($e['code'] ?? $status), (string) ($e['message'] ?? '') ?: t('ohne Angabe')));
+        $code = (string) ($e['code'] ?? $status);
+        throw new ProviderRefused(
+            sprintf('Google Drive öffnet keine Hochlade-Sitzung (%s): %s', $code, (string) ($e['message'] ?? '') ?: 'ohne Angabe'),
+            t('Google Drive öffnet keine Hochlade-Sitzung (%s).', $code)
+        );
     }
     return $location;
 }

@@ -49,7 +49,7 @@ if ($friendId <= 0) {
 try {
     $recipients = point_hint_set($pdo, $userId, $pointId, $friendId, !empty($input['on']));
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 json_response(['point_id' => $pointId, 'recipients' => $recipients,
                'others' => point_hint_recipients($pdo, $userId, $pointId)['others']]);

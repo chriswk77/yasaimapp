@@ -284,7 +284,8 @@ function s3_request(array $bundle, string $method, string $key,
  *
  * S3 errors come as XML with a Code and a Message; both go into the
  * exception — "SignatureDoesNotMatch" is findable in every provider's
- * documentation, our own sentence would not be.
+ * documentation, our own sentence would not be. The user sees the code,
+ * the message goes to the log (cloud_refused()).
  */
 function s3_fail(array $answer): never
 {
@@ -295,9 +296,7 @@ function s3_fail(array $answer): never
         $code = (string) ($xml->Code ?? '');
         $text = (string) ($xml->Message ?? '');
     }
-    throw new RuntimeException(t('Der S3-Speicher lehnt ab (%s): %s',
-        $code !== '' ? $code : 'HTTP ' . $answer['status'],
-        $text !== '' ? $text : t('ohne Angabe')));
+    throw cloud_refused('Der S3-Speicher', $code !== '' ? $code : 'HTTP ' . $answer['status'], $text);
 }
 
 /**

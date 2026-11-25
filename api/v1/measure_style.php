@@ -77,7 +77,7 @@ if ($pointId > 0 && measure_air_ready($pdo) && point_view_scope($pdo, $userId, $
         measure_air_set($pdo, $userId, $pointId, (string) ($input['label'] ?? $_POST['label'] ?? ''),
             (int) ($input['spore_air'] ?? $_POST['spore_air']));
     } catch (InvalidArgumentException $e) {
-        json_error($e->getMessage(), 422);
+        json_error(error_for_user($e), 422);
     }
     json_response(['air' => (object) measure_air_for_point($pdo, $userId, $pointId)]);
 }
@@ -152,7 +152,7 @@ if (!empty($input['micro_shrink_warned'] ?? $_POST['micro_shrink_warned'] ?? nul
 try {
     $stored = measure_style_write($style);
 } catch (InvalidArgumentException $e) {
-    json_error($e->getMessage(), 422);
+    json_error(error_for_user($e), 422);
 }
 $pdo->prepare('UPDATE map_users SET measure_style = ? WHERE id = ?')
     ->execute([$stored, $userId]);

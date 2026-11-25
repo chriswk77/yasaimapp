@@ -111,7 +111,7 @@ if ($e !== null && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
         }
     } catch (InvalidArgumentException $ex) {
-        $error[] = $ex->getMessage();
+        $error[] = error_for_user($ex);
     }
 }
 

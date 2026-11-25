@@ -17,7 +17,7 @@ if (email_confirmation_ready($pdo)) {
     try {
         $ok = email_confirmation_finish($pdo, (string) ($_GET['t'] ?? '')) !== null;
     } catch (InvalidArgumentException $e) {
-        $error = $e->getMessage();
+        $error = error_for_user($e);
     }
 }
 
