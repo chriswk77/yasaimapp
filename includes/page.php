@@ -153,6 +153,13 @@ function page_header(string $title, array $options = []): void
 <html lang="<?= h(lang_current()) ?>">
 <head>
     <meta charset="UTF-8">
+    <?php /* AN AREA'S PAGE OPENED AT THE DESK goes into the frame page — as
+         early as a line of the page can say it (includes/shell.php, way 1).
+         Not on the answer to a form: that page shows what the form did. */
+    if (!$embed && $user !== null && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET'
+        && ($entry = shell_area()) !== null) {
+        echo shell_entry_script($entry);
+    } ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="dark light">
     <title><?= h($title) ?> · YASAIMAPP<?= IS_LOCAL ? ' (lokal)' : '' ?></title>

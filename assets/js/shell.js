@@ -45,6 +45,18 @@
  *   browser's storage, its cache of tiles and outlines), and watching them
  *   all to save one loading would miss one some day.
  *
+ * - THE DESK'S ENTRY (includes/shell.php tells the whole of it). A window
+ *   that asked for an area's page arrives here in one of two shapes: sent
+ *   by the server as ?area=<key>&at=<the page's query>, the # of the
+ *   address still behind it — or sent by the page itself, bare, with the
+ *   address already in this tab's store. Either way the area is shown at
+ *   that address and this page's own address is tidied to '#<area>'.
+ *   AND THE WAY BACK OUT: on a device that is no desk (no mouse, a narrow
+ *   window, the recorder app, a tab that said 'shell.off') nothing is
+ *   loaded here at all — the area's own page is asked for through
+ *   ?leave=…, which also takes the session's mark back, or the server
+ *   would send the page's window straight here again.
+ *
  * THE MESSAGES, all of type 'yasaimapp-shell', same origin only:
  *   frame → here   { event: 'open', area, address }  show that area, at that
  *                    address (its query and hash; '' = as it stands)
@@ -274,7 +286,34 @@ window.addEventListener('popstate', () => {
 });
 window.addEventListener('pagehide', () => { for (const key of frames.keys()) remember(key); });
 
+/** Is this a desk — the question includes/shell.php explains, asked with its words. */
+function atDesk() {
+    try {
+        if (sessionStorage.getItem('shell.off')) return false;
+    } catch { /* no store: the media query decides alone */ }
+    return !window.yasaimapp && matchMedia(box.dataset.desk).matches;
+}
+
 {
-    const asked = location.hash.slice(1);
-    show(AREAS[asked] ? asked : KEYS[0], null, false);
+    const asked = new URLSearchParams(location.search);
+    let key = location.hash.slice(1);
+    let address = null;
+    if (AREAS[asked.get('area')]) {
+        // Sent on by the server: the area's own page, with the query it was
+        // asked with and the # the browser carried over the redirect.
+        key = asked.get('area');
+        const url = areaUrl(key);
+        url.search = asked.get('at') ?? '';
+        url.hash = location.hash;
+        address = url.pathname + url.search + url.hash;
+    }
+    if (!AREAS[key]) key = KEYS[0];
+    if (atDesk()) {
+        // '#map' alone would keep the query, and a reload would ask for that address again.
+        if (location.search) history.replaceState(null, '', location.pathname + '#' + key);
+        show(key, address, false);
+    } else {
+        const to = new URL(address ?? remembered(key) ?? AREAS[key].url, location.href);
+        location.replace(location.pathname + '?leave=' + encodeURIComponent(to.pathname + to.search) + to.hash);
+    }
 }

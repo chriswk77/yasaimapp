@@ -44,6 +44,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($_POST['stay'])) {
             persistent_remember((int) $account['id']);
         }
+        /* A DESK OR NOT — the form said so (the hidden field below), and
+           with it the server sends this session straight into the frame
+           page instead of writing the map once for nothing first
+           (includes/shell.php, way 2). Wrong or missing costs nothing: the
+           pages put it right themselves. */
+        $_SESSION['desk'] = ($_POST['desk'] ?? '') === '1';
         redirect_to($next !== '' ? $next : 'index.php');
     } else {
         // Deliberately without saying which part was wrong.
@@ -71,6 +77,10 @@ page_header(t('Anmelden'));
         <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="next" value="<?= h($next) ?>">
+            <?php /* Filled by the line below with what only the browser knows:
+                 a wide window and a mouse (DESK_QUERY), and not the recorder app. */ ?>
+            <input type="hidden" name="desk" id="login-desk" value="">
+            <script>document.getElementById('login-desk').value = !window.yasaimapp && matchMedia(<?= json_encode(DESK_QUERY, JSON_HEX_TAG | JSON_HEX_AMP) ?>).matches ? '1' : '';</script>
 
             <div class="field">
                 <label for="email"><?= h(t('E-Mail-Adresse')) ?></label>

@@ -52,6 +52,20 @@
  * which a desk carries and a phone should not. A guest has no areas to walk
  * between and is sent to the map.
  *
+ * AND AT THE DESK IT IS THE ENTRY (25.11.2026, after a day of trying it by
+ * its address: „Ja, mach die Rahmenseite zum normalen Eingang"). Whoever
+ * opens an area's page there is brought here, with that area in sight at
+ * the address he asked for — includes/shell.php says by which two ways, and
+ * what „at the desk" means. This page's part in it:
+ *
+ *   - written for a session, it marks the session as a desk's
+ *     ($_SESSION['desk']), and from then on the server sends that session's
+ *     windows here before it writes an area's page;
+ *   - found on a device that is no desk after all (a phone with this
+ *     page's address, a window pulled narrow), shell.js asks for
+ *     ?leave=<the area's address> — the mark is taken back and the area's
+ *     page is what one gets.
+ *
  * assets/js/shell.js does the work; app_areas() and app_tools()
  * (includes/page.php) say which there are — the lists the header's buttons
  * are drawn from.
@@ -71,6 +85,19 @@ if (user_current() === null) {
     login_required();
 }
 
+/* „NOT A DESK AFTER ALL" (shell.js): the mark goes, and the area's own page
+   is shown as a page. Only to an area's page — the address comes from the
+   request, and anything else in it would be a redirect to wherever a link
+   says. A # travels by itself: the browser carries it over. */
+if (isset($_GET['leave'])) {
+    $_SESSION['desk'] = false;
+    $to = (string) $_GET['leave'];
+    $known = str_starts_with($to, BASE_URL)
+        && shell_area_of((string) parse_url($to, PHP_URL_PATH)) !== null;
+    redirect_to($known ? $to : 'index.php');
+}
+$_SESSION['desk'] = true;
+
 $areas = [];
 foreach (app_areas() as $key => [$label, $href]) {
     if ($href !== null) {
@@ -86,6 +113,6 @@ page_header('YASAIMAPP', ['full' => true]);
 <?php /* One <iframe> per area, made by shell.js when the area is first
      wanted. They all fill the window; the one in sight is the one without
      the class is-aside (app.css). */ ?>
-<div class="shell" id="shell" data-areas="<?= h(json_encode($areas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>"></div>
+<div class="shell" id="shell" data-desk="<?= h(DESK_QUERY) ?>" data-areas="<?= h(json_encode($areas, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) ?>"></div>
 <?php
 page_footer(['full' => true, 'scripts' => ['assets/js/shell.js']]);

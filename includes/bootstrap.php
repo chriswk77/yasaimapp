@@ -235,3 +235,9 @@ require_once __DIR__ . '/auth.php';
 // every API call may ask a module something (modules.php names the hooks).
 require_once __DIR__ . '/modules.php';
 require_once __DIR__ . '/i18n.php';
+// At the desk the areas' pages are shown inside the frame page; a window
+// that asks for one of them is sent there before the page is written
+// (shell.php says how it knows, and why here: no page has to remember it,
+// a module's included).
+require_once __DIR__ . '/shell.php';
+shell_entry();

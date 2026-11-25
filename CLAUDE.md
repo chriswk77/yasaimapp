@@ -71,6 +71,21 @@ names of the applied migrations keep their German — they are the ledger.
 | `migrations/` | numbered `.sql`, run in name order — file names are the applied-migration ledger and NEVER rename |
 | `tests/` | `php tests/x.php` or `node tests/x.mjs`; green means the last line is `All good.` |
 
+**AT THE DESK AN AREA'S PAGE RUNS INSIDE A FRAME** (25.11.2026:
+„mach die Rahmenseite zum normalen Eingang"). The map, the Fundbrowser, a
+module's area and the administration are still pages of their own, with
+their own addresses — the phone opens them as such. At the desk (a wide
+window AND a mouse) whoever asks for one lands in `pages/shell.php`, which
+holds them side by side in frames, so a change of area is a change of view
+and full screen holds. `includes/shell.php` says how one gets in,
+`assets/js/shell.js` holds the frames, `assets/js/shellframe.js` is the
+part every page carries. What follows for all code: a page must work as
+the WINDOW and as a FRAME alike. `location.href = …` to another area still
+arrives (the frame page puts it right), `shellOpen()` is the way without a
+reload; what must take the whole window — a provider's sign-in, a foreign
+site — says `target="_top"`. And a test or a look at ONE page alone says
+`sessionStorage['shell.off'] = '1'` in its tab first.
+
 ## How much to test
 
 **ONLY WHAT WAS ACTUALLY TOUCHED, and for a small change nothing at all.**

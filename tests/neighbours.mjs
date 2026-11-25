@@ -242,6 +242,13 @@ try {
            + '  Or name another account: MAP_USER=… MAP_PASS=… node tests/neighbours.mjs');
     }
 
+    /* THE PAGES AS PAGES. At the desk an area's page sends itself into the
+       frame page (includes/shell.php), and this test would then measure a
+       page that holds nothing but frames. 'shell.off' is the tab's „no" to
+       that; the session is no desk's either, it logged in without saying
+       so. */
+    await evaluate(`sessionStorage.setItem('shell.off', '1')`);
+
     for (const [width, height] of WIDTHS) {
         await run('Emulation.setDeviceMetricsOverride', {
             width, height, deviceScaleFactor: 1, mobile: width < 860,

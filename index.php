@@ -502,6 +502,12 @@ function clear_button(string $id, string $label): string
 <html lang="<?= h(lang_current()) ?>">
 <head>
     <meta charset="UTF-8">
+    <?php /* THE MAP OPENED AT THE DESK goes into the frame page (includes/shell.php,
+         way 1; the same lines page_header() writes for the other areas). A
+         guest of an excursion has no areas to walk between and stays here. */
+    if (!$guest && ($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
+        echo shell_entry_script('map');
+    } ?>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <meta name="color-scheme" content="dark light">
     <title>YASAIMAPP<?= IS_LOCAL ? ' ' . h(t('(lokal)')) : '' ?></title>
