@@ -1,14 +1,15 @@
 <?php
 /**
- * A PLATE ON THE PUBLIC SITE — released on purpose, under a licence, with
- * everybody whose pictures it carries cleared (migration 0201).
+ * A PLATE IN ONE'S FIND BOOK — released on purpose, under a licence, with
+ * everybody whose pictures it carries cleared (migration 0201). The find
+ * book itself, and how it fetches what was released, is publication.php.
  *
  * „Ich habe auch schon überlegt, ob wir in YASAIMAPP nicht einen einfachen
  * Haken irgendwo einführen … zur Veröffentlichung freigegeben oder nicht
  * … Beim Veröffentlichen setze ich dort die Lizenz. Und wenn dort Bilder
  * drauf sind von Freunden, dann kann ich das natürlich vorher klären"
- * (25.11.2026). Until then the site (includes/public_site.php) took every
- * plate of its owner by itself.
+ * (25.11.2026). Until then the one find book there was, built into the
+ * installation, took every plate of its owner by itself.
  *
  * ONE LICENCE: CC BY-NC 4.0 — anybody may pass the plate on, changed too,
  * with the names and the licence, but not for money („kommerzielle
@@ -32,8 +33,8 @@
  * layer (plateparts.js rowsFor) — so those count too. A plot or a values
  * text shows numbers, not pictures, and counts for nobody.
  *
- * ONLY THE SITE'S OWNER SEES ANY OF THIS (public_site_may): on an
- * installation without a public site the columns mean nothing.
+ * ONLY WHO HAS A FIND BOOK SEES ANY OF THIS (publication_site_label): to
+ * an account without one the columns mean nothing.
  */
 
 declare(strict_types=1);

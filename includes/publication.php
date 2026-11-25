@@ -129,28 +129,16 @@ function publication_by_key(PDO $pdo, string $key): ?array
 
 /**
  * Where this account's finds go public, as the find's head names it
- * („example.org") — or null: then nothing about publishing is shown to him.
- *
- * THE BUILT-IN FIND BOOK STILL COUNTS, for the one installation that has
- * it (includes/public_site.php), until its pages fetch through the API
- * too; then that file and this fallback go.
+ * („example.org") — or null: he has no find book, and nothing about
+ * publishing is shown to him.
  */
 function publication_site_label(PDO $pdo, ?array $user): ?string
 {
-    if ($user === null || !plate_publish_ready($pdo)) {
+    if ($user === null) {
         return null;
     }
     $book = publication_of($pdo, (int) $user['id']);
-    if ($book !== null) {
-        return publication_host((string) $book['site_url']);
-    }
-    if (is_file(__DIR__ . '/public_site.php')) {
-        require_once __DIR__ . '/public_site.php';
-        if (public_site_may($user)) {
-            return public_site_label();
-        }
-    }
-    return null;
+    return $book !== null ? publication_host((string) $book['site_url']) : null;
 }
 
 /** The site's host as the find's head names it („example.org"). */
