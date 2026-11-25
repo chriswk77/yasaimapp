@@ -68,6 +68,14 @@ compare('same', '(Linné 1753 : Fries 1821) Roussel', '(L.) Roussel', 'Linnaeus 
 compare('same', '(Schaeff.: Fr.) S. F. Gray var. silvestris Sing. 1932', 'Singer', 'the variety\'s author stands behind its epithet');
 compare('same', '(Persoon : Fries) Fries var. acutus', '(Pers.) Fr.', 'a variety nobody is named for is the species\' own');
 compare('same', 'Schulz. ap. Kalchbr.', 'Schulzer', '„apud" like „in"');
+compare('same', '(Bres. in Sacc. & Syd.) Singer', '(Sacc. & P. Syd.) Singer', 'whoever stands behind „in" may be the one the list cites');
+compare('same', '(Fries in Quélet 1872) Hesler 1967', '(Quél.) Hesler', 'and so may the one before it');
+compare('part', '(Schff. em. Pers.) Fr.', '(Schaeff.) Fr.', '„em." like „emend."');
+compare('part', '(von Schweiniz 1822) Fries 1825 non Panus strigosus Berkeley & Curtis 1859', 'Fr.', 'the name it is not');
+compare('same', '("miser") (P. Karst.) Redhead, Vilgalys & Hopple 2001', '(P. Karst.) Redhead, Vilgalys & Hopple', 'a quoted spelling before the author');
+compare('same', 'Lange 1914 = var. alba Flora Danica ex Rea 1922', 'J.E. Lange', 'a synonym behind an equals sign');
+compare('combining', '(D.C ex Fr.) Secr.', '(DC.) Krombh.', '„D.C" is de Candolle');
+compare('same', '(A. & S.ex Fr.) Boud.', '(Alb. & Schwein.) Boud.', '„ex" without its space');
 compare('none', 'ad int.', 'Bidaud & Reumaux', 'a status remark is no author');
 compare('none', 'spec. nov.', 'Consiglio', 'neither is „spec. nov."');
 
@@ -81,6 +89,12 @@ compare('part', '(Schff.) Fr.', '(Schaeff.) Fr.', 'Schff. for Schaeffer');
 compare('part', '(Krbh.) Cke.', '(Krombh.) Cooke', 'Krbh. and Cke.');
 compare('part', 'Svrček', 'Svrek', 'a letter the list lost — the clean row beside it must win');
 compare('same', 'Svrček', 'Svrcek', 'the same without its diacritic');
+compare('part', '(Wulren 1788 ex Fr. 1821) Mre. 1929', '(Wulfen) Maire', 'one letter read wrong by the scan');
+compare('part', '(Brirz. 1883) Sacc. 1887', '(Britzelm.) Sacc.', 'the same inside an abbreviation');
+compare('part', '(Bondartzev) Bondartzev & P.N. Borisov', '(Bondartsev) Bondartsev & P.N. Borisov', 'two transliterations');
+compare('part', '(Dittm. ex Fr.) Kummer', '(Ditmar) P. Kumm.', 'a doubled letter');
+compare('part', '(J Lge.) Imbach', '(J.E. Lange) Imbach', 'an initial that lost its dot');
+compare('same', '(L ex Fr.) Quel.', '(L.) Quél.', 'but „L ex Fr." keeps its Linnaeus');
 
 echo "\nAgreeing, but one side says less:\n";
 compare('part', 'Britz.', '(Britzelm.) Sacc.', 'the book cites the author of the epithet alone');
@@ -96,6 +110,14 @@ compare('combining', '(Fr.) Quél.', '(Fr.) Singer', 'the same first author, ano
 compare('basionym', '(O.F. Müll.) Bondartsev', '(Relhan) Bondartsev', 'the same combination, another first author');
 compare('sanction', '(Fr.) Kumm.', '(Bolton) P.Kumm.', 'Fries for an author before him: the citing of before 1981');
 compare('sanction', 'Fries', 'Pers.', 'the same without a bracket');
+compare('sanction', '(Pers. : Fr.) Kotl. & Pouzar', '(Schaeff.) Kotl. & Pouzar', 'whom Fries took the name from, cited two ways');
+compare('sanction', '(Müll. ex Fr. 1822) Fuck. 1870', '(Pers.) Fuckel', 'the same with „ex"');
+compare('sanction', '(Persoon 1801) Kummer 1871', '(Fr.) P. Kumm.', 'the older author written out');
+compare('sanction', 'Fr.', '(Schaeff.) Pers.', 'the bare Fries of the old books against a name resting on an older author');
+compare('differs', 'Fr.', '(P. Karst.) Sacc.', 'but not against one resting on a later author');
+compare('combining', '(Fr.) Singer', '(Pers.) Pat.', 'the first author in the old way, the combination credited to another');
+compare('basionym', '(Opat.) Kalchbr.', '(Klotzsch) Kalchbr.', 'two first authors and no Fries between them');
+compare('differs', 'Schaeff. : Fr.', 'Bull.', 'without a shared combining author two old names may be two fungi');
 compare('basionym', '(Fr.) Singer', '(P.Karst.) Singer', 'Fries against an author AFTER him is a contradiction');
 compare('differs', 'Fr.', 'Quél.', 'and so it is without a bracket');
 compare('differs', 'Bull.', 'Pilát', 'two authors, one name: a homonym');
@@ -105,6 +127,8 @@ echo "\nWhat must not agree:\n";
 compare('differs', 'L.', 'Bull.', 'one letter sits in every name — Linnaeus is not Bulliard');
 compare('differs', 'Fr.', 'Fayod', 'two letters are no abbreviation');
 compare('differs', 'Mre.', 'Murrill', 'an abbreviation needs all its letters in order');
+compare('differs', 'Rostk.', 'Rostaf.', 'one letter apart at the END of an abbreviation: Rostkovius and Rostafiński');
+compare('differs', 'Berk.', 'Beck', 'and not below five letters');
 compare('differs', 'ss. auct.', '(Pers.) Fr.', 'a list row that is only a sensu clause agrees with nobody');
 compare('none', '', '(Pers.) Fr.', 'no author, nothing to say');
 

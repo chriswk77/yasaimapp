@@ -54,7 +54,7 @@ const AUTHOR_ALIASES = [
     'robhenry' => 'henry', 'hry' => 'henry', 'hy' => 'henry', 'rhry' => 'henry', 'rhenry' => 'henry',
     'rmre' => 'maire', 'mre' => 'maire',
     'julschaff' => 'schaff', 'jschff' => 'schaff', 'jschaff' => 'schaff',
-    'thorefries' => 'thfr', 'bk' => 'berk', 'pk' => 'peck',
+    'thorefries' => 'thfr', 'bk' => 'berk', 'pk' => 'peck', 'teodorowicz' => 'theodor',
 ];
 
 /** Pairs the older books abbreviate to their initials: „(A. & S.: Fr.) Fr.". */
@@ -114,6 +114,14 @@ function author_plain(?string $a): array
     $a = strtr(trim((string) $a), ['[' => '(', ']' => ')', '{' => '(', '}' => ')', '→' => ':']);
     // „Fr. [= M. phalloides (Bull.) Chev.]": a synonym in a bracket of its own.
     $a = preg_replace('~\(\s*=.*$~u', '', $a);
+    // The same without a bracket: „Lange 1914 = var. alba Fl. Dan. ex Rea 1922".
+    $a = preg_replace('~\s+=\s+.*$~u', '', $a);
+    // A spelling the book quotes before the author: „("miser") (P. Karst.) Redhead".
+    $a = preg_replace('~\(\s*["„“”‘’\'][^()]*\)~u', '', $a);
+    // „D.C ex Fr." is de Candolle, not an initial and a stray letter; and
+    // „A. & S.ex Fr." lost the space the next rules look for.
+    $a = preg_replace('~\bD\.\s?C\b\.?~u', 'DC.', $a);
+    $a = preg_replace('~(?<=\.)(ex|et|in)\s+(?=[\p{Lu}(])~u', ' $1 ', $a);
     // THE RANK BELOW THE SPECIES, printed into the author: „(Schaeff.: Fr.)
     // Gray var. silvestris Singer" — the variety's author is the one behind
     // its epithet. Where nobody follows („Fries var. acutus"), the variety
@@ -130,17 +138,24 @@ function author_plain(?string $a): array
     // clause is cut only BEHIND an author: a list row that is nothing but
     // „ss. auct." has to stay a citation that agrees with nobody — as no
     // author at all it would win against every row that contradicts.
-    $a = preg_replace('~\s+(non\s+)?(ss\.|(?-i:s\.)|sensu|s\.\s*l\.|s\.\s*str\.|auct\.|p\.\s*p\.|emend\.).*$~iu', '', $a);
+    $a = preg_replace('~\s+(non\s+)?(ss\.|(?-i:s\.)|sensu|s\.\s*l\.|s\.\s*str\.|auct\.|p\.\s*p\.|em(end)?\.).*$~iu', '', $a);
+    // „Fries 1825 non Panus strigosus Berk. & M.A. Curtis": the name it is NOT.
+    $a = preg_replace('~\s+non\s+\p{Lu}.*$~u', '', $a);
     $a = preg_replace('~(^|\s+)(sp(ec)?\.\s*n(ov)?\.?|n(ov)?\.\s*sp(ec)?\.?|nom\.\s*\w+\.?|inval\.|ad\s+int\.|comb\.\s*\w+\.?).*$~iu', '', $a);
-    // „A in B", „A apud B": A is the author, B only the book it stood in.
-    $a = preg_replace('~\s+(in|apud|ap\.)\s+[^()]*~u', '', $a);
-    // „A ex B": some lists keep A, some B, some both — both stay, as a
-    // team. The sanctioning („Pers. : Fr.") keeps its colon and with it its
-    // place behind the author: author_members() and author_sanctioners().
-    $a = preg_replace('~\s+(ex|et|and|und|e)\s+~u', ' & ', $a);
+    // „A ex B", „A in B", „A apud B": some lists keep A, some B, some both
+    // — both stay, as a team. „Bres. in Sacc. & Syd." is „(Sacc. & P. Syd.)"
+    // in the lists, „Fries in Quélet" is „(Quél.)" in one and „(Fr.)" in
+    // the other; until 25.11.2026 whoever stood behind „in" was dropped as
+    // the book's editor, and those were contradictions. The sanctioning
+    // („Pers. : Fr.") keeps its colon and with it its place behind the
+    // author: author_members() and author_sanctioners().
+    $a = preg_replace('~\s+(ex|et|and|und|e|in|apud|ap\.)\s+~u', ' & ', $a);
     // Initials go: „J.-E. Gilbert" and „E.-J. Gilbert", „P. Karst." and
     // „P.Karst." — but not an author who IS one letter („L.", „(L.) Fr.").
     $a = preg_replace('~\b\p{Lu}\.(?=\s*-?\s*\p{L})~u', '', $a);
+    // An initial that lost its dot in the scan: „J Lge." for J. Lange, „R
+    // Haller". Only before a name — „L ex Fr." is Linnaeus.
+    $a = preg_replace('~(?<![\p{L}.])\p{Lu}\s+(?=\p{Lu}\p{Ll})~u', '', $a);
     // „& al.", „et al." stand for co-authors the other side may spell out.
     $a = preg_replace('~\s*&\s*al\.?~u', '', $a);
     $a = preg_replace('~\d+~', '', $a);
@@ -206,7 +221,10 @@ function author_names(string $team): array
  *   1  the shorter an ABBREVIATION of the longer — the same first letter
  *      and its letters in the longer one's order: „Lge." for Lange, „Cke."
  *      for Cooke, „Krbh." for Krombholz. The older books abbreviate so,
- *      and a letter the print lost („Bourot") passes the same way.
+ *      and a letter the print lost („Bourot") passes the same way. Or ONE
+ *      LETTER READ WRONG in a name of five letters and more: the scanned
+ *      books carry „Wulren" and „Brirz.", and two people who differ in
+ *      one letter of the same name's author are not to be expected.
  *   0  two people.
  *
  * THE ABBREVIATION IS A LOOSE RULE, AND KNOWINGLY: by it „Pers." would
@@ -232,12 +250,26 @@ function author_fit(string $x, string $y): int
     if (min(strlen($x), strlen($y)) < 3) return 0;
     if (str_contains($x, $y) || str_contains($y, $x)) return 2;
     [$short, $long] = strlen($x) < strlen($y) ? [$x, $y] : [$y, $x];
-    if ($short[0] !== $long[0] || strlen($short) === strlen($long)) return 0;
-    $i = 0;
-    for ($j = 0, $n = strlen($long), $k = strlen($short); $j < $n && $i < $k; $j++) {
-        if ($long[$j] === $short[$i]) $i++;
+    if ($short[0] !== $long[0]) return 0;
+    // A letter doubled on one side only: „Dittm." for Ditmar.
+    $single = static fn(string $s): string => preg_replace('~(.)\1~', '$1', $s);
+    if (strlen($single($short)) >= 3 && (str_contains($single($long), $single($short)) || str_contains($single($short), $single($long)))) return 1;
+    if (strlen($short) !== strlen($long)) {
+        $i = 0;
+        for ($j = 0, $n = strlen($long), $k = strlen($short); $j < $n && $i < $k; $j++) {
+            if ($long[$j] === $short[$i]) $i++;
+        }
+        if ($i === strlen($short)) return 1;
     }
-    return $i === strlen($short) ? 1 : 0;
+    // ONE LETTER READ WRONG: „Wulren" for Wulfen, „Brirz." for Britzelmayr,
+    // „Bondartzev" for Bondartsev. From five letters on — „Berk." and
+    // „Beck" are two people, and so are „Pers." and „Peck". AND NOT THE
+    // LAST LETTER OF AN ABBREVIATION: „Rostk." is Rostkovius and „Rostaf."
+    // Rostafiński, „Larss." not „Larson" — where an abbreviation ends is
+    // exactly where two names of one beginning part.
+    $k = strlen($short);
+    if ($k < 5 || levenshtein($short, substr($long, 0, $k)) !== 1) return 0;
+    return $k === strlen($long) || $short[$k - 1] === $long[$k - 1] ? 1 : 0;
 }
 
 /**
@@ -308,9 +340,27 @@ function author_compare(?string $a, ?string $b): string
     [$bb, $cb] = author_plain($b);
     if ($ba . $ca === '' || $bb . $cb === '') return 'none';
 
-    $before = static fn(string $x, string $y): bool => author_members($x) === ['fr']
-        && array_intersect(author_members($y), AUTHORS_BEFORE_FRIES) !== [];
+    // An author before Fries, abbreviated or written out („Persoon", „Schaeffer").
+    $old = static function (string $x): bool {
+        foreach (author_members($x) as $m) {
+            foreach (AUTHORS_BEFORE_FRIES as $o) {
+                if ($m === $o || strlen($o) >= 3 && str_starts_with($m, $o)) return true;
+            }
+        }
+        return false;
+    };
+    $before = static fn(string $x, string $y): bool => author_members($x) === ['fr'] && $old($y);
     $sanction = static fn(string $x, string $y): bool => $before($x, $y) || $before($y, $x);
+    /* WHOM FRIES TOOK THE NAME FROM, cited two ways. „Albatrellus cristatus
+     * (Pers. : Fr.) Kotl. & Pouzar" in Moser, „(Schaeff.) Kotl. & Pouzar"
+     * in the lists: the old books name the author Fries cites, the lists
+     * the one who described it first. Fries stands in the one bracket, an
+     * author before him in the other — and the combination is one, made
+     * once by the same people. ONLY BEHIND A SHARED COMBINING AUTHOR: two
+     * bare citations, „Schaeff. : Fr." and „Bull.", may well be two
+     * Agaricus of one name. */
+    $fries = static fn(string $x): bool => in_array('fr', array_merge(author_members($x), author_sanctioners($x)), true);
+    $taken = static fn(string $x, string $y): bool => $fries($x) && $old($x) && $old($y) || $fries($y) && $old($y) && $old($x);
 
     if ($ba === '' || $ca === '' || $bb === '' || $cb === '') {
         $best = 0;
@@ -326,15 +376,24 @@ function author_compare(?string $a, ?string $b): string
         // book and „Entoloma P. Kumm." in the list do not contradict.
         if (!$alike && ($ca === '' || $cb === '') && ($ba === '' || $bb === '')) return 'none';
         // Two citations without a bracket: „Agaricus x Fr." in the old way, „Pers." in today's.
-        return $ba . $bb === '' && $sanction($ca, $cb) ? 'sanction' : 'differs';
+        if ($ba . $bb === '' && $sanction($ca, $cb)) return 'sanction';
+        // „Russula emetica Fr." in a book, „(Schaeff.) Pers." in the list:
+        // the bare Fries of the old books against a name that rests on an
+        // author before him — the same old way of citing, seen from a
+        // citation that says nothing else.
+        $bare = static fn(string $b, string $c, string $other): bool => $b === '' && author_members($c) === ['fr'] && $old($other);
+        return $bare($ba, $ca, $bb) || $bare($bb, $cb, $ba) ? 'sanction' : 'differs';
     }
 
     $basionym = author_part_grade($ba, $bb);
     $combining = author_part_grade($ca, $cb);
     if ($basionym && $combining) return $basionym + $combining === 4 ? 'same' : 'part';
     if ($basionym) return 'combining';
-    if ($combining) return $sanction($ba, $bb) ? 'sanction' : 'basionym';
-    return 'differs';
+    if ($combining) return $sanction($ba, $bb) || $taken($ba, $bb) ? 'sanction' : 'basionym';
+    // „Melanoleuca humilis (Fr.) Singer" against „(Pers.) Pat.": the first
+    // author is the same in the old way of citing, only the combination is
+    // credited to another — no more than `combining`.
+    return $sanction($ba, $bb) || $taken($ba, $bb) ? 'combining' : 'differs';
 }
 
 /**
