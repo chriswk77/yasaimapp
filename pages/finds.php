@@ -25,8 +25,7 @@ require_once __DIR__ . '/../includes/gallery_windows.php';
 require_once __DIR__ . '/../includes/figure_window.php';
 
 $me = login_required();
-require_once __DIR__ . '/../includes/public_site.php';
-require_once __DIR__ . '/../includes/plate_publish.php';
+require_once __DIR__ . '/../includes/publication.php';
 
 /* THE PICTURE VIEWER'S AND THE PLATE EDITOR'S STYLES — this page is a host
    of both since 11.10.2026, as the map and Organisieren are of the viewer. */
@@ -155,10 +154,10 @@ page_header(t('Fundbrowser'), [
                      (plates.php), so releasing the find's plate IS releasing
                      the find. The button says where it stands; its menu holds
                      the tick, the other photographers (plate_publish.php)
-                     and the addition. Only for the account that owns the
-                     site, and shown only where the find has a plate of his
-                     (findpublish.js). */ ?>
-                <?php if (plate_publish_ready($pdo) && public_site_may($me)): ?>
+                     and the addition. Only for an account that has a find
+                     book (publication.php), and shown only where the find
+                     has a plate of his (findpublish.js). */ ?>
+                <?php if (publication_site_label($pdo, $me) !== null): ?>
                 <div class="finds-publish" id="finds-publish" hidden>
                     <button type="button" class="button subtle small" id="finds-publish-toggle"
                             aria-haspopup="true" aria-expanded="false" aria-controls="finds-publish-menu"><?= icon('globe') ?><span id="finds-publish-word"></span></button>

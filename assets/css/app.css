@@ -7532,3 +7532,7 @@ kbd {
 .legal-text ul { margin: .5rem 0 .9rem; padding-left: 1.3rem; }
 .legal-text li { margin: .45rem 0; }
 .legal-text li > ul { margin: .35rem 0 .2rem; }
+
+/* Einstellungen → Fundbuch (publication_content.php): where the find book stands, with the green tick of a thing in order. */
+.publication-state { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: baseline; color: var(--text-quiet); }
+.publication-state .icon { color: var(--ok); align-self: center; }

@@ -107,6 +107,12 @@ async function send(said) {
         });
         if (id === plateId) state = answer.publish;
         toast(said, 'success');
+        /* Whoever shows the find elsewhere on the page follows at once — the
+           Fundbrowser's tile carries a mark for a published find (finds.js). */
+        const now = answer.publish;
+        document.dispatchEvent(new CustomEvent('publish:changed', { detail: {
+            pointId, state: !now.published ? null : now.shown ? 'shown' : 'waiting',
+        } }));
     } catch (e) {
         toast(e.message || t('Das ließ sich nicht speichern.'), 'error');
     }

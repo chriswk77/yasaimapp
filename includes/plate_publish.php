@@ -212,3 +212,29 @@ function plate_publish_set(PDO $pdo, int $userId, int $plateId, bool $on, string
     $stmt->execute([$plateId]);
     return plate_publish_state($pdo, $stmt->fetch());
 }
+
+/**
+ * Which of these finds are out, for a list that marks them (the
+ * Fundbrowser's tiles): the maker's own released plates among $pointIds,
+ * each as 'shown' or — where a photographer is not confirmed yet —
+ * 'waiting'. Finds without a released plate of his are not in the answer.
+ * Empty before migration 0201.
+ *
+ * @param int[] $pointIds
+ * @return array<int, 'shown'|'waiting'>
+ */
+function plate_publish_points(PDO $pdo, int $userId, array $pointIds): array
+{
+    $pointIds = array_values(array_unique(array_map('intval', $pointIds)));
+    if ($pointIds === [] || !plate_publish_ready($pdo)) {
+        return [];
+    }
+    $in = implode(',', array_fill(0, count($pointIds), '?'));
+    $stmt = $pdo->prepare("SELECT * FROM map_plates WHERE user_id = ? AND published_at IS NOT NULL AND point_id IN ($in)");
+    $stmt->execute([$userId, ...$pointIds]);
+    $out = [];
+    foreach ($stmt as $plate) {
+        $out[(int) $plate['point_id']] = plate_publish_state($pdo, $plate)['shown'] ? 'shown' : 'waiting';
+    }
+    return $out;
+}

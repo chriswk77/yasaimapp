@@ -10925,4 +10925,52 @@ return [
         => 'The plate carries pictures by others. Confirm first that they agree.',
     'Veröffentlichen gibt es hier nicht.'
         => 'Publishing is not available here.',
+
+    // THE FUNDBUCH (publication_content.php, publication.php, 25.11.2026)
+    'Dein Fundbuch ist eingerichtet.'
+        => 'Your find book is set up.',
+    'Der neue Schlüssel ist da. Der alte gilt nicht mehr.'
+        => 'The new key is here. The old one no longer works.',
+    'Das Fundbuch ist entfernt. Deine Homepage bekommt keine neuen Funde mehr.'
+        => 'The find book is removed. Your homepage gets no new finds any more.',
+    'Fundbuch'
+        => 'Find book',
+    'Mit dem Fundbuch zeigst du Funde auf deiner eigenen Homepage.'
+        => 'With the find book you show finds on your own homepage.',
+    'Dort erscheint nur, was du freigibst: Öffne einen Fund im Fundbrowser und klicke oben auf den Knopf mit der Weltkugel.'
+        => 'Only what you release appears there: open a find in the find browser and click the button with the globe at the top.',
+    'Deine Homepage holt sich jede Tafel einmal ab und zeigt sie dann selbst. Der genaue Fundort bleibt hier: Hinaus gehen nur die Gemeinde und das Viertel des Messtischblatts.'
+        => 'Your homepage fetches each plate once and then shows it itself. The exact spot stays here: only the municipality and the quarter of the map sheet go out.',
+    'Eingerichtet für %s am %s.'
+        => 'Set up for %s on %s.',
+    'Deine Homepage hat zuletzt am %s nachgefragt.'
+        => 'Your homepage last asked on %s.',
+    'Deine Homepage hat noch nie nachgefragt.'
+        => 'Your homepage has never asked yet.',
+    'Adresse deiner Homepage'
+        => 'Address of your homepage',
+    'Die Adresse, unter der dein Fundbuch zu sehen ist. Sie steht auch in jeder Tafel, als Stelle für Nachfragen zur Lizenz.'
+        => 'The address where your find book can be seen. It also stands in every plate, as the place to ask about the licence.',
+    'Fundbuch einrichten'
+        => 'Set up find book',
+    'Mit dem Schlüssel weist sich deine Homepage hier aus. Er steht dort in einer Datei. Wir kennen ihn nicht mehr: Er wurde dir nur einmal gezeigt.'
+        => 'With the key your homepage identifies itself here. It is kept there in a file. We no longer know it: it was shown to you only once.',
+    'Einen neuen Schlüssel erzeugen? Der alte gilt dann sofort nicht mehr. Deine Homepage bekommt erst wieder neue Funde, wenn du dort den neuen Schlüssel einträgst.'
+        => 'Create a new key? The old one stops working at once. Your homepage gets new finds again only when you enter the new key there.',
+    'Neuen Schlüssel erzeugen'
+        => 'Create new key',
+    'Das Fundbuch entfernen? Der Schlüssel gilt dann nicht mehr, und deine Homepage bekommt keine neuen Funde. Was schon auf deiner Homepage liegt, bleibt dort, bis du es dort löschst.'
+        => 'Remove the find book? The key then stops working, and your homepage gets no new finds. What already lies on your homepage stays there until you delete it there.',
+    'Fundbuch entfernen'
+        => 'Remove find book',
+    'Der Schlüssel für dein Fundbuch'
+        => 'The key for your find book',
+    'Kopiere den Schlüssel jetzt.'
+        => 'Copy the key now.',
+    'Er erscheint nur dieses eine Mal. Geht er verloren, erzeugst du hier einen neuen.'
+        => 'It appears only this once. If it gets lost, you create a new one here.',
+    'Er gehört auf deine Homepage, in die Datei „fundbuch-key.php" im Ordner „inc".'
+        => 'It belongs on your homepage, in the file “fundbuch-key.php” in the folder “inc”.',
+    'Das ist keine Adresse einer Homepage. Ein Beispiel: https://beispiel.de/'
+        => 'That is not the address of a homepage. An example: https://example.org/',
 ];

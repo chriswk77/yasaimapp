@@ -118,6 +118,9 @@ $excursionsState = excursions_process($pdo, $userId);
 $importState    = import_process($pdo, $userId);
 $organizeState   = organize_process($pdo, $userId);
 $settingsState   = settings_process($pdo, $userId);
+// The Fundbuch tab lives inside the settings and keeps its own state (publication_content.php).
+require_once __DIR__ . '/../includes/publication_content.php';
+publication_process($pdo, $userId);
 $cloudState    = cloud_process($pdo, $userId);
 $archivesState = archives_process($pdo, $userId);
 

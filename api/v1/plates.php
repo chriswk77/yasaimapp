@@ -32,13 +32,13 @@ if ($me === null) {
 }
 $userId = (int) $me['id'];
 
-/* RELEASING ON THE PUBLIC SITE (plate_publish.php, 25.11.2026) — only for
-   the account that owns the site, and only on its own plates; for everybody
-   else the answer carries no `publish` and the find's head shows nothing
-   (findpublish.js). */
-require_once __DIR__ . '/../../includes/public_site.php';
-require_once __DIR__ . '/../../includes/plate_publish.php';
-$publishing = plate_publish_ready($pdo) && public_site_may($me);
+/* RELEASING FOR ONE'S FIND BOOK (plate_publish.php, publication.php,
+   25.11.2026) — only for an account that has one, and only on its own
+   plates; for everybody else the answer carries no `publish` and the find's
+   head shows nothing (findpublish.js). */
+require_once __DIR__ . '/../../includes/publication.php';
+$publishSite = publication_site_label($pdo, $me);
+$publishing = $publishSite !== null;
 
 if ($method === 'GET') {
     $pointId = (int) ($_GET['point'] ?? 0);
@@ -49,7 +49,7 @@ if ($method === 'GET') {
             if ($plate['mine']) {
                 $stmt = $pdo->prepare('SELECT * FROM map_plates WHERE id = ?');
                 $stmt->execute([$plate['id']]);
-                $plate['publish'] = plate_publish_state($pdo, $stmt->fetch()) + ['site' => public_site_label()];
+                $plate['publish'] = plate_publish_state($pdo, $stmt->fetch()) + ['site' => $publishSite];
             }
         }
         unset($plate);
@@ -115,7 +115,7 @@ if (($input['action'] ?? '') === 'publish') {
     } catch (InvalidArgumentException $e) {
         json_error(error_for_user($e), 422);
     }
-    json_response(['publish' => $state + ['site' => public_site_label()]]);
+    json_response(['publish' => $state + ['site' => $publishSite]]);
 }
 
 /* A NAME OF PICTURE CUTOUTS RENAMED in the photo window (22.11.2026) —

@@ -679,6 +679,15 @@ function settings_render(PDO $pdo, int $userId, array $state): void
          e-mail, one tab to the left. */ ?>
     <button type="button" role="tab" id="tab-devices" aria-controls="section-devices"
             data-anchor="devices"><?= icon('device') ?><?= h(t('Geräte')) ?></button>
+    <?php /* ONE'S FINDS ON ONE'S OWN HOMEPAGE (publication_content.php,
+         25.11.2026). Last in the bar: it is set up once and then left
+         alone. Only where it is offered — see publication_offered. */
+    require_once __DIR__ . '/publication_content.php';
+    $fundbuch = publication_offered($pdo, user_current());
+    if ($fundbuch): ?>
+    <button type="button" role="tab" id="tab-fundbuch" aria-controls="section-fundbuch"
+            data-anchor="fundbuch"><?= icon('globe') ?><?= h(t('Fundbuch')) ?></button>
+    <?php endif; ?>
 </div>
 
 <section id="section-account" role="tabpanel" aria-labelledby="tab-account" hidden>
@@ -2425,6 +2434,12 @@ foreach ($devices as $d) {
         </dialog>
     <?php endif; ?>
 </section>
+
+<?php if ($fundbuch): ?>
+<section id="section-fundbuch" role="tabpanel" aria-labelledby="tab-fundbuch" hidden>
+    <?php publication_render($pdo, $userId); ?>
+</section>
+<?php endif; ?>
 
 <script type="module">
 /* BY THE BARE PATH, DELIBERATELY. Every module imports these files by
