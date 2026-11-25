@@ -6862,7 +6862,7 @@ export function mountPhotoWindow(host) {
                 return mode === '' || !document.querySelector(`#photo-tool-rail button[data-tool="${mode}"]`)?.hidden;
             };
             out.push({ title: t('Messen'), rows: [['1', t('Strecke')], ['2', t('Gebogene Länge')], ['3', t('Länge × Breite')],
-                ['4', t('Länge × Breite, gebogen')], ['5', t('Zystide in Teilen')], ['Q', t('Text')], ['W', t('Pfeil')],
+                ['4', t('Länge × Breite, gebogen')], ['5', t('Sondermessungen')], ['Q', t('Text')], ['W', t('Pfeil')],
                 ['R', t('Poren zählen')], ['6', t('Lamellen zählen')], ['T', t('Bildausschnitt')], ['A', t('Auswählen')]].filter(offered) });
             // Enter belongs to the polyline (photoKeys) — named where that tool is offered.
             if (offered(['2'])) out[out.length - 1].rows.push([t('Enter'), t('gebogene Länge abschließen')]);
@@ -10469,9 +10469,17 @@ export function mountPhotoWindow(host) {
            it in the order of its method — Hebeloma's l · A · M · B, or
            Conocybe's length, belly, head and neck (CYSTID_PROFILES in
            measurestats.js). The method is chosen in the line over the
-           picture and kept (cystidRow). */
-        { mode: 'cystid', icon: 'measure-cystid', group: 'measure', name: () => t('Zystide in Teilen'),
-          hint: () => t('Hebeloma: Kopf, Mitte, unten · Conocybe: Bauch, Köpfchen, Hals') },
+           picture and kept (cystidRow).
+           CALLED „Sondermessungen" since 25.11.2026, until then „Zystide in
+           Teilen": the third method measures a paraphysis, and a paraphysis
+           is no cystidium („Ich kann aber auch eine Paraphyse messen …
+           wollen wir das Werkzeug lieber Sondermessungen nennen?" — and his
+           choice of that name over „Messung in Teilen"). Only the WORDS
+           changed: the mode stays 'cystid', the profiles CYSTID_PROFILES,
+           because both stand in saved measures and settings. The line under
+           the name lists all three methods now; the paraphysis was missing. */
+        { mode: 'cystid', icon: 'measure-cystid', group: 'measure', name: () => t('Sondermessungen'),
+          hint: () => t('Hebeloma: Kopf, Mitte, unten · Conocybe: Bauch, Köpfchen, Hals · Paraphyse: Breite, Kopf') },
         /* THE FRAME COUNTS (18.11.2026) — among the measuring
            tools since it does, at their end: pulled open, then counted in (boxCount). */
         /* „PORENZÄHLEN" AND „LAMELLEN ZÄHLEN" (18.11.2026: „Unter
@@ -10829,7 +10837,7 @@ export function mountPhotoWindow(host) {
             line: t('Klicke auf den Anfang, dann auf das Ende.'),
             rect: t('Vier Punkte: erst die Längsachse (2), dann die Breite (2) – je den äußersten Punkt links und rechts der Achse.'),
             cutout: t('Zuerst der Ausschnitt: vier Punkte, erst die Längsachse (2), dann die Breite (2) – je den äußersten Punkt links und rechts der Achse.'),
-            cystid: t('Zuerst der Rahmen um eine Zystide: vier Punkte, erst die Längsachse (2), dann die Breite (2). Danach führt die Zeile hier Schritt für Schritt durch die Maße.'),
+            cystid: t('Zuerst der Rahmen: vier Punkte, erst die Längsachse (2), dann die Breite (2). Danach führt die Zeile hier Schritt für Schritt durch die Maße.'),
             path: t('Klicke in kleinen Schritten entlang der gedachten Mittellinie. Am Ende ein Doppelklick.'),
             text: t('Klicke dorthin, wo der Text stehen soll.'),
             arrow: t('Klicke dorthin, wo der Pfeil hinzeigen soll. Dann klicke dorthin, wo er beginnt.'),
@@ -13230,7 +13238,7 @@ export function mountPhotoWindow(host) {
      * The table as a function, not a const beside it: layerChipsSync, which
      * asks it, may run before the lines around it (see pickSay).
      * Modes: line Strecke · path Gebogene Länge · rect Länge × Breite ·
-     * cutout Länge × Breite, gebogen · cystid Zystide in Teilen · box Poren
+     * cutout Länge × Breite, gebogen · cystid Sondermessungen · box Poren
      * zählen · sector Lamellen zählen · text · arrow · crop Bildausschnitt.
      */
     function layerTools(name) {
@@ -13251,9 +13259,10 @@ export function mountPhotoWindow(host) {
            THE WINDING LINE FOR WHAT WINDS (22.11.2026, the same day): asci,
            paraphyses, marginal hairs and every hypha and the mycelium got
            „Gebogene Länge"; the excipulum the box „falls man Zellengrößen
-           messen will". The paraphyses LOST „Zystide in Teilen" on that
-           call — its method „Paraphyse" stays in the tool for whoever
-           measures one on another layer. */
+           messen will". The paraphyses LOST „Zystide in Teilen" (since
+           25.11.2026 „Sondermessungen") on that call — its method
+           „Paraphyse" stays in the tool for whoever measures one on
+           another layer. */
         const table = {
             // Spores and conidia: straight and bent — the bent one for the allantoid spore (18.11.2026).
             Sporen: ['rect', 'cutout', 'line'],

@@ -8601,13 +8601,13 @@ return [
     // Fundbrowser (pages/finds.php, assets/js/finds.js; 10.10.2026)
     'Funde'
         => 'Finds',
-    // Zystide in Teilen — Hebeloma und Conocybe (assets/js/photowindow.js, measurestats.js; 05.11.2026)
-    'Zystide in Teilen'
-        => 'Cystidium in parts',
-    'Hebeloma: Kopf, Mitte, unten · Conocybe: Bauch, Köpfchen, Hals'
-        => 'Hebeloma: apex, middle, base · Conocybe: belly, head, neck',
-    'Zuerst der Rahmen um eine Zystide: vier Punkte, erst die Längsachse (2), dann die Breite (2). Danach führt die Zeile hier Schritt für Schritt durch die Maße.'
-        => 'First the frame around a cystidium: four points, the long axis first (2), then the width (2). Then this line leads you through the measures step by step.',
+    // Sondermessungen (until 25.11.2026 „Zystide in Teilen") — Hebeloma, Conocybe, Paraphyse (assets/js/photowindow.js, measurestats.js; 05.11.2026)
+    'Sondermessungen'
+        => 'Special measurements',
+    'Hebeloma: Kopf, Mitte, unten · Conocybe: Bauch, Köpfchen, Hals · Paraphyse: Breite, Kopf'
+        => 'Hebeloma: apex, middle, base · Conocybe: belly, head, neck · Paraphysis: breadth, head',
+    'Zuerst der Rahmen: vier Punkte, erst die Längsachse (2), dann die Breite (2). Danach führt die Zeile hier Schritt für Schritt durch die Maße.'
+        => 'First the frame: four points, the long axis first (2), then the width (2). Then this line leads you through the measures step by step.',
     'Messart:'
         => 'Method:',
     'Hier fehlt noch: %s'
@@ -8644,7 +8644,7 @@ return [
         => 'Head',
     'Hals'
         => 'Neck',
-    // „Zystide in Teilen", the method „Paraphyse" (assets/js/photowindow.js, cystidSteps; 18.11.2026)
+    // „Sondermessungen", the method „Paraphyse" (assets/js/photowindow.js, cystidSteps; 18.11.2026)
     'Paraphyse'
         => 'Paraphysis',
     'Kopf'
