@@ -4943,8 +4943,8 @@ return [
         => 'Four points: first the long axis (2), then the breadth (2) – the outermost point left and right of the axis.',
     'Zuerst der Ausschnitt: vier Punkte, erst die Längsachse (2), dann die Breite (2) – je den äußersten Punkt links und rechts der Achse.'
         => 'First the cutout: four points, first the long axis (2), then the breadth (2) – the outermost point left and right of the axis.',
-    'Klicke in kleinen Schritten die Mittellinie entlang. Ende: letzten Punkt nochmal klicken oder Enter.'
-        => 'Click in small steps along the midline. To finish: click the last point again, or Enter.',
+    'Klicke in kleinen Schritten entlang der gedachten Mittellinie. Ende: letzten Punkt nochmal klicken oder Enter.'
+        => 'Click in small steps along the imagined midline. To finish: click the last point again, or Enter.',
     'Klicke dorthin, wo der Text stehen soll.'
         => 'Click where the text should go.',
     'Klicke dorthin, wo der Pfeil hinzeigen soll. Dann klicke dorthin, wo er beginnt.'
@@ -5038,8 +5038,8 @@ return [
         => 'Write now. Enter starts a new line.',
     'Hier fehlt noch die Breite.'
         => 'The breadth is still missing here.',
-    'Jetzt die Länge: Klicke in kleinen Schritten die Mittellinie entlang. Ende: letzten Punkt nochmal klicken oder Enter.'
-        => 'Now the length: click in small steps along the midline. To finish: click the last point again, or Enter.',
+    'Jetzt die Länge: Klicke in kleinen Schritten entlang der gedachten Mittellinie. Ende: letzten Punkt nochmal klicken oder Enter.'
+        => 'Now the length: click in small steps along the imagined midline. To finish: click the last point again, or Enter.',
     'Jetzt die Breite: Klicke an der dicksten Stelle auf beide Ränder.'
         => 'Now the breadth: click both edges at the thickest place.',
     'Zeiger'

@@ -10692,7 +10692,7 @@ export function mountPhotoWindow(host) {
                Punkte") — two points and the double click are a straight
                length, so the switch to a straight line went. */
             frameArm('path');
-            say(t('Jetzt die Länge: Klicke in kleinen Schritten die Mittellinie entlang. Ende: letzten Punkt nochmal klicken oder Enter.'));
+            say(t('Jetzt die Länge: Klicke in kleinen Schritten entlang der gedachten Mittellinie. Ende: letzten Punkt nochmal klicken oder Enter.'));
             offer(t('Abbrechen'), () => frameDiscard());
         } else {
             /* THE BREADTH BELONGS TO IT — the tool is „Länge × Breite,
@@ -10838,7 +10838,7 @@ export function mountPhotoWindow(host) {
             rect: t('Vier Punkte: erst die Längsachse (2), dann die Breite (2) – je den äußersten Punkt links und rechts der Achse.'),
             cutout: t('Zuerst der Ausschnitt: vier Punkte, erst die Längsachse (2), dann die Breite (2) – je den äußersten Punkt links und rechts der Achse.'),
             cystid: t('Zuerst der Rahmen: vier Punkte, erst die Längsachse (2), dann die Breite (2). Danach führt die Zeile hier Schritt für Schritt durch die Maße.'),
-            path: t('Klicke in kleinen Schritten die Mittellinie entlang. Ende: letzten Punkt nochmal klicken oder Enter.'),
+            path: t('Klicke in kleinen Schritten entlang der gedachten Mittellinie. Ende: letzten Punkt nochmal klicken oder Enter.'),
             text: t('Klicke dorthin, wo der Text stehen soll.'),
             arrow: t('Klicke dorthin, wo der Pfeil hinzeigen soll. Dann klicke dorthin, wo er beginnt.'),
             box: t('Ziehe den Rahmen auf. Er rastet in runden Maßen ein.'),
@@ -16715,7 +16715,7 @@ export function mountPhotoWindow(host) {
         const length = { mode: 'line', word: t('die Länge'),
             say: t('Jetzt die Länge: Klicke auf die Basis, dann auf die Spitze.') };
         const traced = { mode: 'path', word: t('die Länge'),
-            say: t('Jetzt die Länge: Klicke in kleinen Schritten die Mittellinie entlang. Ende: letzten Punkt nochmal klicken oder Enter.') };
+            say: t('Jetzt die Länge: Klicke in kleinen Schritten entlang der gedachten Mittellinie. Ende: letzten Punkt nochmal klicken oder Enter.') };
         /* THE PARAPHYSIS'S LENGTH IS BENT (18.11.2026: „Länge mal Breite
            gebogen … plus Kopfdurchmesser") — it curves as an ascus does, so
            it is traced. */
