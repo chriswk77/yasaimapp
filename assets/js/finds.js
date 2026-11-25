@@ -1001,22 +1001,31 @@ const toMap = () => `<button type="button" class="symbol-button small finds-to-m
    nested, so this is a matter of taste now, no longer a trap. */
 const quiet = (text) => '<span class="finds-quiet">' + esc(text) + '</span>';
 
-/* THE FIND ON THE PUBLIC FIND BOOK, as a dot in the picture's top left
-   corner (25.11.2026: „in der Kachelansicht noch zusätzlich einen Punkt
-   setzen bei den Funden, die veröffentlicht wurden"). Green where it stands
-   on the site, orange where it is released but a photographer's consent is
-   still missing — the colours of the button in the find's head
-   (findpublish.js). A find not released carries NO dot: an orange one on
-   every other tile „wäre ja zu viel gewesen". The server sends `publish`
-   only to an account that has a find book (finds.php), so nobody else sees
-   a dot that would mean nothing. Top LEFT: the right corners are the
-   crosshair's and the picture count's. */
+/* THE FIND ON THE PUBLIC FIND BOOK, as a small globe before the name
+   (25.11.2026: „in der Kachelansicht noch zusätzlich einen Punkt setzen bei
+   den Funden, die veröffentlicht wurden"). In the accent where it stands on
+   the site, quiet grey where it is released but a photographer's consent is
+   still missing. A find not released carries NO mark: one on every other
+   tile „wäre ja zu viel gewesen".
+
+   QUIET, IN THE PAGE'S OWN DRESS (the same day, after the first draft:
+   green and orange dots over the photo's corner „lenkt zu sehr ab vom
+   eigentlichen … nicht unbedingt ein eigenes Grün, sondern im Stil bleiben
+   der Seite"). So the accent and not the meaning colours, and beside the
+   name instead of on the picture — the picture is what one looks at. A
+   GLOBE AND NOT A DOT (chosen beside a dot in the browser the same day): it
+   says „on the web" by itself, and it is the sign of the publish button in
+   the find's head. Before the name, not after it: a long name is cut at its
+   end, and the mark must not be cut with it.
+
+   The server sends `publish` only to an account that has a find book
+   (finds.php), so nobody else sees a mark that would mean nothing. */
 const PUBLISH_WORDS = { shown: () => t('Veröffentlicht'), waiting: () => t('Wartet auf Einverständnis') };
 function publishMark(f) {
     const words = PUBLISH_WORDS[f.publish];
     if (!words) return '';
     const word = esc(words());
-    return `<span class="finds-tile-publish is-${f.publish}" title="${word}" role="img" aria-label="${word}"></span>`;
+    return `<span class="finds-tile-publish is-${f.publish}" title="${word}" role="img" aria-label="${word}">${iconHtml('globe')}</span>`;
 }
 
 function tileHtml(f) {
@@ -1024,14 +1033,13 @@ function tileHtml(f) {
     const meta = [numberBesideName(f), dayOf(f), cultureWord(f)].filter(Boolean).join(' · ');
     const count = f.pictures.length > 1
         ? '<span class="finds-tile-n">' + iconHtml('photo') + f.pictures.length + '</span>' : '';
-    const name = f.title ? esc(f.title) : quiet(t('ohne Namen'));
+    const name = publishMark(f) + (f.title ? esc(f.title) : quiet(t('ohne Namen')));
     const owner = f.own ? ''
         : '<span class="finds-tile-owner">' + esc(t('von %s', personName(f.owner) || t('Unbekannt'))) + '</span>';
     return `<span class="finds-tile-image">
             <img src="${esc(cover.thumb)}" alt="" loading="lazy" decoding="async">
             <span class="finds-tile-missing">${iconHtml('photo')}</span>
             ${count}
-            ${publishMark(f)}
         </span>
         <span class="finds-tile-name">${name}</span>
         <span class="finds-tile-meta">${esc(meta)}</span>
@@ -2468,10 +2476,10 @@ document.addEventListener('publish:changed', (e) => {
     const f = byId.get(Number(e.detail?.pointId));
     if (!f) return;
     f.publish = e.detail?.state ?? null;
-    const image = tiles.get(f.id)?.querySelector('.finds-tile-image');
-    if (!image) return;
-    image.querySelector('.finds-tile-publish')?.remove();
-    image.insertAdjacentHTML('beforeend', publishMark(f));
+    const name = tiles.get(f.id)?.querySelector('.finds-tile-name');
+    if (!name) return;
+    name.querySelector('.finds-tile-publish')?.remove();
+    name.insertAdjacentHTML('afterbegin', publishMark(f));
 });
 
 /* A FIND NAMED FROM INSIDE ANOTHER — an Aufsammlung's species, the way back
