@@ -1430,75 +1430,60 @@
     text-align: center;
     pointer-events: none;
 }
-/* THE HELP BAND AND ITS LIP (photowindow.js, helpSync — 25.11.2026). The
-   sentences that say HOW a tool is used left the pill for a band at the
-   picture's upper edge; the pill keeps what one operates.
-
-   THE BOX IS AS TALL AS THE BAND, AND THE LIP HANGS AT ITS LOWER EDGE
-   (top: 100%). Folded, the whole box is pushed up by its own height — the
-   band is gone and the lip stands exactly at the picture's edge, whatever
-   the sentence's length and however often it wraps. No height is measured
-   for the fold, and none can go stale.
-
-   Literal colours like the pill's, and for the same reason. Nothing here
-   takes a tap but the lip — the band only while the pointer called it
-   down (is-peek), where it has to hold the hover. */
+/* THE HELP (photowindow.js, helpSync — 25.11.2026): a small „?" at the
+   top of the picture, its sentence unfolding beside it for a few seconds
+   or while the pointer rests on it. The pill keeps what one operates.
+   Literal colours like the pill's, and for the same reason; a fine frame,
+   because over a dark picture — or the black beside a letterboxed one —
+   the ground alone is invisible. */
 .photo-help {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1;
-    transform: translateY(-100%);
-    transition: transform .2s ease;
-    pointer-events: none;
-}
-.photo-help.is-open { transform: none; }
-.photo-help-band {
-    margin: 0;
-    padding: .45rem 1rem;
-    background: rgba(0, 0, 0, .72);
-    color: #fff;
-    font-size: .85rem;
-    text-align: center;
-}
-.photo-help.is-peek .photo-help-band { pointer-events: auto; }
-.photo-help-lip {
-    position: absolute;
-    top: 100%;
+    top: .8rem;
     left: 50%;
     transform: translateX(-50%);
-    display: inline-flex;
-    align-items: center;
-    gap: .3rem;
-    height: 1.5rem;
-    padding: 0 .7rem;
-    /* A fine frame on the three free sides: over a dark picture — or the
-       black beside a letterboxed one — the lip's ground alone is invisible. */
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    width: max-content;          /* see .photo-frame-hint: without it max-width is dead */
+    max-width: min(90%, 40rem);
     border: 1px solid rgba(255, 255, 255, .35);
-    border-top: 0;
-    border-radius: 0 0 var(--radius) var(--radius);
+    border-radius: .85rem;
     background: rgba(0, 0, 0, .65);
     color: #fff;
+    font-size: .85rem;
+}
+.photo-help-sign {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: none;
+    color: #fff;
     font: inherit;
-    font-size: .78rem;
-    cursor: pointer;
-    pointer-events: auto;
+    cursor: help;
 }
-.photo-help-lip:hover { background: rgba(0, 0, 0, .85); }
+.photo-help-sign .icon { font-size: 1rem; }
+.photo-help-words { padding: .3rem .8rem .3rem 0; }
+.photo-help:not(.is-open) .photo-help-words { display: none; }
+.photo-help.is-open { border-radius: var(--radius); }
+/* The pill stands under the question mark — helpSync says how far down
+   that is (zero where no help is up) — and glides when the sentence
+   unfolds. Where the question mark exists, the sentences it shows are not
+   drawn a second time in the pill; a pill that holds nothing else is not
+   drawn at all. `has-help` is set by the script, so a page still open
+   from before it keeps its sentences. */
+.photo-frame-hint { top: calc(.8rem + var(--photo-help-drop, 0px)); transition: top .15s ease; }
+.photo-frame-hint.has-help .photo-hint-words,
+.photo-frame-hint.has-help.is-words-only { display: none; }
 @media (prefers-reduced-motion: reduce) {
-    .photo-help { transition: none; }
+    .photo-frame-hint { transition: none; }
 }
-/* THE PILL STANDS UNDER LIP AND BAND — helpSync says how far down that is
-   (zero where no help is up). And where the band exists, the sentences it
-   shows are not drawn a second time in the pill; a pill that holds
-   nothing else is not drawn at all. `has-band` is set by the script, so a
-   page still open from before the band keeps its sentences. */
-.photo-frame-hint { top: calc(.8rem + var(--photo-help-drop, 0px)); }
-.photo-frame-hint.has-band .photo-hint-words,
-.photo-frame-hint.has-band.is-words-only { display: none; }
 /* A button that followed a sentence stands first now. */
-.photo-frame-hint.has-band > .photo-hint-words:first-child + button { margin-left: 0; }
+.photo-frame-hint.has-help > .photo-hint-words:first-child + button { margin-left: 0; }
 
 /* The cutout offer's buttons (map.js frameOffer) sit IN the hint, so
    they share its literal palette — token buttons would take the theme's
@@ -1792,9 +1777,11 @@
        in at 44 beside them and showed it („angleichen"). */
     .photo-frame-hint button,
     .photo-frame-hint input[type=text] { min-height: 44px; }
-    /* The lip is hit with a thumb as well; it is the only way to the help
-       where nothing hovers. */
-    .photo-help-lip { height: 44px; padding: 0 1rem; }
+    /* The question mark is hit with a thumb as well; it is the only way
+       back to the sentence where nothing hovers. */
+    .photo-help-sign { width: 44px; height: 44px; }
+    .photo-help { border-radius: 22px; }
+    .photo-help-words { padding-top: .75rem; padding-bottom: .75rem; }
     .photo-box-size button { min-width: 44px; }
     /* The statistics' tabs are hit with a thumb in the drawer too. */
     .photo-stats-tabs button { min-height: 44px; }

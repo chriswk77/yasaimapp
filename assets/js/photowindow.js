@@ -9236,16 +9236,29 @@ export function mountPhotoWindow(host) {
         hint.hidden = text === '';
     }
 
-    /* THE HELP IS A BAND AT THE PICTURE'S UPPER EDGE (25.11.2026, after two
-       drafts in the browser: „Die Leiste gefällt mir eigentlich ganz gut,
-       denn man könnte sie dauerhaft anzeigen lassen, indem man sie quasi
-       aufklappt durch einen Klick oder nur auffährt durch Überfahren. Wenn
-       man schnell mal nicht weiter weiß, kann man sie schnell kurz
-       auffahren. Wenn man gerade ganz neu dabei ist, kann man es ja
-       aufgeklappt lassen"). Until then every sentence about HOW a tool is
-       used stood in the pill in the middle of the picture for as long as
-       the tool was armed — over the very thing one measures, and for the
-       hundredth spore as for the first.
+    /* THE HELP IS A QUESTION MARK OVER THE PICTURE (25.11.2026). Until
+       then every sentence about HOW a tool is used stood in the pill in
+       the middle of the picture for as long as the tool was armed — over
+       the very thing one measures, and for the hundredth spore as for the
+       first. Two drafts stood side by side in the browser that day, a
+       question mark that unfolds into the sentence and a band sliding
+       down from the upper edge, which could be left open. The band went
+       live first and came back out within the hour („die Leiste gefällt
+       mir doch nicht. Nimm das Fragezeichen. Und dann wird es halt nur
+       temporär eingeblendet. Auch gut.").
+
+       SO: a small „?" at the top of the picture. When a NEW sentence
+       arrives — another tool, the next step of a cutout — it unfolds by
+       itself for as long as it takes to read it (helpReadMs) and folds
+       back. The pointer resting on it unfolds it again; a finger, which
+       cannot rest anywhere, taps it open and shut. Nothing is kept open
+       for good: a sentence that stands for ever is the pill again.
+
+       NOT EVERY REBUILD IS NEWS. Several places clear the pill and write
+       the same sentence back after each measure; a sentence equal to the
+       last one shown therefore does not unfold again, or the „?" would
+       flap open after every spore. Choosing another tool and coming back
+       is news.
 
        WHAT GOES UP THERE AND WHAT STAYS. A sentence that says how — where
        to click, how a run ends — is help and wears `photo-hint-words`
@@ -9259,84 +9272,107 @@ export function mountPhotoWindow(host) {
 
        THE PILL IS STILL WRITTEN AS BEFORE — seven places build it, each
        clearing only what it wrote itself, and each recognises its own by a
-       class inside. None of them had to learn about the band: an observer
-       reads the marked sentences out of the pill whenever it changes, the
-       stylesheet hides them there, and a pill left with nothing but
-       sentences is not drawn at all (`is-words-only`). The eighth place to
-       write into the pill inherits all of it by marking its sentence.
-
-       OPEN IS THE STATE ONE STARTS WITH (settings, `photoHelpOpen`): whoever
-       is new reads on as before. A click on the lip folds it away; folded,
-       the pointer over the lip brings it down for as long as it rests
-       there. NOTHING COMES DOWN BY ITSELF — whoever folded it chose a free
-       picture, and a band that drops with every tool taken up would be
-       the old pill with a detour.
+       class inside. None of them had to learn about the question mark: an
+       observer reads the marked sentences out of the pill whenever it
+       changes, the stylesheet hides them there, and a pill left with
+       nothing but sentences is not drawn at all (`is-words-only`). The
+       eighth place to write into the pill inherits all of it by marking
+       its sentence.
 
        IT LIES OVER THE PICTURE AND MOVES NO LAYOUT (the rule of 28.08.2026
-       above), and standing open it swallows no tap: pointer-events are the
-       lip's alone, and the band's only while it was called down by the
-       pointer — there it must hold the hover, because the lip travels down
-       with it, out from under the pointer, and would otherwise close what
-       it has just opened, for ever. */
+       above). The pill stands under it (--photo-help-drop) and glides
+       down while the sentence is unfolded — it carries buttons, and a
+       sentence laid over „Abbrechen" would hide the way out. */
     function hintWords(text) {
         const span = document.createElement('span');
         span.className = 'photo-hint-words';
         span.textContent = text;
         return span;
     }
+    /* Long enough for a slow reader of a long sentence, never so long that
+       the picture stays covered: 2.5 s plus 70 ms a character, at most 10 s
+       — „Klicke auf den Anfang, dann auf das Ende." stands some 5 s. */
+    function helpReadMs(text) {
+        return Math.min(10000, 2500 + 70 * text.length);
+    }
     const helpBox = document.getElementById('photo-help');
-    let helpPeek = false;
-    const helpPinned = () => settings.get('photoHelpOpen', true) !== false;
+    let helpLast = '';
+    let helpTimer = 0;
+    let helpHover = false;
+    function helpOpen(on) {
+        helpBox.classList.toggle('is-open', on);
+        document.getElementById('photo-help-sign').setAttribute('aria-expanded', String(on));
+        helpDrop();
+    }
+    /* The pill stands UNDER the question mark or its sentence, never behind. */
+    function helpDrop() {
+        const hint = document.getElementById('photo-frame-hint');
+        hint.parentElement.style.setProperty('--photo-help-drop', helpBox.hidden ? '0px'
+            : (helpBox.offsetHeight + 6) + 'px');
+    }
     function helpSync() {
         if (helpBox === null) return;
         const hint = document.getElementById('photo-frame-hint');
-        const band = document.getElementById('photo-help-band');
-        const lip = document.getElementById('photo-help-lip');
         const words = hint.hidden ? [] : [...hint.querySelectorAll('.photo-hint-words')]
             .map(w => w.textContent.trim()).filter(w => w !== '');
         const text = words.join(' ');
         hint.classList.toggle('is-words-only', words.length > 0
             && [...hint.children].every(c => c.classList.contains('photo-hint-words')));
-        if (band.textContent !== text) band.textContent = text;
+        const box = document.getElementById('photo-help-words');
+        if (box.textContent !== text) box.textContent = text;
         helpBox.hidden = text === '';
-        if (text === '') helpPeek = false;
-        const pinned = helpPinned();
-        helpBox.classList.toggle('is-open', pinned || helpPeek);
-        helpBox.classList.toggle('is-peek', !pinned && helpPeek);
-        lip.setAttribute('aria-expanded', String(pinned));
-        lip.title = pinned ? t('Hilfe einklappen') : t('Hilfe aufgeklappt lassen');
-        /* The pill stands UNDER lip and band, never behind them. */
-        hint.parentElement.style.setProperty('--photo-help-drop', text === '' ? '0px'
-            : (lip.offsetHeight + (pinned || helpPeek ? band.offsetHeight : 0)) + 'px');
+        if (text === '') {
+            clearTimeout(helpTimer);
+            helpHover = false;
+            helpOpen(false);
+            return;
+        }
+        if (text !== helpLast) {
+            helpLast = text;
+            clearTimeout(helpTimer);
+            helpOpen(true);
+            helpTimer = setTimeout(() => { if (!helpHover) helpOpen(false); }, helpReadMs(text));
+            return;
+        }
+        helpDrop();
     }
     if (helpBox !== null) {
         const hint = document.getElementById('photo-frame-hint');
-        const lip = document.getElementById('photo-help-lip');
-        /* Only a page that HAS the band hides the sentences in the pill — a
-           page still open from before the deployment has none, and would
-           otherwise lose its hints to the new stylesheet. */
-        hint.classList.add('has-band');
+        const sign = document.getElementById('photo-help-sign');
+        /* Only a page that HAS the question mark hides the sentences in the
+           pill — a page still open from before the deployment has none, and
+           would otherwise lose its hints to the new stylesheet. */
+        hint.classList.add('has-help');
         new MutationObserver(helpSync).observe(hint,
             { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['hidden'] });
-        new ResizeObserver(helpSync).observe(document.getElementById('photo-help-band'));
+        new ResizeObserver(helpDrop).observe(helpBox);
         // The press must not take the focus (and with it the keys) from the picture.
-        lip.addEventListener('pointerdown', (e) => e.preventDefault());
-        lip.addEventListener('click', (e) => {
+        let finger = false;
+        helpBox.addEventListener('pointerdown', (e) => {
+            finger = e.pointerType !== 'mouse';
+            e.preventDefault();
+        });
+        /* A finger taps open and shut. A mouse click changes nothing — the
+           pointer resting there has opened it already, and a click that
+           closed it under the pointer would only puzzle. */
+        helpBox.addEventListener('click', (e) => {
             e.stopPropagation();
-            settings.set('photoHelpOpen', !helpPinned());
-            helpPeek = false;
-            helpSync();
+            if (!finger) return;
+            clearTimeout(helpTimer);
+            helpOpen(!helpBox.classList.contains('is-open'));
         });
         helpBox.addEventListener('pointerenter', (e) => {
-            if (e.pointerType !== 'mouse' || helpPinned()) return;
-            helpPeek = true;
-            helpSync();
+            if (e.pointerType !== 'mouse') return;
+            helpHover = true;
+            clearTimeout(helpTimer);
+            helpOpen(true);
         });
-        helpBox.addEventListener('pointerleave', () => {
-            if (!helpPeek) return;
-            helpPeek = false;
-            helpSync();
+        helpBox.addEventListener('pointerleave', (e) => {
+            if (e.pointerType !== 'mouse') return;
+            helpHover = false;
+            helpOpen(false);
         });
+        sign.setAttribute('aria-expanded', 'false');
         helpSync();
     }
 

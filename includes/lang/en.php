@@ -10530,10 +10530,8 @@ return [
         => 'Enter',
     'gebogene Länge abschließen'
         => 'finish the curved length',
-    'Hilfe einklappen'
-        => 'Fold the help away',
-    'Hilfe aufgeklappt lassen'
-        => 'Keep the help open',
+    'Hilfe zum Werkzeug'
+        => 'Help for the tool',
     'gewählte Stelle löschen'
         => 'delete the chosen spot',
     'neue Ellipse'
