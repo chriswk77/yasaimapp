@@ -164,8 +164,12 @@ export function plateWord(word, short) {
 }
 
 /* The plate's own sentences — the distribution's axes and spread line, a
-   cystidium's parts among the values. Anything else goes through the app's
-   catalog as before (t()). */
+   cystidium's parts among the values, the counts' lines, the details'
+   words (25.11.2026: „mach alles englisch"). Anything else goes through
+   the app's catalog as before (t()). FINDER AND BESTIMMER ARE „leg." AND
+   „det.", as herbarium labels write them the world over — not a
+   word-for-word „Finder", which an English reader takes for a tool. The
+   VALUES stay as written: a date, a place, a remark are the find's own. */
 const PLATE_SENTENCES = {
     'Länge µm': 'Length µm',
     'Breite µm': 'Width µm',
@@ -174,6 +178,35 @@ const PLATE_SENTENCES = {
     'Köpfchen': 'Capitulum',
     'Hals': 'Neck',
     'Kopf': 'Head',
+    // The values' brackets and the names of a row of cutouts or counts.
+    'ohne Merkmal': 'unmarked',
+    'Zählungen': 'Counts',
+    'Ausschnitte': 'Cutouts',
+    // The counts: sectors and frames.
+    'Lamellen': 'Lamellae',
+    'Lamelletten': 'Lamellulae',
+    'Quadrat %s · Anzahl %d': 'Square %s · count %d',
+    'Rechteck %s · Anzahl %d': 'Rectangle %s · count %d',
+    'je cm²': 'per cm²',
+    'je mm²': 'per mm²',
+    'je 10 × 10 µm': 'per 10 × 10 µm',
+    // The details (Fundangaben), as the plate prints their words.
+    'Fundnummer': 'Coll. no.',
+    'Funddatum': 'Date',
+    'Fundort': 'Locality',
+    'Höhe': 'Elevation',
+    'Finder': 'leg.',
+    'Bestimmer': 'det.',
+    'Bestimmungssicherheit': 'Certainty',
+    'Anzahl / Menge': 'Abundance',
+    'Substrat / Wirt': 'Substrate / host',
+    'Begleitvegetation': 'Associated vegetation',
+    'Geruch': 'Smell',
+    'Geschmack': 'Taste',
+    'Sporenpulver': 'Spore print',
+    'Beleg-Nr.': 'Voucher no.',
+    'Bemerkung': 'Remark',
+    'Notiz': 'Note',
 };
 
 /** t() for what the plate draws: its own English where PLATE_SENTENCES has it, the app's catalog otherwise. */

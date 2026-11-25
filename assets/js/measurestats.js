@@ -1216,8 +1216,8 @@ export function sectorRimPath(g, t0, t1) {
    itself. The switch over
    the picture carries the same dot. (Before, a lamellula was a ring.) */
 export const SECTOR_KINDS = [
-    { key: 'count', name: () => t('Lamellen'), colour: '#a6dba0' },
-    { key: 'lamellulae', name: () => t('Lamelletten'), colour: '#f2a7a7' },
+    { key: 'count', name: (tr = t) => tr('Lamellen'), colour: '#a6dba0' },
+    { key: 'lamellulae', name: (tr = t) => tr('Lamelletten'), colour: '#f2a7a7' },
 ];
 
 /** The slice's angle in degrees as seen from above, or null without a slice. */
@@ -1239,15 +1239,15 @@ export const sectorRound = (n, deg) => (deg > 0 ? Math.round(n * 360 / deg) : 0)
    millimetre, where a square centimetre would give thousands and ten
    micrometres a crumb; below, under the microscope, per 10 × 10 µm.
    Not for „Lamellen": lamellae per area say nothing. */
-export function boxDensity(m, n) {
+export function boxDensity(m, n, tr = t) {
     if (measureLabel(m) === 'Lamellen' || !Array.isArray(m.um)) return '';
     const area = m.um[0] * m.um[1];
     if (!(area > 0)) return '';
     const side = Math.max(...m.um);
-    const [per, words] = side >= 1000 ? [1e8, t('je cm²')] : side >= 100 ? [1e6, t('je mm²')] : [100, t('je 10 × 10 µm')];
+    const [per, words] = side >= 1000 ? [1e8, tr('je cm²')] : side >= 100 ? [1e6, tr('je mm²')] : [100, tr('je 10 × 10 µm')];
     const v = n * per / area;
     const said = v.toLocaleString('de-DE', { maximumFractionDigits: v >= 100 ? 0 : v >= 10 ? 1 : 2 });
-    return t('≈ %s %s', said, words);
+    return tr('≈ %s %s', said, words);
 }
 
 
@@ -1265,7 +1265,7 @@ export function boxDensity(m, n) {
  * the lamellulae, as keys abbreviate them.
  * `askew` says how many sectors lie past 35° of tilt — the window notes it.
  */
-export function sectorSummary(sectors) {
+export function sectorSummary(sectors, tr = t) {
     const withSlice = sectors.filter((m) => sectorDegrees(m) !== null);
     const lines = [];
     for (const kind of SECTOR_KINDS) {
@@ -1274,24 +1274,24 @@ export function sectorSummary(sectors) {
         if (rounds.length === 0) continue;
         const avg = Math.round(rounds.reduce((a, v) => a + v, 0) / rounds.length);
         lines.push(rounds.length >= 2
-            ? t('%s: Ø ≈ %d (%d–%d), N = %d', kind.name(), avg, Math.min(...rounds), Math.max(...rounds), rounds.length)
-            : t('%s: ≈ %d, N = 1', kind.name(), avg));
+            ? tr('%s: Ø ≈ %d (%d–%d), N = %d', kind.name(tr), avg, Math.min(...rounds), Math.max(...rounds), rounds.length)
+            : tr('%s: ≈ %d, N = 1', kind.name(tr), avg));
     }
     const both = withSlice.filter((m) => (m.count ?? []).length > 0 && (m.lamellulae ?? []).length > 0);
     if (both.length > 0) {
         const lamellae = both.reduce((a, m) => a + m.count.length, 0);
         const lamellulae = both.reduce((a, m) => a + m.lamellulae.length, 0);
-        lines.push(t('L/l ≈ 1 : %s', (lamellulae / lamellae).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })));
+        lines.push(tr('L/l ≈ 1 : %s', (lamellulae / lamellae).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })));
     }
     const askew = withSlice.filter((m) => (sectorShape(m.points)?.tilt ?? 0) > 35).length;
     return { lines, askew };
 }
 
 /** A counting frame's line: its kind and size, its count, its count per area. */
-export function boxLine(m, n) {
+export function boxLine(m, n, tr = t) {
     const square = Math.abs(m.um[0] - m.um[1]) < .05;
-    const density = n > 0 ? boxDensity(m, n) : '';
-    return (square ? t('Quadrat %s · Anzahl %d', boxLabel(m), n) : t('Rechteck %s · Anzahl %d', boxLabel(m), n))
+    const density = n > 0 ? boxDensity(m, n, tr) : '';
+    return (square ? tr('Quadrat %s · Anzahl %d', boxLabel(m), n) : tr('Rechteck %s · Anzahl %d', boxLabel(m), n))
         + (density ? ' · ' + density : '');
 }
 
@@ -1310,12 +1310,13 @@ export function countMeasures(sources, label) {
 /**
  * A plate's lines for a layer's counts: the sectors' means and ratio, then
  * a line per frame. `named` where the line names its own kind („Lamellen:
- * Ø …", „L/l …") — the plate sets no layer name before those.
+ * Ø …", „L/l …") — the plate sets no layer name before those. `tr` is the
+ * translator, as for valueLines: the plate passes its English (plateT).
  */
-export function countLines(sources, label) {
+export function countLines(sources, label, tr = t) {
     const found = countMeasures(sources, label);
-    const lines = sectorSummary(found.filter((r) => r.m.type === 'sector').map((r) => r.m)).lines.map((text) => ({ text, named: true }));
-    for (const r of found) if (r.m.type === 'box') lines.push({ text: boxLine(r.m, (r.m.count ?? []).length), named: false });
+    const lines = sectorSummary(found.filter((r) => r.m.type === 'sector').map((r) => r.m), tr).lines.map((text) => ({ text, named: true }));
+    for (const r of found) if (r.m.type === 'box') lines.push({ text: boxLine(r.m, (r.m.count ?? []).length, tr), named: false });
     return lines;
 }
 

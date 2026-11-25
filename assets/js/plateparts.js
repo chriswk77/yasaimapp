@@ -27,29 +27,29 @@ import {
    too much: the place with land and state is still „Fundort" there
    (08.10.2026 — „mit dem Land zwei Buchstaben, dem Bundesland
    drei Buchstaben und danach die Gemeinde"). */
-export function detailLabels() {
+export function detailLabels(tr = t) {
     return [
-        ['species', t('Art')],
-        ['number', t('Fundnummer')],
-        ['date', t('Funddatum')],
-        ['place', t('Fundort')],
-        ['place_full', t('Fundort mit Land und Bundesland'), t('Fundort')],
-        ['mtb', t('MTB')],
-        ['gps', t('GPS')],
-        ['elevation', t('Höhe')],
-        ['finder', t('Finder')],
-        ['determiner', t('Bestimmer')],
-        ['certainty', t('Bestimmungssicherheit')],
-        ['amount', t('Anzahl / Menge')],
-        ['substrate', t('Substrat / Wirt')],
-        ['vegetation', t('Begleitvegetation')],
-        ['odour', t('Geruch')],
-        ['taste', t('Geschmack')],
-        ['spore_print', t('Sporenpulverfarbe'), t('Sporenpulver')],
-        ['voucher', t('Beleg-Nr.')],
-        ['remark', t('Bemerkung')],
+        ['species', tr('Art')],
+        ['number', tr('Fundnummer')],
+        ['date', tr('Funddatum')],
+        ['place', tr('Fundort')],
+        ['place_full', tr('Fundort mit Land und Bundesland'), tr('Fundort')],
+        ['mtb', tr('MTB')],
+        ['gps', tr('GPS')],
+        ['elevation', tr('Höhe')],
+        ['finder', tr('Finder')],
+        ['determiner', tr('Bestimmer')],
+        ['certainty', tr('Bestimmungssicherheit')],
+        ['amount', tr('Anzahl / Menge')],
+        ['substrate', tr('Substrat / Wirt')],
+        ['vegetation', tr('Begleitvegetation')],
+        ['odour', tr('Geruch')],
+        ['taste', tr('Geschmack')],
+        ['spore_print', tr('Sporenpulverfarbe'), tr('Sporenpulver')],
+        ['voucher', tr('Beleg-Nr.')],
+        ['remark', tr('Bemerkung')],
         // The find's own note (08.11.2026: „bei Fundangaben noch die Notiz dazu").
-        ['note', t('Notiz')],
+        ['note', tr('Notiz')],
     ];
 }
 
@@ -516,7 +516,7 @@ export function rowLabelSubs(d, rows) {
 }
 /** The row's name as the cell shows it, with the ticked subs behind it. */
 export function rowLabel(d, rows, cell) {
-    const name = typeof d.crop === 'string' ? blockName(d) : labelWord(d.layer, cell.labelShort);
+    const name = typeof d.crop === 'string' ? blockName(d, plateT, w => plateWord(w, cell.labelShort)) : labelWord(d.layer, cell.labelShort);
     if (!name) return '';
     const subs = rowLabelSubs(d, rows).filter(sub => (cell.labelMarks ?? []).includes(sub));
     return subs.length ? `${name} (${subs.map(vocab).join(', ')})` : name;
@@ -566,7 +566,8 @@ export function detailsRows(d, values) {
     /* IN THE ORDER THE FIELD KEEPS (09.11.2026: „dass man die
        Reihenfolge sortieren kann … per Drag and Drop"): d.fields is the
        order, set by dragging in the panel — no longer the list's. */
-    const named = new Map(detailLabels().map(([key, label, printed = label]) => [key, printed]));
+    // The words the PLATE prints — in English (plateT), as its other labels.
+    const named = new Map(detailLabels(plateT).map(([key, label, printed = label]) => [key, printed]));
     /* THE LEERZEILE IS THE PERSON'S OWN (09.11.2026: „so etwas
        wie eine Leerzeile … die man schieben kann … hinzufügen kann, um
        genau so etwas zu gestalten. Dann bräuchtest du es nicht automatisch
@@ -602,7 +603,9 @@ export function detailsRows(d, values) {
         let row;
         if (species || !d.labels) row = [value];
         else if (d.labels === 'icons') row = DETAIL_ICONS[key] ? [{ icon: DETAIL_ICONS[key] }, value] : [value];
-        else row = [{ s: named.get(key) + ':', bold: !oneLine }, { s: ' ' }, value];
+        /* NO COLON AFTER A WORD THAT ENDS IN ITS DOT — „leg. A. Maier",
+           „Coll. no. 12", as labels write them; „leg.: A. Maier" reads as a typo. */
+        else row = [{ s: named.get(key) + (named.get(key).endsWith('.') ? '' : ':'), bold: !oneLine }, { s: ' ' }, value];
         if (swatch) row.splice(row.length - 1, 0, swatch);
         // The air of the Leerzeilen before it — `gap`, in lines, as every renderer reads it.
         if (air > 0 && rows.length > 0) row.gap = air;
@@ -683,10 +686,12 @@ export function cropsOf(pics, layer) {
  *  „Sporen · Keimporus"; a row of cutouts by their own name, or „Asci ·
  *  Ausschnitte" where they have none. */
 /* SHOWN ONLY, never compared — the words international (vocabulary.js). */
-export const blockName = (d) => (d.count === true ? `${vocab(d.layer)} · ${t('Zählungen')}`
+/* The plate's own label passes its English (plateT, plateWord); the
+   editor's tiles and titles keep the app's words. */
+export const blockName = (d, tr = t, word = vocab) => (d.count === true ? `${word(d.layer)} · ${tr('Zählungen')}`
     : typeof d.crop === 'string'
-    ? (d.crop !== '' ? vocab(d.crop) : `${vocab(d.layer)} · ${t('Ausschnitte')}`)
-    : d.part ? `${vocab(d.layer)} · ${vocab(d.part)}` : vocab(d.layer));
+    ? (d.crop !== '' ? word(d.crop) : `${word(d.layer)} · ${tr('Ausschnitte')}`)
+    : d.part ? `${word(d.layer)} · ${word(d.part)}` : word(d.layer));
 
 /** One layer's measured structures over all the find's pictures — their
  *  bent lengths read straight where `straight` says so (frameValues). */
@@ -751,7 +756,7 @@ export const PART_GAP = .5;
 
 export function valuesRows(item, rows, pics = null) {
     const name = typeof item.mark === 'string'
-        ? `${vocab(item.layer)} (${item.mark === '' ? t('ohne Merkmal') : vocab(item.mark)})` : vocab(item.layer);
+        ? `${vocab(item.layer)} (${item.mark === '' ? plateT('ohne Merkmal') : vocab(item.mark)})` : vocab(item.layer);
     const lines = valueLines(rows, plateT).filter(l => item.lines.includes(l.key));
     // Spread and outliers after the classic lines — without N, the Q line has it (spreadText).
     const spread = item.lines.includes('spread') ? spreadText(rows, false, plateT) : '';
@@ -785,7 +790,7 @@ export function valuesRows(item, rows, pics = null) {
            a layer's name before them said „Lamellen: Lamellen: …". Only a
            frame's line, which says no kind, takes the name where it opens
            the text. */
-        countLines(sourcesOf(pics), item.layer).forEach(({ text, named }, i) => {
+        countLines(sourcesOf(pics), item.layer, plateT).forEach(({ text, named }, i) => {
             const r = row(text, i === 0 && out.length > 0 ? 1 : 0);
             if (i === 0 && out.length === 0 && item.name && !named) r.lead = name + ': ';
             out.push(r);
