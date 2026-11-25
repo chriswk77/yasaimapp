@@ -25,6 +25,8 @@ require_once __DIR__ . '/../includes/gallery_windows.php';
 require_once __DIR__ . '/../includes/figure_window.php';
 
 $me = login_required();
+require_once __DIR__ . '/../includes/public_site.php';
+require_once __DIR__ . '/../includes/plate_publish.php';
 
 /* THE PICTURE VIEWER'S AND THE PLATE EDITOR'S STYLES — this page is a host
    of both since 11.10.2026, as the map and Organisieren are of the viewer. */
@@ -145,6 +147,41 @@ page_header(t('Fundbrowser'), [
                     <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
                     <?php endif; ?>
                 </div>
+                <?php /* ON THE PUBLIC SITE — THE FIND'S, IN ITS HEAD (25.11.2026:
+                     „Positionieren würde ich es gerne woanders. Und zwar
+                     allgemeiner, ein Fund direkt in der Kopfzeile. Mit einem
+                     vielleicht Dropdown für den Zusatz"). It sat in the plate
+                     window's „Allgemein" first. One plate per maker and find
+                     (plates.php), so releasing the find's plate IS releasing
+                     the find. The button says where it stands; its menu holds
+                     the tick, the other photographers (plate_publish.php)
+                     and the addition. Only for the account that owns the
+                     site, and shown only where the find has a plate of his
+                     (findpublish.js). */ ?>
+                <?php if (plate_publish_ready($pdo) && public_site_may($me)): ?>
+                <div class="finds-publish" id="finds-publish" hidden>
+                    <button type="button" class="button subtle small" id="finds-publish-toggle"
+                            aria-haspopup="true" aria-expanded="false" aria-controls="finds-publish-menu"><?= icon('globe') ?><span id="finds-publish-word"></span></button>
+                    <div class="finds-publish-menu" id="finds-publish-menu" hidden>
+                        <fieldset class="field question">
+                            <legend id="finds-publish-question"></legend>
+                            <label class="choice-row"><input type="checkbox" id="finds-publish-on"><span><?= h(t('Tafel veröffentlichen')) ?></span></label>
+                            <p class="hint-text small" id="finds-publish-licence"></p>
+                        </fieldset>
+                        <fieldset class="field question" id="finds-publish-others" hidden>
+                            <legend><?= h(t('Bilder von anderen auf dieser Tafel')) ?></legend>
+                            <div id="finds-publish-people"></div>
+                            <p class="hint-text small"><?= h(t('Hake jeden an, der einverstanden ist. Vorher geht die Tafel nicht hinaus.')) ?></p>
+                        </fieldset>
+                        <div class="field">
+                            <label for="finds-publish-note"><?= h(t('Zusatz zur Lizenz')) ?></label>
+                            <input type="text" id="finds-publish-note" maxlength="500"
+                                   placeholder="<?= h(t('z. B. Foto unten links mit freundlicher Genehmigung')) ?>">
+                        </div>
+                        <p class="finds-publish-state" id="finds-publish-state" aria-live="polite"></p>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <?php /* FULL SCREEN FROM THE FIND'S BAR TOO (24.11.2026: „der
                      Wechsel in den Vollbildmodus ist aber momentan nur aus der
                      Yasai-Map Hauptkopfzeile möglich. Nicht aus der

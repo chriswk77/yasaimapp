@@ -34,7 +34,8 @@ $userId = (int) $me['id'];
 
 /* RELEASING ON THE PUBLIC SITE (plate_publish.php, 25.11.2026) — only for
    the account that owns the site, and only on its own plates; for everybody
-   else the answer carries no `publish` and the window shows nothing. */
+   else the answer carries no `publish` and the find's head shows nothing
+   (findpublish.js). */
 require_once __DIR__ . '/../../includes/public_site.php';
 require_once __DIR__ . '/../../includes/plate_publish.php';
 $publishing = plate_publish_ready($pdo) && public_site_may($me);
@@ -150,11 +151,5 @@ try {
     $plate = plate_save($pdo, $userId, $pointId, $id > 0 ? $id : null, $input['layout'] ?? null, $since);
 } catch (InvalidArgumentException $e) {
     json_error($e->getMessage(), 422);
-}
-// Its pictures may now be somebody else's too — the window's publishing section hears of it with the save.
-if ($publishing) {
-    $stmt = $pdo->prepare('SELECT * FROM map_plates WHERE id = ?');
-    $stmt->execute([$plate['id']]);
-    $plate['publish'] = plate_publish_state($pdo, $stmt->fetch()) + ['site' => public_site_label()];
 }
 json_response(['plate' => $plate], $id > 0 ? 200 : 201);

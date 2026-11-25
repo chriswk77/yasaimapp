@@ -58,6 +58,7 @@ import { wordsOrSigns } from './wordsorsigns.js';
 import { personName } from './names.js';
 import { scrollRemember } from './scrollkeep.js';
 import { inShell, shellOpen, onShell } from './shellframe.js';
+import { publishFind } from './findpublish.js';
 
 const root = document.getElementById('finds');
 const API = root.dataset.api;
@@ -1422,6 +1423,7 @@ function showBrowse() {
        areas' head says why). */
     micro?.end();
     paintArea('find');
+    publishFind(0);
     fund.hidden = true;
     browse.hidden = false;
     // The find just left: its tile as the find stands now — or the whole list, where it came in meanwhile (listReload).
@@ -1447,6 +1449,7 @@ function drawFund(f) {
     browse.hidden = true;
     fund.hidden = false;
     areasForFind(f.id);
+    publishFind(f.id);
     /* The rail keeps its place per find (scrollkeep.js): back from the map,
        after a reload, out of another tab — the pictures stand where one
        left them. Another find is other pictures and starts at the top. */

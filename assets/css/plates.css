@@ -1280,11 +1280,3 @@
 .plate-controls.is-inset > .plate-remove { top: -28px; right: -28px; }
 .plate-controls.is-inset > .plate-remove.is-inside { top: 10px; right: 10px; }
 .plate-remove:hover { background: color-mix(in srgb, var(--error) 18%, var(--ground)); }
-
-/* ON THE PUBLIC SITE (plate_window.php, plates.js publishDraw): the same
-   grounds as every other question of the panel; the addition takes the
-   panel's width, and the line that says where the plate stands is quiet. */
-.plate-publish .plate-ticks .hint-text { margin: .3rem 0 0; }
-.plate-publish input[type="text"] { width: 100%; margin-top: .3rem; }
-.plate-publish-state { margin: .5rem 0 0; font-size: .85rem; color: var(--text-quiet); }
-.plate-publish-state:empty { display: none; }

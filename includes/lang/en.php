@@ -10890,11 +10890,15 @@ return [
     'Bestimmung — Internet-Links und Funde zum Namen'
         => 'Identification — web links and finds for the name',
 
-    // A PLATE ON THE PUBLIC SITE (plate_window.php, plates.js publishDraw, plate_publish.php, 25.11.2026)
+    // A FIND ON THE PUBLIC SITE (pages/finds.php, findpublish.js, plate_publish.php, 25.11.2026)
     'Veröffentlichen'
         => 'Publish',
     'Tafel veröffentlichen'
         => 'Publish the plate',
+    'Nicht veröffentlicht'
+        => 'Not published',
+    'Wartet auf Einverständnis'
+        => 'Waiting for consent',
     'Auf %s zeigen?'
         => 'Show on %s?',
     'der öffentlichen Seite'

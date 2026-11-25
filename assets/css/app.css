@@ -6366,6 +6366,36 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
    „Zeigen" fills with the colour that means „show on the map" (--show) and
    the trash can with the danger red, the sign white on it. */
 .finds-fund-actions :is(#d-center, #d-delete) { color: var(--text-quiet); }
+/* THE FIND ON THE PUBLIC SITE (pages/finds.php, findpublish.js): the
+   button says the state, its globe in the meaning colour — green where the
+   find is out, orange where it waits for somebody's consent, quiet where
+   it is not published. The menu hangs under it like the plate window's
+   Export menu, wide enough for a name and the addition. */
+.finds-publish { position: relative; display: flex; }
+#finds-publish-toggle .icon { color: var(--text-quiet); }
+#finds-publish-toggle.is-published .icon { color: var(--ok); }
+#finds-publish-toggle.is-waiting .icon { color: var(--warn); }
+.finds-publish-menu {
+    position: absolute;
+    top: calc(100% + .35rem);
+    right: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+    width: 22rem;
+    max-width: calc(100vw - 2rem);
+    padding: .8rem .9rem;
+    background: var(--ground-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, .45);
+}
+.finds-publish-menu .field { margin: 0; }
+.finds-publish-menu .hint-text { margin: .3rem 0 0; }
+.finds-publish-menu input[type="text"] { width: 100%; }
+.finds-publish-state { margin: 0; font-size: .85rem; color: var(--text-quiet); }
+.finds-publish-state:empty { display: none; }
 .finds-fund-actions #d-center:hover { background: var(--show); color: #fff; box-shadow: none; }
 .finds-fund-actions #d-delete:hover { background: var(--error); color: #fff; box-shadow: none; }
 .finds-fund-where { color: var(--text-quiet); font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
