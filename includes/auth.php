@@ -848,9 +848,20 @@ function account_create(string $email, string $password, array $person, ?array $
                deployment window — until the migration has run, rows
                marked by the old code may still lie there, and they are
                spent. */
-            $stmt = $pdo->prepare(
-                'DELETE FROM map_invites WHERE id = ? AND redeemed_by IS NULL'
-            );
+            /* A CODE FOR SEVERAL (migration 0204, uses_left): it counts
+               down instead, and goes like a single one at its last use.
+               The same race guard through the row — the count only falls
+               while it is above zero, and two at the last place cannot
+               both get it. */
+            if (($invitation['uses_left'] ?? null) !== null && (int) $invitation['uses_left'] > 1) {
+                $stmt = $pdo->prepare(
+                    'UPDATE map_invites SET uses_left = uses_left - 1 WHERE id = ? AND uses_left > 1'
+                );
+            } else {
+                $stmt = $pdo->prepare(
+                    'DELETE FROM map_invites WHERE id = ? AND redeemed_by IS NULL'
+                );
+            }
             $stmt->execute([$invitation['id']]);
 
             if ($stmt->rowCount() === 0) {

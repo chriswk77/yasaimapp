@@ -41,6 +41,15 @@ function invitations_process(PDO $pdo, int $adminId): array
         $raw  = trim((string) ($_POST['days'] ?? ''));
         $tage = $raw === '' ? null : max(1, min(365, (int) $raw));
 
+        /* HOW MANY PEOPLE (26.11.2026, for the DGfM's state coordinators:
+           one link in one letter, „einen universellen Einladungscode").
+           One is the code as it always was and stores NULL; more counts
+           down with each registration (migration 0204, account_create).
+           Capped at 500 — a code for a crowd is the public registration,
+           and that is another decision. */
+        $withUses = column_exists($pdo, 'map_invites', 'uses_left');
+        $uses = max(1, min(500, (int) ($_POST['uses'] ?? 1)));
+
         // The role hangs on the code, not on the registration form —
         // otherwise anyone could declare themselves an administrator when
         // joining. Whatever is not in the list becomes an ordinary user;
@@ -57,14 +66,16 @@ function invitations_process(PDO $pdo, int $adminId): array
             try {
                 // Before migration 0026 the role column does not exist yet.
                 $pdo->prepare($mitRolle
-                    ? 'INSERT INTO map_invites (code, created_by, role, created_at, valid_until, note)
+                    ? 'INSERT INTO map_invites (code, created_by, role, created_at, valid_until, note'
+                      . ($withUses ? ', uses_left' : '') . ')
                        VALUES (?, ?, ?, NOW(),
-                               CASE WHEN ? IS NULL THEN NULL ELSE DATE_ADD(NOW(), INTERVAL ? DAY) END, ?)'
+                               CASE WHEN ? IS NULL THEN NULL ELSE DATE_ADD(NOW(), INTERVAL ? DAY) END, ?'
+                      . ($withUses ? ', ?' : '') . ')'
                     : 'INSERT INTO map_invites (code, created_by, created_at, valid_until, note)
                        VALUES (?, ?, NOW(),
                                CASE WHEN ? IS NULL THEN NULL ELSE DATE_ADD(NOW(), INTERVAL ? DAY) END, ?)'
                 )->execute($mitRolle
-                    ? [$code, $adminId, $role, $tage, $tage, $note]
+                    ? [$code, $adminId, $role, $tage, $tage, $note, ...($withUses ? [$uses > 1 ? $uses : null] : [])]
                     : [$code, $adminId, $tage, $tage, $note]);
                 $state['code'] = $code;
                 break;
@@ -128,7 +139,7 @@ function invitations_render(PDO $pdo, array $state): void
     ?>
 
 <p class="hint-text">
-    <?= h(t('Ohne Code kommt niemand herein. Ein Code gilt einmal und läuft ab, wenn er liegen bleibt.')) ?>
+    <?= h(t('Ohne Code kommt niemand herein. Ein Code gilt für eine Person, oder für so viele, wie du beim Erzeugen einträgst.')) ?>
 </p>
 
 <?php notice('error', $state['error'], true); ?>
@@ -170,6 +181,16 @@ function invitations_render(PDO $pdo, array $state): void
         </select>
     </div>
 
+    <?php if (column_exists($pdo, 'map_invites', 'uses_left')): ?>
+    <div class="field">
+        <label for="invitation-uses"><?= h(t('Für wie viele Personen?')) ?></label>
+        <input type="number" id="invitation-uses" name="uses" value="1" min="1" max="500">
+        <p class="hint-text small">
+            <?= h(t('Mehr als 1 heißt: Alle bekommen denselben Link, zum Beispiel in einem Rundbrief. Jede Anmeldung zählt einen Platz ab.')) ?>
+        </p>
+    </div>
+    <?php endif; ?>
+
     <div class="field">
         <label for="invitation-days"><?= h(t('Gültig für … Tage (leer = unbegrenzt)')) ?></label>
         <input type="number" id="invitation-days" name="days" value="" min="1" max="365"
@@ -206,7 +227,10 @@ function invitations_render(PDO $pdo, array $state): void
                 // this list: a code either still works or its day has
                 // passed.
                 $expired = $e['valid_until'] !== null && strtotime($e['valid_until']) < time();
-                $status = $expired ? t('Abgelaufen') : t('Offen');
+                $status = $expired ? t('Abgelaufen')
+                    // A code for several says how many it still lets in.
+                    : (($e['uses_left'] ?? null) === null ? t('Offen')
+                        : ((int) $e['uses_left'] === 1 ? t('Offen, noch ein Platz') : t('Offen, noch %d Plätze', (int) $e['uses_left'])));
                 ?>
                 <tr>
                     <td><code><?= h($e['code']) ?></code></td>

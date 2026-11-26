@@ -3725,8 +3725,16 @@ return [
         => 'Without usable coordinates — one row',
     'Ohne client_id lässt sich die Strecke nicht wiedererkennen.'
         => 'Without client_id the track cannot be recognized again.',
-    'Ohne Code kommt niemand herein. Ein Code gilt einmal und läuft ab, wenn er liegen bleibt.'
-        => 'Nobody gets in without a code. A code is valid once and expires if it is left lying around.',
+    'Ohne Code kommt niemand herein. Ein Code gilt für eine Person, oder für so viele, wie du beim Erzeugen einträgst.'
+        => 'Nobody gets in without a code. A code is for one person, or for as many as you enter when you create it.',
+    'Für wie viele Personen?'
+        => 'For how many people?',
+    'Mehr als 1 heißt: Alle bekommen denselben Link, zum Beispiel in einem Rundbrief. Jede Anmeldung zählt einen Platz ab.'
+        => 'More than 1 means: everybody gets the same link, in a circular letter for instance. Each registration takes one place.',
+    'Offen, noch %d Plätze'
+        => 'Open, %d places left',
+    'Offen, noch ein Platz'
+        => 'Open, one place left',
     'Ohne Empfang im Wald merkt sich die App deine Funde auf dem Gerät und schickt sie später ab. Damit der Browser diese Daten nicht bei Platzmangel wegräumt, braucht er deine Erlaubnis.'
         => 'Without reception in the woods, the app remembers your finds on the device and sends them later. So that the browser does not clear this data away when space runs low, it needs your permission.',
     'Ohne Freigabe oder Freund gibt es keinen Chat.'
