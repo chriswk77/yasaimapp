@@ -534,29 +534,47 @@ echo "\nThe MykIS sheet\n";
         'in June and December, what was there on the 1st is due');
     check(mykis_cutoff(new DateTimeImmutable('2026-09-25')) === null
         && mykis_cutoff(new DateTimeImmutable('2027-01-02')) === null, 'in every other month nothing is');
-    // The collective mail: one per coordinator address, one sheet per finder.
-    $anna = ['first_name' => 'Anna', 'last_name' => 'Musterfrau', 'email' => 'anna@example.org'];
-    $finn = ['first_name' => 'Finn', 'last_name' => 'Horn', 'email' => 'finn@example.org'];
+    // The collective mail: one per coordinator address, the finders in shared sheets (26.11.2026).
+    $anna = ['first_name' => 'Anna', 'last_name' => 'Musterfrau', 'email' => 'anna@example.org', 'mykis_precision' => 'exact'];
+    $finn = ['first_name' => 'Finn', 'last_name' => 'Horn', 'email' => 'finn@example.org', 'mykis_precision' => 'q16'];
     $hessen = [['name' => 'Harald Zühlsdorf', 'region' => 'HES', 'part' => null]];
-    $files = [
-        ['finder' => $anna, 'points' => [[$sure, 8], [$sure, 8]], 'precision' => 'exact',
-         'name' => mykis_file_name('Anna Musterfrau', '2026-12-01')],
-        ['finder' => $finn, 'points' => [[$sure, 8]], 'precision' => 'q16', 'name' => mykis_file_name('Finn Horn', '2026-12-01')],
-    ];
+    $entries = [mykis_finder_entry($anna, [[$sure, 8], [$sure, 8]]), mykis_finder_entry($finn, [[$sure, 8]])];
+    $files = mykis_packages($entries, 'Hessen', '2026-12-01');
+    check(count($files) === 1 && $files[0]['name'] === 'Funde-Hessen-2026-12-01.csv'
+        && substr_count($files[0]['content'], "\n") === 4,
+        'every finder in ONE sheet, named after the state — a head and three rows');
+    check(array_map(static fn(array $e): string => $e['finder']['last_name'], $files[0]['finders']) === ['Horn', 'Musterfrau'],
+        'the finders in the order of their names');
     $mail = mykis_coordinator_mail($hessen, $files, 1, 1,
         ['first_name' => 'Sebastian', 'last_name' => 'Schröder', 'email' => 'sebastian@example.org']);
     check(str_contains($mail['body'], 'Guten Tag Harald Zühlsdorf')
-        && str_contains($mail['body'], 'Anna Musterfrau <anna@example.org> — 2 Funde — genaue Koordinaten — Funde-Anna-Musterfrau-2026-12-01.csv')
-        && str_contains($mail['body'], 'Finn Horn <finn@example.org> — ein Fund — nur Messtischblatt bis zum 16tel —'),
-        'the collective mail lists every finder with address, count, precision and file');
+        && str_contains($mail['body'], 'in einer Tabelle mit den Spalten der MykIS-Importvorlage (mykdaten.xls), zum Öffnen in jedem Tabellenprogramm (Funde-Hessen-2026-12-01.csv)')
+        && str_contains($mail['body'], 'Musterfrau, Anna <anna@example.org> — 2 Funde — genaue Koordinaten')
+        && str_contains($mail['body'], 'Horn, Finn <finn@example.org> — ein Fund — nur Messtischblatt bis zum 16tel'),
+        'the collective mail lists every finder with address, count and precision');
     check($mail['subject'] === 'Pilzfunde für MykIS — Hessen (2 Finder, 3 Funde)' && !str_contains($mail['body'], 'Teil 1'),
         'its subject says state, finders and finds — ' . $mail['subject']);
     check(str_contains($mail['body'], 'geht an Sebastian Schröder (sebastian@example.org), zuständig für den Versand'),
         'a reply goes to the operator, and the mail names them with their address');
     check(!str_contains(mykis_coordinator_mail($hessen, $files, 1, 1, null)['body'], 'Eine Antwort'),
         'without an operator the sentence stays out');
-    $partOf = static fn(int $part, int $parts): string => mykis_coordinator_mail($hessen, [$files[1]], $part, $parts, null)['body'];
-    $second = mykis_coordinator_mail($hessen, [$files[1]], 2, 2, null);
+    // Cut into sheets of about one size, a finder never split.
+    check(mykis_package_groups([3, 3, 3, 3], 5) === [[0, 1], [2, 3]]
+        && mykis_package_groups([2, 2, 2], 5) === [[0], [1, 2]]
+        && mykis_package_groups([4, 4, 4], 5) === [[0], [1], [2]],
+        'sheets about the same size — rather one a little past the mark than a finder split');
+    check(mykis_package_groups([10, 1, 1], 5) === [[0], [1, 2]] && mykis_package_groups([], 5) === []
+        && mykis_package_groups([7], 5) === [[0]],
+        'a finder above the mark goes whole and alone, and makes no sheet more than needed');
+    $split = mykis_packages($entries, 'Hessen', '2026-12-01', 2);
+    $splitMail = mykis_coordinator_mail($hessen, $split, 1, 1, null)['body'];
+    check(count($split) === 2 && $split[1]['name'] === 'Funde-Hessen-2026-12-01-Datei-2.csv'
+        && str_contains($splitMail, 'in 2 Tabellen')
+        && str_contains($splitMail, 'Funde-Hessen-2026-12-01-Datei-1.csv — Horn, Finn, ein Fund:')
+        && str_contains($splitMail, 'Funde-Hessen-2026-12-01-Datei-2.csv — Musterfrau, Anna, 2 Funde:'),
+        'several sheets: each under its file name with its finders');
+    $partOf = static fn(int $part, int $parts): string => mykis_coordinator_mail($hessen, [$split[1]], $part, $parts, null)['body'];
+    $second = mykis_coordinator_mail($hessen, [$split[1]], 2, 2, null);
     check(str_ends_with($second['subject'], '— Teil 2 von 2')
         && str_contains($second['body'], 'Dies ist Teil 2 von 2, der letzte; die übrigen Tabellen kamen in der vorigen Mail.')
         && !str_contains($second['body'], 'folgen'),
@@ -565,16 +583,17 @@ echo "\nThe MykIS sheet\n";
         && str_contains($partOf(2, 3), 'Teil 2 von 3; die übrigen Tabellen folgen in einer weiteren Mail.')
         && str_contains($partOf(3, 3), 'Teil 3 von 3, der letzte; die übrigen Tabellen kamen in den vorigen Mails.'),
         'and counts what is still to come');
-    check(mykis_file_name('Sebastian Schröder', '2026-12-01') === 'Funde-Sebastian-Schroeder-2026-12-01.csv',
-        'an umlaut is written out in the file name');
+    check(mykis_file_name('Sebastian Schröder', '2026-12-01') === 'Funde-Sebastian-Schroeder-2026-12-01.csv'
+        && mykis_file_name('Thüringen', '2026-12-01', 3) === 'Funde-Thueringen-2026-12-01-Datei-3.csv',
+        'an umlaut is written out in the file name, and a sheet of several carries its number');
     $sizes = static fn(array $parts): array => array_map(static fn(array $p): array =>
         array_map(static fn(array $f): int => strlen($f['content']), $p), $parts);
     $blob = static fn(int $n): array => ['content' => str_repeat('x', $n)];
     check($sizes(mykis_parts([$blob(4), $blob(4), $blob(4)], 10)) === [[4, 4], [4]]
         && $sizes(mykis_parts([$blob(12), $blob(3)], 10)) === [[12], [3]],
-        'the sheets split into mails at a finder\'s border; one too large goes alone');
+        'the sheets split into mails at a sheet\'s border; one too large goes alone');
     check(array_map('count', mykis_parts(array_fill(0, 20, $blob(1)), MYKIS_MAIL_MAX_BYTES, MYKIS_FILES_PER_MAIL)) === [15, 5],
-        'twenty finders are two mails: fifteen sheets, then five');
+        'twenty sheets are two mails: fifteen, then five');
     $confirmation = mykis_confirmation_mail($anna, [
         ['state' => 'Hessen', 'name' => 'Harald Zühlsdorf', 'email' => 'pilze-hessen@dgfm-ev.de', 'count' => 2],
         ['state' => 'Bayern', 'name' => 'Peter Karasch', 'email' => 'pilze-bayern@dgfm-ev.de', 'count' => 1],

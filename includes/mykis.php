@@ -984,12 +984,34 @@ const MYKIS_PAUSE_MS = 1500;
 const MYKIS_MAIL_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
- * Sheets per mail — fifteen finders at most, so a coordinator can work
- * through them one mail at a time (25.09.2026: fifteen sheets,
- * fifteen attachments a mail; twenty finders are two mails). The size
- * limit above still splits a mail of large sheets earlier.
+ * Sheets per mail — fifteen at most. Since the sheets gather many finders
+ * (MYKIS_FINDS_PER_FILE) this is a backstop the size limit above reaches
+ * long before; it stays so a mail never turns into a pile of attachments.
  */
 const MYKIS_FILES_PER_MAIL = 15;
+
+/**
+ * ONE SHEET FOR MANY FINDERS (26.11.2026, replacing the sheet per finder
+ * of 25.09.2026: „dieses Gestückel pro Benutzer … gefällt mir eigentlich
+ * nicht mehr … wenn es mal mehrere werden, bekommt Harald trotzdem
+ * mehrere Mails und hat ziemlich viel Arbeit. Die einzelnen Listen
+ * einzulesen. Ich würde eher eine große Datei machen"). A coordinator gets
+ * one sheet with every finder's finds; the erfasser column names each
+ * row's finder, and the mail still lists every finder with address, count
+ * and precision for the questions.
+ *
+ * SPLIT ONLY WHERE IT GETS LARGE, AND NEVER THROUGH A FINDER („in CSV1
+ * sind die Personen von bis, dass man so ungefähr eine etwas gleich große
+ * Paketgröße zusammenbekommt, aber nicht Nutzer auf 2 Pakete aufteilt.
+ * Also wenn dann das eine Paket vielleicht doch etwas größer macht"):
+ * above this many finds the finders, in the order of their names, are cut
+ * into as many sheets as the count asks for, each about the same size,
+ * each finder whole in one — a sheet grows past the mark rather than
+ * break a finder in two. Five thousand finds are about a megabyte (215
+ * bytes a find, measured 25.09.2026): four sheets a mail before the size
+ * limit splits the mail, and a size every spreadsheet opens.
+ */
+const MYKIS_FINDS_PER_FILE = 5000;
 
 /** Migration 0128 — the finders' confirmations. */
 function mykis_confirm_ready(PDO $pdo): bool
@@ -1186,25 +1208,11 @@ function mykis_deliver(PDO $pdo, ?string $cutoff, float $deadline): array
             $done['open']++;
             continue;
         }
-        $files = [];
-        foreach ($address['finders'] as $entry) {
-            $finder = $entry['finder'];
-            $holder = mykis_holder($finder);
-            $precision = mykis_precision($finder['mykis_precision'] ?? null);
-            $rules     = mykis_rules_read($finder['mykis_rules'] ?? null);
-            $files[] = [
-                'finder'    => $finder,
-                'points'    => $entry['points'],
-                'precision' => $precision,
-                'rules'     => $rules,
-                'name'      => mykis_file_name($finder['first_name'] . ' ' . $finder['last_name'], $day),
-                'type'      => 'text/csv; charset=utf-8',
-                // Each find at its own step — the finder's rules (mykis_step).
-                'content'   => mykis_csv(array_map(
-                    static fn(array $pair): array => mykis_row($pair[0], $holder, mykis_step($pair[0], $rules, $precision)),
-                    $entry['points'])),
-            ];
-        }
+        // Every finder of this address in shared sheets, named after the states it looks after.
+        $label = implode(' ', array_unique(array_map(static fn(array $c): string =>
+            MYKIS_STATES[$c['region']] ?? (string) $c['region'], $address['coordinators'])));
+        $files = mykis_packages(array_map(static fn(array $entry): array =>
+            mykis_finder_entry($entry['finder'], $entry['points']), $address['finders']), $label, $day);
         $parts = mykis_parts($files, MYKIS_MAIL_MAX_BYTES, MYKIS_FILES_PER_MAIL);
         foreach ($parts as $i => $part) {
             $breathe();
@@ -1213,8 +1221,10 @@ function mykis_deliver(PDO $pdo, ?string $cutoff, float $deadline): array
             // state waits); naming it would announce finds that are not there.
             $used = [];
             foreach ($part as $file) {
-                foreach ($file['points'] as [, $coordinatorId]) {
-                    $used[$coordinatorId] = true;
+                foreach ($file['finders'] as $entry) {
+                    foreach ($entry['points'] as [, $coordinatorId]) {
+                        $used[$coordinatorId] = true;
+                    }
                 }
             }
             $shown = array_values(array_filter($address['coordinators'],
@@ -1234,13 +1244,15 @@ function mykis_deliver(PDO $pdo, ?string $cutoff, float $deadline): array
             $sent++;
             $done['mails']++;
             foreach ($part as $file) {
-                $copy = mykis_wants_copy($file['finder']) ? 1 : 0;
-                foreach ($file['points'] as [$p, $coordinatorId]) {
-                    $record->execute($confirmReady
-                        ? [(int) $p['id'], $coordinatorId, $copy]
-                        : [(int) $p['id'], $coordinatorId]);
+                foreach ($file['finders'] as $entry) {
+                    $copy = mykis_wants_copy($entry['finder']) ? 1 : 0;
+                    foreach ($entry['points'] as [$p, $coordinatorId]) {
+                        $record->execute($confirmReady
+                            ? [(int) $p['id'], $coordinatorId, $copy]
+                            : [(int) $p['id'], $coordinatorId]);
+                    }
+                    $done['finds'] += count($entry['points']);
                 }
-                $done['finds'] += count($file['points']);
             }
         }
     }
@@ -1351,19 +1363,130 @@ function mykis_operator(PDO $pdo): ?array
 
 /**
  * A file name that survives every mail program: letters, digits, dashes,
- * umlauts written out — „Funde-Sebastian-Schroeder-2026-12-01.csv".
+ * umlauts written out — „Funde-Hessen-2026-12-01.csv", and with a number
+ * where the finds are cut into several sheets: „…-2026-12-01-Datei-2.csv".
  */
-function mykis_file_name(string $label, string $day): string
+function mykis_file_name(string $label, string $day, ?int $number = null): string
 {
     $label = strtr(trim($label), ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'Ä' => 'Ae', 'Ö' => 'Oe', 'Ü' => 'Ue', 'ß' => 'ss']);
     $label = trim((string) preg_replace('/[^A-Za-z0-9]+/', '-', $label), '-') ?: 'Funde';
-    return 'Funde-' . $label . '-' . $day . '.csv';
+    return 'Funde-' . $label . '-' . $day . ($number === null ? '' : '-Datei-' . $number) . '.csv';
 }
 
 /**
- * The finders' sheets split into mails — by count and by size, at a
- * finder's border, never through a sheet. A single sheet larger than the
- * size limit goes alone.
+ * One finder's part of a coordinator's sheet: the rows, each find at its
+ * own step (the finder's rules, mykis_step), and what the mail says about
+ * the finder.
+ *
+ * @param array[] $points  each [point, coordinator id]
+ */
+function mykis_finder_entry(array $finder, array $points): array
+{
+    $holder    = mykis_holder($finder);
+    $precision = mykis_precision($finder['mykis_precision'] ?? null);
+    $rules     = mykis_rules_read($finder['mykis_rules'] ?? null);
+    return [
+        'finder'    => $finder,
+        'points'    => $points,
+        'precision' => $precision,
+        'rules'     => $rules,
+        'rows'      => array_map(static fn(array $pair): array =>
+            mykis_row($pair[0], $holder, mykis_step($pair[0], $rules, $precision)), $points),
+    ];
+}
+
+/**
+ * Which finders go into which sheet — MYKIS_FINDS_PER_FILE says why. Given
+ * the finders' find counts in their order, the groups as lists of their
+ * indexes: as many as the total asks for, contiguous (a sheet holds the
+ * names „von … bis …"), a finder never split, and cut so the LARGEST sheet
+ * is as small as it can be — the sheets come out about the same size, and
+ * one grows past the mark only where whole finders leave no other way.
+ * A greedy cut was tried first and left the last sheet half again as large
+ * as the others; this is the exact answer, by dynamic programming — a few
+ * hundred finders and a handful of sheets cost nothing.
+ *
+ * @param int[] $counts
+ * @return int[][]
+ */
+function mykis_package_groups(array $counts, int $maxFinds = MYKIS_FINDS_PER_FILE): array
+{
+    $counts = array_values($counts);
+    $n = count($counts);
+    if ($n === 0) {
+        return [];
+    }
+    $k = min($n, max(1, (int) ceil(array_sum($counts) / max(1, $maxFinds))));
+    $prefix = [0];
+    foreach ($counts as $i => $c) {
+        $prefix[$i + 1] = $prefix[$i] + $c;
+    }
+    // $best[$j][$i]: the smallest possible largest sheet for the first $i finders in $j sheets.
+    $best = [0 => [0 => 0]];
+    $cut = [];
+    for ($j = 1; $j <= $k; $j++) {
+        for ($i = $j; $i <= $n; $i++) {
+            $best[$j][$i] = PHP_INT_MAX;
+            for ($m = $j - 1; $m < $i; $m++) {
+                if (!isset($best[$j - 1][$m])) {
+                    continue;
+                }
+                $largest = max($best[$j - 1][$m], $prefix[$i] - $prefix[$m]);
+                if ($largest < $best[$j][$i]) {
+                    $best[$j][$i] = $largest;
+                    $cut[$j][$i] = $m;
+                }
+            }
+        }
+    }
+    /* No more sheets than that largest one needs: one finder above the
+       mark sets the size by himself, and the rest then fit fewer sheets
+       (a finder of 10 and two of 1, at a mark of 5: two sheets, not three). */
+    $sheets = $k;
+    while ($sheets > 1 && isset($best[$sheets - 1][$n]) && $best[$sheets - 1][$n] <= $best[$k][$n]) {
+        $sheets--;
+    }
+    $groups = [];
+    for ($j = $sheets, $i = $n; $j > 0; $j--) {
+        $m = $cut[$j][$i];
+        array_unshift($groups, range($m, $i - 1));
+        $i = $m;
+    }
+    return $groups;
+}
+
+/**
+ * The finders' entries (mykis_finder_entry) as the sheets a coordinator
+ * gets: in the order of the finders' names — „Personen von bis" —, cut
+ * by mykis_package_groups, each sheet one CSV under its number.
+ *
+ * @return array[] each with 'name', 'type', 'content', 'finders' (the
+ *                 entries in it), 'number' and 'of'
+ */
+function mykis_packages(array $entries, string $label, string $day, int $maxFinds = MYKIS_FINDS_PER_FILE): array
+{
+    $key = static fn(array $e): string => mb_strtolower(mykis_holder($e['finder']));
+    usort($entries, static fn(array $a, array $b): int => strcmp($key($a), $key($b)));
+    $groups = mykis_package_groups(array_map(static fn(array $e): int => count($e['points']), $entries), $maxFinds);
+    $files = [];
+    foreach ($groups as $n => $indexes) {
+        $finders = array_map(static fn(int $i): array => $entries[$i], $indexes);
+        $files[] = [
+            'name'    => mykis_file_name($label, $day, count($groups) > 1 ? $n + 1 : null),
+            'type'    => 'text/csv; charset=utf-8',
+            'content' => mykis_csv(array_merge(...array_map(static fn(array $e): array => $e['rows'], $finders))),
+            'finders' => $finders,
+            'number'  => $n + 1,
+            'of'      => count($groups),
+        ];
+    }
+    return $files;
+}
+
+/**
+ * The sheets split into mails — by count and by size, at a sheet's
+ * border, never through one. A single sheet larger than the size limit
+ * goes alone.
  *
  * @param array[] $files  each with 'content'
  * @return array[][] the files per mail
@@ -1395,8 +1518,8 @@ function mykis_parts(array $files, int $maxBytes, int $maxFiles = PHP_INT_MAX): 
  * gives names, not how their bearers wish to be addressed.
  *
  * @param array[] $coordinators  the rows sharing this address
- * @param array[] $files         this part's sheets, each with 'finder',
- *                               'points', 'name'
+ * @param array[] $files         this part's sheets (mykis_packages), each
+ *                               with 'name', 'number', 'of' and 'finders'
  */
 function mykis_coordinator_mail(array $coordinators, array $files, int $part, int $parts, ?array $operator): array
 {
@@ -1405,18 +1528,41 @@ function mykis_coordinator_mail(array $coordinators, array $files, int $part, in
     $states = implode(', ', array_unique(array_map(static fn(array $c): string =>
         (MYKIS_STATES[$c['region']] ?? $c['region']) . ($c['part'] ? ' (' . $c['part'] . ')' : ''),
         $coordinators)));
-    $finds  = array_sum(array_map(static fn(array $f): int => count($f['points']), $files));
-    $list   = '';
+    $entries = array_merge(...array_map(static fn(array $f): array => $f['finders'], $files));
+    $finds   = array_sum(array_map(static fn(array $e): int => count($e['points']), $entries));
+    $sheets  = (int) ($files[0]['of'] ?? count($files));
+    $count   = static fn(int $n): string => $n === 1 ? 'ein Fund' : number_format($n, 0, ',', '.') . ' Funde';
+    /* EVERY FINDER BY NAME, ADDRESS, COUNT AND PRECISION — the sheet no
+       longer says who is who by its name, so the list does; „Nachname,
+       Vorname" as the erfasser column writes them, so a row and its line
+       here are found by the same words. Several sheets: each under its
+       file name with its range „von … bis …". */
+    $finderLine = static fn(array $e): string => '  ' . mykis_holder($e['finder'])
+        . ' <' . $e['finder']['email'] . '> — ' . $count(count($e['points']))
+        . ' — ' . MYKIS_PRECISIONS[mykis_precision($e['precision'] ?? null)]['short']
+        // The finder's own rules make single groups coarser or finer —
+        // the sheet's rows show each find's step, the line says so.
+        . (mykis_rules_any($e['rules'] ?? []) ? ', mit eigenen Regeln für einzelne Arten und Gruppen' : '')
+        . "\n";
+    $list = '';
     foreach ($files as $f) {
-        $count = count($f['points']);
-        $list .= '  ' . trim($f['finder']['first_name'] . ' ' . $f['finder']['last_name'])
-            . ' <' . $f['finder']['email'] . '> — ' . ($count === 1 ? 'ein Fund' : $count . ' Funde')
-            . ' — ' . MYKIS_PRECISIONS[mykis_precision($f['precision'] ?? null)]['short']
-            // The finder's own rules make single groups coarser or finer —
-            // the sheet's rows show each find's step, the line says so.
-            . (mykis_rules_any($f['rules'] ?? []) ? ', mit eigenen Regeln für einzelne Arten und Gruppen' : '')
-            . ' — ' . $f['name'] . "\n";
+        if ($sheets > 1) {
+            $first = mykis_holder($f['finders'][0]['finder']);
+            $last  = mykis_holder($f['finders'][count($f['finders']) - 1]['finder']);
+            $list .= ($list === '' ? '' : "\n") . $f['name'] . ' — '
+                . ($first === $last ? $first : "$first bis $last") . ', '
+                . $count(array_sum(array_map(static fn(array $e): int => count($e['points']), $f['finders']))) . ":\n";
+        }
+        foreach ($f['finders'] as $e) {
+            $list .= $finderLine($e);
+        }
     }
+    $sheetWords = $sheets > 1
+        ? "in $sheets Tabellen mit den Spalten der MykIS-Importvorlage (mykdaten.xls), zum Öffnen in "
+          . "jedem Tabellenprogramm. Damit keine Tabelle zu groß wird, sind die Finder auf die Tabellen "
+          . "verteilt, jeder ganz in einer"
+        : 'in einer Tabelle mit den Spalten der MykIS-Importvorlage (mykdaten.xls), zum Öffnen in '
+          . 'jedem Tabellenprogramm' . ($files !== [] ? ' (' . $files[0]['name'] . ')' : '');
     // The operator's address stands in the sentence too („hier
     // kannst du meine Adresse direkt eintragen") — a reply reaches them
     // through Reply-To anyway, but a forwarded mail loses that header.
@@ -1433,15 +1579,15 @@ function mykis_coordinator_mail(array $coordinators, array $files, int $part, in
           . ($parts === 2 ? 'der vorigen Mail' : 'den vorigen Mails') . ".\n\n");
 
     return [
-        'subject' => 'Pilzfunde für MykIS — ' . $states . ' (' . count($files) . ' Finder, ' . $finds . ' Funde)'
+        'subject' => 'Pilzfunde für MykIS — ' . $states . ' (' . count($entries) . ' Finder, ' . $count($finds) . ')'
                    . ($parts > 1 ? " — Teil $part von $parts" : ''),
         'body'    => "Guten Tag $names,\n\n"
             // Where the data comes from, said once and first — the erfasser
             // column then needs no explaining (it names the finder, who
             // recorded the find in the app).
             . "anbei die Pilzfunde aus Ihrem Zuständigkeitsgebiet ($states), erfasst mit der App "
-            . "YASAIMAPP — eine Tabelle je Finder, mit den Spalten der MykIS-Importvorlage "
-            . "(mykdaten.xls), zum Öffnen in jedem Tabellenprogramm:\n\n"
+            . "YASAIMAPP — $sheetWords. In der Spalte „erfasser“ steht bei jedem Fund sein Finder.\n\n"
+            . ($sheets > 1 ? '' : "Gemeldet haben:\n\n")
             . $list . "\n"
             . $partLine
             // How an unmarked find is read stays in-house: the
@@ -1456,7 +1602,7 @@ function mykis_coordinator_mail(array $coordinators, array $files, int $part, in
             . "bestimmt und nicht zur Veröffentlichung, an manchen Stellen stehen seltene Arten.\n\n"
             . "Fragen zu einem Fund richten Sie bitte direkt an den Finder, unter der Adresse oben. "
             . ($whom !== '' ? "Eine Antwort auf diese Mail geht an $whom, zuständig für den Versand.\n\n" : "\n")
-            . "Diese Tabellen kommen zweimal im Jahr, Anfang Juni und Anfang Dezember, weil Sie "
+            . "Neue Funde kommen zweimal im Jahr, Anfang Juni und Anfang Dezember, weil Sie "
             . "dem automatischen Versand zugestimmt haben.\n\n"
             . "Viele Grüße\nYASAIMAPP\n",
     ];

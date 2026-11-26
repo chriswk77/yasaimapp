@@ -47,12 +47,12 @@ const MYKIS_SAMPLE_TOWNS = [
     ['Bad Hersfeld', 50.8682, 9.7079],
 ];
 
-/** The twenty finders' sheets, as mykis_deliver() builds them. */
+/** The twenty finders' finds in the sheets mykis_deliver() would build. */
 function mykis_sample_files(string $day): array
 {
     mt_srand(2026);
     $pick = static fn(array $list) => $list[mt_rand(0, count($list) - 1)];
-    $files = [];
+    $entries = [];
     foreach (MYKIS_SAMPLE_FINDERS as [$first, $last]) {
         $local = strtolower(strtr("$first.$last", ['ä' => 'ae', 'ö' => 'oe', 'ü' => 'ue', 'ß' => 'ss']));
         // Most keep the default quarter, some choose finer — the list in
@@ -82,17 +82,10 @@ function mykis_sample_files(string $day): array
                 'photos' => [], 'recordings' => mt_rand(0, 3) === 0 ? 1 : 0,
             ], 0];
         }
-        $holder = mykis_holder($finder);
-        $files[] = [
-            'finder'    => $finder,
-            'points'    => $points,
-            'precision' => $precision,
-            'name'      => mykis_file_name("$first $last", $day),
-            'type'      => 'text/csv; charset=utf-8',
-            'content'   => mykis_csv(array_map(
-                static fn(array $pair): array => mykis_row($pair[0], $holder, $precision), $points)),
-        ];
+        $entries[] = mykis_finder_entry($finder, $points);
     }
+    // Shared sheets as the delivery cuts them (mykis_packages).
+    $files = mykis_packages($entries, 'Hessen', $day);
     return $files;
 }
 
