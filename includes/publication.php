@@ -361,17 +361,29 @@ function publication_picture_key(array $page, array $rights, string $siteUrl): s
    municipality and the sheet, as decided when the site began. The
    „Bestimmungssicherheit" is not repeated here; it has its own row.
    THE NOTE STAYS HOME TOO (26.11.2026: „Wir machen nur noch Bemerkung
-   und Notizen sind intern"): the field „Bemerkung" is what one writes
-   for others, the point's note is one's own — so it is not even read. */
+   und Notizen sind intern"): the field „Bemerkung" — „Fundbeschreibung"
+   since the same day (find_fields.php) — is what one writes for others,
+   the point's note is one's own — so it is not even read.
+   THE DESCRIPTION COMES LAST, after the height and the protected area
+   (the same day: „oben einfach die kurzen Daten haben zum Fund. Und
+   unten unsere Fundbeschreibung, weil der Text kann ja länger sein"):
+   the short facts stand together, the long text below them. */
 const PUBLICATION_DETAIL_ORDER = ['Finder', 'Bestimmer', 'Anzahl / Menge', 'Substrat / Wirt', 'Begleitvegetation',
-    'Geruch', 'Geschmack', 'Sporenpulverfarbe', 'Beleg-Nr.', 'Beleg aufbewahrt', 'Bemerkung'];
+    'Geruch', 'Geschmack', 'Sporenpulverfarbe', 'Beleg-Nr.', 'Beleg aufbewahrt'];
 
 /** @return list<array{0: string, 1: string, 2?: string}> label, value, and for the spore print its colour */
 function publication_find_details(array $p): array
 {
+    require_once __DIR__ . '/find_fields.php';
     $extra = json_decode((string) ($p['extra'] ?? ''), true);
-    $extra = is_array($extra) ? $extra : [];
+    $extra = is_array($extra) ? find_extra_carry($extra) : [];
     unset($extra[PUBLICATION_CERTAIN_FIELD]);
+    // Until migration 0203 a carried description stands under both keys — the old one is not said twice.
+    if (array_key_exists(FIND_DESCRIPTION, $extra) && !find_description_moved()) {
+        unset($extra[FIND_DESCRIPTION_FORMER]);
+    }
+    $description = $extra[FIND_DESCRIPTION] ?? null;
+    unset($extra[FIND_DESCRIPTION]);
     $text = static function ($v): string {
         if (is_bool($v)) return $v ? 'ja' : 'nein';
         if (is_array($v)) return implode(', ', array_filter(array_map(static fn($x) => is_scalar($x) ? trim((string) $x) : '', $v)));
@@ -394,6 +406,9 @@ function publication_find_details(array $p): array
     }
     if (trim((string) ($p['protected_area'] ?? '')) !== '') {
         $out[] = ['Schutzgebiet', trim((string) $p['protected_area'])];
+    }
+    if ($description !== null && $text($description) !== '') {
+        $out[] = [FIND_DESCRIPTION, $text($description)];
     }
     return $out;
 }

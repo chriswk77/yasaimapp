@@ -206,6 +206,7 @@ const PLATE_SENTENCES = {
     'Sporenpulver': 'Spore print',
     'Beleg-Nr.': 'Voucher no.',
     'Bemerkung': 'Remark',
+    'Fundbeschreibung': 'Find description',
     'Notiz': 'Note',
 };
 

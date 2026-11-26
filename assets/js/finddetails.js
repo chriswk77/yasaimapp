@@ -86,8 +86,8 @@ export function findDetails(point, isFind) {
         taste:      extra['Geschmack'] ?? '',
         spore_print: sporePrintRead(extra['Sporenpulverfarbe'])?.words ?? (extra['Sporenpulverfarbe'] ?? ''),
         spore_print_color: sporePrintRead(extra['Sporenpulverfarbe'])?.color ?? '',
-        // The general remark (find_fields.php), in one run like the note.
-        remark:     String(extra['Bemerkung'] ?? '').replace(/\s*\n\s*/g, ' ').trim(),
+        // The find description (find_fields.php — „Bemerkung" until 26.11.2026), in one run like the note.
+        remark:     String(extra['Fundbeschreibung'] ?? '').replace(/\s*\n\s*/g, ' ').trim(),
         /* THE NOTE IN ONE RUN: its line breaks become spaces, because a
            detail is one value after its label — a field wraps it at its
            edge like any long value. */

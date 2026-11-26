@@ -570,6 +570,10 @@ function import_fields_from_note(string $note): array
     $options = [];
     foreach (find_fields() as $f) {
         $known[mb_strtolower($f['name'])] = $f['name'];
+        // A field's former name still lands there — a file that says „Bemerkung" (find_fields.php).
+        foreach ($f['aliases'] ?? [] as $alias) {
+            $known[mb_strtolower($alias)] ??= $f['name'];
+        }
         $types[$f['name']] = $f['type'];
         $options[$f['name']] = $f['options'] ?? null;
     }

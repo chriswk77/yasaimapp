@@ -47,7 +47,7 @@ export function detailLabels(tr = t) {
         ['taste', tr('Geschmack')],
         ['spore_print', tr('Sporenpulverfarbe'), tr('Sporenpulver')],
         ['voucher', tr('Beleg-Nr.')],
-        ['remark', tr('Bemerkung')],
+        ['remark', tr('Fundbeschreibung')],
         // The find's own note (08.11.2026: „bei Fundangaben noch die Notiz dazu").
         ['note', tr('Notiz')],
     ];

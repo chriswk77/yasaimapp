@@ -2735,7 +2735,10 @@ export function mountPointWindow(host) {
             const keep = new Set(['finder', 'substrat / wirt', 'begleitvegetation']);
             return [...byNameMap.values()].filter(f => keep.has(f.name.toLowerCase()));
         }
-        return [...byNameMap.values()];
+        /* WHAT IS MARKED 'last' GOES BELOW EVERYTHING — the find description,
+           a long text, under a list's own fields too (find_fields.php). */
+        const all = [...byNameMap.values()];
+        return [...all.filter(f => !f.last), ...all.filter(f => f.last)];
     }
 
     /** They follow the list selection: one checkmark more, one field more. */

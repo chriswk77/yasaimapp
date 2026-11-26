@@ -2320,7 +2320,12 @@ function point_extra_read(?string $raw): object
         return new stdClass();
     }
     $d = json_decode($raw);
-    return is_object($d) ? $d : new stdClass();
+    if (!is_object($d)) {
+        return new stdClass();
+    }
+    // The find description under its new key until migration 0203 has run (find_fields.php).
+    require_once __DIR__ . '/find_fields.php';
+    return find_extra_carry($d);
 }
 
 /**

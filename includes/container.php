@@ -1441,7 +1441,8 @@ function list_fields_of_root(PDO $pdo, int $listId): array
             'options'  => isset($f['options']) && is_string($f['options'])
                 ? (json_decode($f['options'], true) ?: null) : null,
         ], $stmt->fetchAll());
-        return array_merge($leading, $own);
+        // The find description below the list's own fields (find_fields.php, 'last').
+        return $isSpecies ? find_fields_last_to_end(array_merge($leading, $own)) : $own;
     } catch (PDOException $e) {
         if (($e->errorInfo[0] ?? '') === '42S02') {
             return $leading;

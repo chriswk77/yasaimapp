@@ -5,7 +5,7 @@
  * WHAT BELONGS TO A FIND MAPPING belongs to every one: Finder, Bestimmer,
  * Bestimmungssicherheit, Menge, Substrat, Begleitvegetation, Geruch,
  * Geschmack, Sporenpulverfarbe, Belegnummer, whether a voucher is kept,
- * and a general remark.
+ * and the find description (the text for others).
  * If these fields were created per list individually, the same thing would
  * soon have three names ("Bestimmer", "bestimmt von", "Det.") — and any
  * evaluation across them would be none. That is why the set lives EXACTLY
@@ -113,9 +113,79 @@ function find_fields(): array
            plate (the plate's free text went the same day): a plate shows
            it as a detail like any other field. Beside the Notiz, which
            stays the find's own jotting. The remarks PER BOOK belong to the
-           identification module and come from the taxonomy session. */
-        ['name' => 'Bemerkung',         'type' => 'multiline',  'is_species' => false, 'options' => null, 'fixed' => true],
+           identification module and come from the taxonomy session.
+           CALLED „FUNDBESCHREIBUNG" SINCE 26.11.2026 („Notiz und Bemerkung,
+           die Bezeichnungen sind ja ziemlich ähnlich" — the text one writes
+           FOR OTHERS about the find and its situation, „Passt ganz gut zu den
+           Literaturangaben, aber Sporen leicht kleiner", the one the Fundbuch
+           publishes; the Notiz stays one's own and stays home). Not
+           „Diagnose", which is a new species' formal description, nor
+           „Zusammenfassung", which sounds like a sum of the other fields.
+           THE NAME IS THE STORED KEY, so the rename is a move of data:
+           migration 0203 carries „Bemerkung" over in extra, field times,
+           rescue anchors, conflicts and share ticks, and until it has run
+           live find_extra_carry() hands the old key on under the new one.
+           'aliases': a file that still says „Bemerkung" lands here.
+           'last' (the same day: „unten unsere Fundbeschreibung, weil der
+           Text kann ja länger sein, sodass er nach unten Platz hat und
+           nichts wegschiebt"): it stands after every other field, a list's
+           own ones too — the short facts stay together above it. */
+        ['name' => 'Fundbeschreibung',  'type' => 'multiline',  'is_species' => false, 'options' => null, 'fixed' => true,
+         'last' => true, 'aliases' => ['Bemerkung']],
     ];
+}
+
+/** The find description's key, and the one it had until migration 0203 (find_fields() says why it moved). */
+const FIND_DESCRIPTION = 'Fundbeschreibung';
+const FIND_DESCRIPTION_FORMER = 'Bemerkung';
+
+/** Whether migration 0203 has moved the find description's key — asked once per request. */
+function find_description_moved(): bool
+{
+    static $moved = null;
+    if ($moved === null) {
+        global $pdo;
+        try {
+            $moved = $pdo instanceof PDO
+                && (bool) $pdo->query("SELECT 1 FROM map_migrations WHERE file = '0203_find_description.sql'")->fetchColumn();
+        } catch (PDOException) {
+            $moved = false;
+        }
+    }
+    return $moved;
+}
+
+/**
+ * A point's field values with the find description under its new key —
+ * UNTIL MIGRATION 0203 HAS RUN. The code goes live before the migration,
+ * and in between every description written so far would stand under the
+ * old key, invisible to the field of the new name. So the old value is
+ * handed on under the new name too (copied, not moved: a list WITHOUT
+ * species may have a field of its own called „Bemerkung", and its value
+ * must stay where it is). Saved back, both keys arrive; the migration
+ * then keeps the new one. Once it has run this does nothing — afterwards
+ * a „Bemerkung" left in extra IS such a list's own field.
+ */
+function find_extra_carry(array|object $extra): array|object
+{
+    $isObject = is_object($extra);
+    $a = (array) $extra;
+    if (!array_key_exists(FIND_DESCRIPTION_FORMER, $a) || array_key_exists(FIND_DESCRIPTION, $a)
+        || !is_string($a[FIND_DESCRIPTION_FORMER]) || find_description_moved()) {
+        return $extra;
+    }
+    $a[FIND_DESCRIPTION] = $a[FIND_DESCRIPTION_FORMER];
+    return $isObject ? (object) $a : $a;
+}
+
+/**
+ * Fields with 'last' to the end of a field set, the rest in its order —
+ * the find description below a list's own fields (find_fields()).
+ */
+function find_fields_last_to_end(array $fields): array
+{
+    $last = array_filter($fields, static fn(array $f): bool => !empty($f['last']));
+    return [...array_values(array_diff_key($fields, $last)), ...array_values($last)];
 }
 
 /** The names of the set, lowercased — for filtering out duplicates. */
