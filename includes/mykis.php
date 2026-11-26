@@ -1598,8 +1598,11 @@ function mykis_coordinator_mail(array $coordinators, array $files, int $part, in
             . "Wie genau die Funde abgegeben werden, entscheidet jeder Finder selbst — mindestens "
             . "auf den Viertelquadranten des Messtischblatts genau; die Liste oben nennt es. "
             . "Genaue Koordinaten stehen in Grad, Minuten und Sekunden, dazu das "
-            . "Messtischblatt bis zum 64stel-Quadranten — sie sind für den internen Gebrauch "
-            . "bestimmt und nicht zur Veröffentlichung, an manchen Stellen stehen seltene Arten.\n\n"
+            /* NO WORD ABOUT WHAT THE COORDINATION MAY DO WITH THEM
+               (26.11.2026: „Das ist ja peinlich. Das kann ich einem
+               Landeskoordinator so nicht schreiben") — they know how the
+               DGfM treats exact places better than any mail could say. */
+            . "Messtischblatt bis zum 64stel-Quadranten.\n\n"
             . "Fragen zu einem Fund richten Sie bitte direkt an den Finder, unter der Adresse oben. "
             . ($whom !== '' ? "Eine Antwort auf diese Mail geht an $whom, zuständig für den Versand.\n\n" : "\n")
             . "Neue Funde kommen zweimal im Jahr, Anfang Juni und Anfang Dezember, weil Sie "
