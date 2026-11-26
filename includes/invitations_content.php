@@ -145,12 +145,28 @@ function invitations_render(PDO $pdo, array $state): void
 <?php notice('error', $state['error'], true); ?>
 
 <?php if ($state['code'] !== null): ?>
+    <?php /* THE COPY BUTTONS RIGHT WHERE THE NEW CODE APPEARS (26.11.2026:
+         „Was mir da fehlt, ist ein Button für Kopiere Code und kopiere
+         direkt einen Link. Ich muss dann immer unten … über den Button"):
+         the same rows as the window „Code und Link zeigen" further down —
+         field and button in one line, the same data-copy handler
+         (administration.js) — so the code is handed on from where it was
+         made. */ ?>
     <div class="notice notice-success">
-        <p>
-            <?= h(t('Neuer Code:')) ?> <code class="code-badge"><?= h($state['code']) ?></code><br>
-            <?= h(t('Direkter Link:')) ?>
-            <a href="<?= h($registrierUrl . '?code=' . urlencode($state['code'])) ?>"><?= h($registrierUrl . '?code=' . $state['code']) ?></a>
-        </p>
+        <div class="field">
+            <label for="invitation-new-code"><?= h(t('Neuer Code:')) ?></label>
+            <div class="copy-row">
+                <input type="text" id="invitation-new-code" readonly value="<?= h($state['code']) ?>">
+                <button type="button" class="button" data-copy="#invitation-new-code"><?= icon('copy') ?><?= h(t('Code kopieren')) ?></button>
+            </div>
+        </div>
+        <div class="field">
+            <label for="invitation-new-link"><?= h(t('Direkter Link:')) ?></label>
+            <div class="copy-row">
+                <input type="text" id="invitation-new-link" readonly value="<?= h($registrierUrl . '?code=' . urlencode($state['code'])) ?>">
+                <button type="button" class="button" data-copy="#invitation-new-link"><?= icon('copy') ?><?= h(t('Einladungslink kopieren')) ?></button>
+            </div>
+        </div>
     </div>
 <?php endif; ?>
 
