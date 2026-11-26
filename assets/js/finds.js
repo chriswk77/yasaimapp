@@ -2590,9 +2590,19 @@ function loadDetail(f) {
                     gone: (id) => forget(id),
                     changed: (point) => pointSaved(point),
                     picturesChanged: () => syncStage(),
+                    /* ONLY A LIST THAT REALLY CHANGED draws the overview anew
+                       (26.11.2026: „wenn ich dort Text eintippe, wird mir die
+                       Tafel ständig neu geladen" — in the Notiz). The window
+                       draws its gallery after every autosave, the gallery
+                       hands the files on unchanged, and each time the whole
+                       overview — plate, pictures, files — was built again
+                       under the typing. */
                     filesChanged: (list) => {
-                        faceFiles = { id: current?.id ?? 0, files: list };
-                        if (tab === 'text') drawFace();
+                        const id = current?.id ?? 0;
+                        const sig = (l) => JSON.stringify(l.map((x) => [x.dir, x.name, x.size, x.uploaded_at, x.provider]));
+                        const same = faceFiles.id === id && sig(faceFiles.files) === sig(list);
+                        faceFiles = { id, files: list };
+                        if (tab === 'text' && !same) drawFace();
                     },
                     showOnMap,
                     mapBox: document.getElementById('finds-map'),
