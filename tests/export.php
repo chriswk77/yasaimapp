@@ -463,9 +463,10 @@ echo "\nThe MykIS sheet\n";
     $ownRow = mykis_row(['extra' => (object) ['Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'Schröder, Sebastian', 'q4');
     check($at($ownRow, 'sammler') === 'Schröder, Sebastian' && $at($ownRow, 'bestimmer') === 'Schröder, Sebastian',
         'with no finder either, finder and determiner are the holder');
-    check($at($r, 'Wirt') === 'Fagus sylvatica; Begleitvegetation: Quercus robur, Carpinus betulus'
-        && $at($r, 'organ_substrat') === '',
-        'Wirt takes the substrate and, labelled, the plants around it; organ_substrat stays empty — ' . $at($r, 'Wirt'));
+    check($at($r, 'Wirt') === 'Fagus sylvatica' && $at($r, 'organ_substrat') === '',
+        'Wirt takes the substrate alone; organ_substrat stays empty — ' . $at($r, 'Wirt'));
+    check($at($r, 'beobachtung_bemerkungen') === 'Begleitvegetation: Quercus robur, Carpinus betulus',
+        'the plants around go, labelled, to beobachtung_bemerkungen — ' . $at($r, 'beobachtung_bemerkungen'));
     check($at($r, 'BASIS_ortslage') === '' && !str_contains($csv, 'Wetterau'), 'no Ortslage — the tour name stays home');
     check([$at($r, 'geobgrad1'), $at($r, 'geobminute1'), $at($r, 'geobsekunde1')] === ['50', '7', '24,4']
         && [$at($r, 'geolgrad1'), $at($r, 'geolminute1'), $at($r, 'geolsekunde1')] === ['8', '39', '15,6'],

@@ -38,16 +38,20 @@
  *     app recorded it, so the account did. (A first reading had it empty
  *     for the coordinator to fill in — the coordinator put that right.)
  *   - WIRT TAKES WHAT THE FUNGUS GREW ON OR AMONG, not only a parasite's
- *     host: „Laubschicht" belongs there too, the coordinator says, and even the
- *     accompanying vegetation. So our field „Substrat / Wirt" goes there,
- *     and the accompanying vegetation after it, labelled, so a reader tells
- *     the substrate from the plants around. organ_substrat stays empty —
+ *     host: „Laubschicht" belongs there too, the coordinator says. So our
+ *     field „Substrat / Wirt" goes there. organ_substrat stays empty —
  *     the same words twice would be two claims.
+ *   - THE ACCOMPANYING VEGETATION GOES TO beobachtung_bemerkungen, labelled
+ *     „Begleitvegetation: …" (26.11.2026, a second coordinator: better
+ *     there). It stood behind the substrate in Wirt until then, as the
+ *     first coordinator had allowed — but the plants around are an
+ *     observation about the site, not what the fungus grew on, and in Wirt
+ *     a reader had to cut the two apart again.
  *   - NO ORTSLAGE. The tour name was meant for it, but on most finds it is
  *     „Tagestour", and BASIS_ort and the MTB say where the find is.
  *   - THE IDENTIFICATION CERTAINTY GOES TO Qualität AS WE WRITE IT — MykIS
  *     keeps no vocabulary of its own there.
- *   - EMPTY ON PURPOSE: note, county, postcode, source, stage, revision,
+ *   - EMPTY ON PURPOSE: the site note (fo_bemerkung), county, postcode, source, stage, revision,
  *     whereabouts, substrate state, special site — and the species number,
  *     which MykIS finds by itself from genus and species (the coordinator).
  *     BASIS_artgruppe and BASIS_methode the template itself says to leave
@@ -749,18 +753,15 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
 
     [$latDeg, $latMin, $latSec] = $exact ? mykis_dms((float) ($p['lat'] ?? 0)) : ['', '', ''];
     [$lonDeg, $lonMin, $lonSec] = $exact ? mykis_dms((float) ($p['lon'] ?? 0)) : ['', '', ''];
-    // The substrate first, the plants around it after — one per line in
-    // our multiline field, one after another here.
+    // The plants around — one per line in our multiline field, one after
+    // another here, under their label (the column takes any remark).
     $vegetation = implode(', ', array_filter(array_map('trim', preg_split('/\R/u', $field('Begleitvegetation')) ?: [])));
-    $wirt = implode('; ', array_filter([
-        $field('Substrat / Wirt'),
-        $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : '',
-    ]));
 
     $values = [
         'BASIS_datum1'   => $date,
         'datum2'         => $date,
         'erfasser'       => $holder,
+        'beobachtung_bemerkungen' => $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : '',
         'BASIS_ort'      => trim((string) ($p['municipality'] ?? '')),
         'name_staat'     => 'Deutschland',
         'name_provinz'   => MYKIS_STATES[$region] ?? '',
@@ -782,7 +783,7 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
            made. On one's own finds the Finder field is empty or the
            holder's, so it comes to the same. */
         'bestimmer'      => mykis_person($field('Bestimmer')) ?: (mykis_person($field('Finder')) ?: $holder),
-        'Wirt'           => $wirt,
+        'Wirt'           => $field('Substrat / Wirt'),
         // „ex cultura, bestimmt am …" — empty for a find from the field.
         'art_bemerkung'  => collection_note($p),
         'beleg_nr'       => $voucher !== '' ? $voucher : $number,
