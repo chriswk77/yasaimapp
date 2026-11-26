@@ -158,12 +158,18 @@ export async function originalBudgetSet(bytes) {
     } catch { /* the store will make room on its next keeping */ }
 }
 
-/** Lay a fetched original down, the older one of the same recording out, and the least used out until the whole fits. */
-async function keep(key, blob, type) {
+/**
+ * Lay a fetched original down, the older one of the same recording out, and
+ * the least used out until the whole fits. A picture kept by its ADDRESS
+ * has no older self to replace (`replaces` false): its address names one
+ * content for ever, and the part before the last slash is no recording but
+ * a path of whatever page asked.
+ */
+async function keep(key, blob, type, replaces = true) {
     const store = await caches.open(STORE);
     const index = indexRead();
     const prefix = key.slice(0, key.lastIndexOf('/') + 1);
-    for (const other of Object.keys(index)) {
+    for (const other of replaces ? Object.keys(index) : []) {
         if (other !== key && other.startsWith(prefix)) {
             await store.delete(other);
             delete index[other];
@@ -229,4 +235,51 @@ async function originalFetch(f, url, kind) {
         keep(key, blob, answer.headers.get('Content-Type')).catch(() => {});
     }
     return blob;
+}
+
+/*
+ * PICTURES KNOWN BY THEIR ADDRESS (26.11.2026: „Können wir diesen Speicher
+ * auch nutzen für Schlüsselbilder? … Und dass wir die auch erst mal
+ * cachen"). A page whose pictures sit in plain <img> tags — the
+ * identification keys' figures, a dozen templates of them — cannot hand
+ * each one through originalBlob: the <img> asks before any script could.
+ * So such a page lets the picture load as it always did and, once it has
+ * come, lays it down HERE under its own address; the service worker
+ * answers the next asking for that address out of this store before the
+ * network (sw.js, getKeptPicture). The budget, the tick and the order of
+ * use are the same as for every original — one store, one size, one
+ * decision in Offline-Daten.
+ *
+ * ONLY FOR AN ADDRESS THAT NEVER CHANGES ITS BYTES: nothing here asks
+ * again, and the worker answers from the store for as long as the picture
+ * lies there. A picture that can change must carry a version in its
+ * address (the keys' figures do, since 17.10.2026).
+ */
+
+/** Whether a picture lies here under this address — and if so, it was used now. No network, synchronous: the index alone. */
+export function originalTouchAddress(url) {
+    if (!usable()) return false;
+    const index = indexRead();
+    if (!index[url]) return false;
+    touch(url, index[url].size);
+    return true;
+}
+
+/**
+ * Lay the picture at `url` down for the next time. It has just been shown,
+ * so the browser's own cache answers this asking (force-cache) and the
+ * network is not asked twice. Quietly nothing where the store is off or
+ * the picture does not come.
+ */
+export function originalKeepAddress(url) {
+    if (!usable() || pending.has(url)) return pending.get(url) ?? Promise.resolve();
+    const job = (async () => {
+        const answer = await fetch(url, { credentials: 'same-origin', cache: 'force-cache' });
+        if (!answer.ok) return;
+        const blob = await answer.blob();
+        if (!blob.type.startsWith('image/')) return;
+        await keep(url, blob, answer.headers.get('Content-Type'), false);
+    })().catch(() => {}).finally(() => pending.delete(url));
+    pending.set(url, job);
+    return job;
 }

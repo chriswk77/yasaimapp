@@ -90,6 +90,20 @@ const PHOTOS = 'photos';
 const PHOTOS_LIMIT = 300;
 
 /**
+ * THE FULL PICTURES THE DESK KEEPS (assets/js/originalcache.js, which owns
+ * this store, its index, its budget and its tick in Offline-Daten — the
+ * name here MUST stay the one there). The worker never writes into it; it
+ * only keeps it alive across a deployment and answers from it (below).
+ *
+ * KEPT ACROSS A NEW WORKER since 26.11.2026: activate() deletes every store
+ * not on its list, and this one was not on it — the first change to this
+ * file after 18.11.2026 would have emptied two gigabytes of pictures the
+ * device had chosen to keep, unnoticed, because nothing had changed here
+ * since. Whoever adds a store a page owns adds it to that list too.
+ */
+const ORIGINALS = 'yasaimapp-originals-v1';
+
+/**
  * THE VECTOR MAP'S OWN FILES FROM OPENFREEMAP (30.09.2026): its style, the
  * sprites of its symbols, the fonts of its lettering and the list of its
  * tiles. Without them MapLibre cannot draw a single line — and without the
@@ -118,12 +132,32 @@ self.addEventListener('activate', (e) => {
         // fetch them once, and a deployment must not make it twice.
         const names = await caches.keys();
         await Promise.all(names
-            .filter(n => n !== PAGES && n !== PROGRAM && n !== VOLATILE && n !== PHOTOS && n !== VECTOR_ASSETS
+            .filter(n => n !== PAGES && n !== PROGRAM && n !== VOLATILE && n !== PHOTOS && n !== VECTOR_ASSETS && n !== ORIGINALS
                       && n !== 'arten' && n !== 'species' && n !== 'inpaint' && !n.startsWith('gebiet-') && !n.startsWith('area-'))
             .map(n => caches.delete(n)));
         await self.clients.claim();
+        await pagesWithoutPictures();
     })());
 });
+
+/**
+ * PICTURES OUT OF THE PAGE STORE — what isPage() let in before it learned to
+ * tell a picture by how it is asked for (see isScriptPicture). Measured in
+ * the code on 26.11.2026: every picture of the identification keys ever
+ * looked at lay among the pages, each retry under an address of its own,
+ * and that store is never trimmed — on a phone too. Looking costs one
+ * match per entry, once per new worker; afterwards there is nothing left
+ * to find.
+ */
+async function pagesWithoutPictures() {
+    try {
+        const store = await caches.open(PAGES);
+        for (const key of await store.keys()) {
+            const hit = await store.match(key);
+            if ((hit?.headers.get('Content-Type') ?? '').startsWith('image/')) await store.delete(key);
+        }
+    } catch { /* the next new worker looks again */ }
+}
 
 /** Does the address belong to a map tile? */
 function isTile(url) {
@@ -222,6 +256,41 @@ function isLayerMask(url) {
         && url.pathname.endsWith('/layer_mask.php');
 }
 
+/**
+ * A picture a script of ours delivers to an <img> — a page's own picture
+ * (the identification keys' figures, an archive's) that has no rule of its
+ * own above. Told by HOW it is asked for, not by its address: the core
+ * cannot know every page a module brings, and every one of them ends in
+ * .php, lies on our origin and outside api/ — a PAGE to isPage() until
+ * 26.11.2026, the trap the paragraph at isCloudFile() describes, walked
+ * into once more.
+ */
+function isScriptPicture(request, url) {
+    return request.destination === 'image'
+        && url.origin === self.location.origin && /\.php$/.test(url.pathname)
+        && !isCloudFile(url) && !isLayerMask(url);
+}
+
+/**
+ * Such a picture from the desk's store of full pictures where a page laid
+ * it down under this very address — else from the network, as before.
+ *
+ * WHY THE WORKER ANSWERS AND NOT THE PAGE: an <img> starts asking the
+ * moment its markup is written, before any script of the page could look
+ * into the store, and the identification keys write their pictures in a
+ * dozen templates. Here the question comes before the network, for every
+ * one of them. Only an address that never changes its bytes may be laid
+ * down so (originalKeepAddress says it); keeping, the budget and the order
+ * of use stay the page's business.
+ */
+async function getKeptPicture(request) {
+    try {
+        const kept = await (await caches.open(ORIGINALS)).match(request.url);
+        if (kept) return kept;
+    } catch { /* no store: the network */ }
+    return fetch(request);
+}
+
 function isPage(request, url) {
     return request.mode === 'navigate'
         || (url.origin === self.location.origin && /\.php$/.test(url.pathname)
@@ -240,6 +309,8 @@ self.addEventListener('fetch', (e) => {
 
     if (isPhoto(url)) {
         e.respondWith(getPhoto(request));
+    } else if (isScriptPicture(request, url)) {
+        e.respondWith(getKeptPicture(request));
     } else if (isPage(request, url)) {
         e.respondWith(getPage(request));
     } else if (isApp(url)) {
@@ -262,7 +333,8 @@ async function getPage(request) {
     const store = await caches.open(PAGES);
     try {
         const answer = await fetch(request);
-        if (answer.ok) store.put(request, answer.clone());
+        // A picture fetched by a script (the store of full pictures keeping one) asks as no <img> does — not a page all the same.
+        if (answer.ok && !(answer.headers.get('Content-Type') ?? '').startsWith('image/')) store.put(request, answer.clone());
         return answer;
     } catch {
         const stored = await store.match(request);
