@@ -61,6 +61,17 @@ function mykis_process(PDO $pdo, int $userId): ?array
             }
             return ['success', t('%d Beispielmails sind an %s unterwegs.', count($mails), $to)];
 
+        /* MYKIS' OWN LISTS — Wirt and substrate words — uploaded once,
+           kept on the server only (mykis_hosts.php says why). */
+        case 'lists':
+            $upload = $_FILES['lists'] ?? null;
+            $text = is_array($upload) && ($upload['error'] ?? 1) === UPLOAD_ERR_OK
+                ? (string) file_get_contents((string) $upload['tmp_name']) : '';
+            $counts = $text === '' ? null : mykis_lists_store($text);
+            return $counts === null
+                ? ['error', t('Das ist keine Wirtliste aus MykIS — es wurde nichts übernommen.')]
+                : ['success', t('Wirtliste übernommen: %d Wirte und %d Substrate.', $counts['hosts'], $counts['organ'])];
+
         case 'deliver':
             $done = mykis_deliver($pdo, null, microtime(true) + 60);
             if ($done['mails'] === 0 && $done['confirmations'] === 0 && $done['failed'] === 0) {
@@ -185,6 +196,21 @@ function mykis_render(PDO $pdo, ?array $message): void
         <button class="button small subtle" type="submit"><?= h(t('Beispiel an mich senden')) ?></button>
     </form>
 </div>
+<?php $lists = mykis_lists(); ?>
+<div class="column-header">
+    <p class="hint-text"><?= h($lists === null
+        ? t('MykIS nimmt bei „Wirt“ und „organ_substrat“ nur Namen aus seinen eigenen Listen an. Ohne diese Listen steht das Feld „Substrat / Wirt“ deshalb in „substrat_text“, dort nimmt MykIS alles. Mit den Listen kommt ein Wirt wie „Fagus sylvatica“ in „Wirt“ und ein Wort wie „Laubstreu“ in „organ_substrat“.')
+        : t('Wirtliste aus MykIS: %d Wirte und %d Substrate. Ein Wirt wie „Fagus sylvatica“ kommt in „Wirt“, ein Wort wie „Laubstreu“ in „organ_substrat“, alles andere in „substrat_text“.', $lists['counts']['hosts'], $lists['counts']['organ'])) ?></p>
+    <form method="post" action="<?= h($target) ?>" enctype="multipart/form-data" class="mykis-lists">
+        <?= csrf_field() ?>
+        <input type="hidden" name="section" value="mapping">
+        <input type="hidden" name="action" value="lists">
+        <label class="button small subtle">
+            <?= h($lists === null ? t('Wirtliste hochladen') : t('Neue Wirtliste hochladen')) ?>
+            <input type="file" name="lists" accept=".json,application/json" hidden>
+        </label>
+    </form>
+</div>
 <p class="hint-text small provider-currency"><?= h(t('Liste nach dgfm-ev.de, Landeskoordinatoren für Pilzkartierung — Stand 25.09.2026.')) ?></p>
 
 <script>
@@ -192,6 +218,10 @@ function mykis_render(PDO $pdo, ?array $message): void
    buttons for one decision at a time. */
 for (const box of document.querySelectorAll('.mykis-consent')) {
     box.addEventListener('change', () => box.form.requestSubmit());
+}
+// The file sends itself once chosen — the same: one step, no second button.
+for (const file of document.querySelectorAll('.mykis-lists input[type=file]')) {
+    file.addEventListener('change', () => file.files.length && file.form.requestSubmit());
 }
 </script>
     <?php

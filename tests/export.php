@@ -235,6 +235,15 @@ echo "\nThe species list — same species, one entry\n";
    stand. */
 echo "\nThe MykIS sheet\n";
 {
+    /* MykIS' lists in miniature — the real ones live on the server only
+       (mykis_hosts.php) and this test must not depend on that file. */
+    mykis_lists([
+        'made'  => '2026-11-27',
+        'hosts' => [['Fagus sylvatica', '', 'Rot-Buche'], ['Castanea sativa', '', 'Ess-Kastanie'],
+                    ['Salix alba', '', 'Weide'], ['Salix caprea', '', 'Weide'], ['Acer sp.', '', 'Ahorn-Art'],
+                    ['Hausrind', 'Bos primigenius taurus', 'Hausrind']],
+        'organ' => ['Laubstreu', 'Zapfen', 'liegender Ast'],
+    ]);
     $parse = static function (string $csv): array {
         $lines = explode("\r\n", rtrim(substr($csv, 3), "\r\n"));
         return array_map(static fn(string $l): array => str_getcsv($l, ';', '"', ''), $lines);
@@ -463,8 +472,29 @@ echo "\nThe MykIS sheet\n";
     $ownRow = mykis_row(['extra' => (object) ['Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'Schröder, Sebastian', 'q4');
     check($at($ownRow, 'sammler') === 'Schröder, Sebastian' && $at($ownRow, 'bestimmer') === 'Schröder, Sebastian',
         'with no finder either, finder and determiner are the holder');
-    check($at($r, 'Wirt') === 'Fagus sylvatica' && $at($r, 'organ_substrat') === '',
-        'Wirt takes the substrate alone; organ_substrat stays empty — ' . $at($r, 'Wirt'));
+    check($at($r, 'Wirt') === 'Fagus sylvatica' && $at($r, 'organ_substrat') === '' && $at($r, 'substrat_text') === '',
+        'a host of MykIS\' list goes to Wirt alone — ' . $at($r, 'Wirt'));
+    $placed = static fn(string $v): array => array_values(mykis_substrate($v));
+    check($placed('Laubstreu') === ['', 'Laubstreu', ''], 'a word of the substrate list goes to organ_substrat');
+    check($placed('Kiefer totholz') === ['', '', 'Kiefer totholz'], 'anything else to the free substrat_text');
+    check($placed('Esskastanie') === ['Castanea sativa', '', '']
+        && $placed('Bos taurus') === ['', '', 'Bos taurus']
+        && $placed('Bos primigenius taurus') === ['Hausrind', '', '']
+        && $placed('Acer spec.') === ['Acer sp.', '', ''] && $placed('fagus  sylvatica') === ['Fagus sylvatica', '', ''],
+        'a unique German name, a synonym, „spec." and loose spelling become MykIS\' own name');
+    check($placed('Weide') === ['', '', 'Weide'], 'a German name two hosts share names none of them');
+    check($placed('Fagus sylvatica, Laubstreu; Zapfen') === ['Fagus sylvatica', 'Laubstreu', 'Zapfen'],
+        'a value is cut at commas and semicolons, one entry per checked column, the second into the free text');
+    mykis_lists(false);
+    $path = mykis_lists_path();
+    $hadFile = is_file($path);
+    if (!$hadFile) {
+        check($placed('Fagus sylvatica') === ['', '', 'Fagus sylvatica'],
+            'without the lists on the server everything goes to the free text — a row MykIS takes');
+    }
+    check(mykis_lists_store('{"hosts": [["Fagus sylvatica"]], "organ": ["Laubstreu"]}') === null
+        && mykis_lists_store('kein JSON') === null && is_file($path) === $hadFile,
+        'a file that is not the lists is refused and nothing written');
     check($at($r, 'beobachtung_bemerkungen') === 'Begleitvegetation: Quercus robur, Carpinus betulus',
         'the plants around go, labelled, to beobachtung_bemerkungen — ' . $at($r, 'beobachtung_bemerkungen'));
     check($at($r, 'BASIS_ortslage') === '' && !str_contains($csv, 'Wetterau'), 'no Ortslage — the tour name stays home');

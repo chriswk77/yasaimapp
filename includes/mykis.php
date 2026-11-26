@@ -37,10 +37,14 @@
  *     since MykIS can be used privately, that is usually the finder; our
  *     app recorded it, so the account did. (A first reading had it empty
  *     for the coordinator to fill in — the coordinator put that right.)
- *   - WIRT TAKES WHAT THE FUNGUS GREW ON OR AMONG, not only a parasite's
- *     host: „Laubschicht" belongs there too, the coordinator says. So our
- *     field „Substrat / Wirt" goes there. organ_substrat stays empty —
- *     the same words twice would be two claims.
+ *   - OUR „SUBSTRAT / WIRT" IS SPREAD OVER THREE COLUMNS (27.11.2026):
+ *     Wirt and organ_substrat only take names of MykIS' own lists, and
+ *     the import refuses the whole row for one it does not know — so a
+ *     host of the list goes to Wirt, a word of the substrate list to
+ *     organ_substrat, everything else to the free substrat_text
+ *     (mykis_hosts.php says how, and why the lists live on the server
+ *     only). Until then the whole field stood in Wirt, „Laubschicht"
+ *     included, as the first coordinator had allowed.
  *   - THE ACCOMPANYING VEGETATION GOES TO beobachtung_bemerkungen, labelled
  *     „Begleitvegetation: …" (26.11.2026, a second coordinator: better
  *     there). It stood behind the substrate in Wirt until then, as the
@@ -120,6 +124,8 @@ declare(strict_types=1);
 
 // collection_note(): the „ex cultura" a species from a culture carries.
 require_once __DIR__ . '/collections.php';
+// mykis_substrate(): where „Substrat / Wirt" goes among MykIS' lists.
+require_once __DIR__ . '/mykis_hosts.php';
 
 /** The template's head, in the template's order and spelling. */
 const MYKIS_COLUMNS = [
@@ -756,6 +762,7 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
     // The plants around — one per line in our multiline field, one after
     // another here, under their label (the column takes any remark).
     $vegetation = implode(', ', array_filter(array_map('trim', preg_split('/\R/u', $field('Begleitvegetation')) ?: [])));
+    $substrate = mykis_substrate($field('Substrat / Wirt'));
 
     $values = [
         'BASIS_datum1'   => $date,
@@ -783,7 +790,9 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
            made. On one's own finds the Finder field is empty or the
            holder's, so it comes to the same. */
         'bestimmer'      => mykis_person($field('Bestimmer')) ?: (mykis_person($field('Finder')) ?: $holder),
-        'Wirt'           => $field('Substrat / Wirt'),
+        'Wirt'           => $substrate['wirt'],
+        'organ_substrat' => $substrate['organ_substrat'],
+        'substrat_text'  => $substrate['substrat_text'],
         // „ex cultura, bestimmt am …" — empty for a find from the field.
         'art_bemerkung'  => collection_note($p),
         'beleg_nr'       => $voucher !== '' ? $voucher : $number,

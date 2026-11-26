@@ -6713,6 +6713,15 @@ return [
     '%d Kopie(n) an Finder sind unterwegs.' => '%d copy/copies to finders on their way.',
     '%d Kopie(n) offen' => '%d copy/copies pending',
     'Beispiel an mich senden' => 'Send a sample to me',
+    'Das ist keine Wirtliste aus MykIS — es wurde nichts übernommen.'
+        => 'That is no host list from MykIS — nothing was taken over.',
+    'Wirtliste übernommen: %d Wirte und %d Substrate.' => 'Host list taken over: %d hosts and %d substrates.',
+    'MykIS nimmt bei „Wirt“ und „organ_substrat“ nur Namen aus seinen eigenen Listen an. Ohne diese Listen steht das Feld „Substrat / Wirt“ deshalb in „substrat_text“, dort nimmt MykIS alles. Mit den Listen kommt ein Wirt wie „Fagus sylvatica“ in „Wirt“ und ein Wort wie „Laubstreu“ in „organ_substrat“.'
+        => 'MykIS accepts only names from its own lists in "Wirt" and "organ_substrat". Without these lists the field "Substrat / Wirt" therefore goes to "substrat_text", where MykIS takes anything. With the lists a host like "Fagus sylvatica" goes to "Wirt" and a word like "Laubstreu" to "organ_substrat".',
+    'Wirtliste aus MykIS: %d Wirte und %d Substrate. Ein Wirt wie „Fagus sylvatica“ kommt in „Wirt“, ein Wort wie „Laubstreu“ in „organ_substrat“, alles andere in „substrat_text“.'
+        => 'Host list from MykIS: %d hosts and %d substrates. A host like "Fagus sylvatica" goes to "Wirt", a word like "Laubstreu" to "organ_substrat", everything else to "substrat_text".',
+    'Wirtliste hochladen' => 'Upload host list',
+    'Neue Wirtliste hochladen' => 'Upload a new host list',
     'Bestätigt am %s' => 'Confirmed on %s',
     // How precisely a finder hands over their finds (0129)
     'Viertelquadrant — etwa 5,5 × 6 km, ohne Koordinaten' => 'Quarter quadrant — about 5.5 × 6 km, no coordinates',
