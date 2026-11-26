@@ -215,7 +215,7 @@ function publication_plan(PDO $pdo, int $userId, string $siteUrl): array
 
     $notes = [];
     $q = $pdo->prepare(
-        'SELECT p.id, p.title, p.found_at, p.municipality, p.region, p.country, p.mtb, p.find_number, p.extra_species, p.extra, p.note, p.mtb_quadrant, p.elevation_m, p.protected_area
+        'SELECT p.id, p.title, p.found_at, p.municipality, p.region, p.country, p.mtb, p.find_number, p.extra_species, p.extra, p.mtb_quadrant, p.elevation_m, p.protected_area
            FROM map_points p
           WHERE p.user_id = ? AND p.deleted_at IS NULL
             AND EXISTS (SELECT 1 FROM map_plates pl JOIN map_plate_images i ON i.plate_id = pl.id
@@ -356,10 +356,13 @@ function publication_picture_key(array $page, array $rights, string $siteUrl): s
    Jegliche Information, die da drin steht"). Every field of the find as
    it is kept in `extra` — the fixed ones in the order the point
    window shows them, then whatever a list adds of its own — and the
-   height, the protected area, the note. THE COORDINATE STAYS HOME, and so
+   height and the protected area. THE COORDINATE STAYS HOME, and so
    does the MTB quadrant: what this file adds of the place is the
    municipality and the sheet, as decided when the site began. The
-   „Bestimmungssicherheit" is not repeated here; it has its own row. */
+   „Bestimmungssicherheit" is not repeated here; it has its own row.
+   THE NOTE STAYS HOME TOO (26.11.2026: „Wir machen nur noch Bemerkung
+   und Notizen sind intern"): the field „Bemerkung" is what one writes
+   for others, the point's note is one's own — so it is not even read. */
 const PUBLICATION_DETAIL_ORDER = ['Finder', 'Bestimmer', 'Anzahl / Menge', 'Substrat / Wirt', 'Begleitvegetation',
     'Geruch', 'Geschmack', 'Sporenpulverfarbe', 'Beleg-Nr.', 'Beleg aufbewahrt', 'Bemerkung'];
 
@@ -391,9 +394,6 @@ function publication_find_details(array $p): array
     }
     if (trim((string) ($p['protected_area'] ?? '')) !== '') {
         $out[] = ['Schutzgebiet', trim((string) $p['protected_area'])];
-    }
-    if (trim((string) ($p['note'] ?? '')) !== '') {
-        $out[] = ['Notiz', trim((string) $p['note'])];
     }
     return $out;
 }
