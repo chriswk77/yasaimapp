@@ -7014,6 +7014,19 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
     #finds-fund[data-tab="lists"] #d-panel-place > .field { margin: 0; }
     #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) { flex: 0 1 15rem; }
     #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 36rem; min-width: 0; }
+    /* TWO DIFFERENT THINGS, TOLD APART (27.11.2026: „weil das ja 2 völlig
+       verschiedene Sachen sind … Vielleicht auch direkt teilen mit einer
+       anderen Hintergrundfarbe als die Listenkacheln"): „Direkt teilen" —
+       who sees this one find — stands left of a hairline from top to
+       bottom, its tile without the lists' raised ground, only framed;
+       the lists — where the find is filed — keep their tiles on
+       --ground-3. */
+    #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) {
+        padding-right: 2rem;
+        border-right: 1px solid var(--border);
+        align-self: stretch;
+    }
+    #finds-fund[data-tab="lists"] #d-hints .list-selection-tile { background: var(--ground-2); }
     #finds-fund[data-tab="lists"] #d-lists.is-tiled { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
     /* NO FOLDING ROOM WHERE NOTHING FOLDS (27.11.2026: „bei Listen ohne
        eigene Mappe oder bei Direktteilen ist das Einrücken da, das da
