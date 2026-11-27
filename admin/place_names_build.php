@@ -63,7 +63,9 @@ if ($missing > 0) {
     exit(2);
 }
 
-// The tiles share their edges: a name on a seam would come twice.
+// The tiles share their edges: a name on a seam would come twice. Each
+// line is remembered by its 16-byte digest, not as itself — Germany's
+// lines as keys outgrew PHP's 128 MB on the first whole run (27.11.2026).
 $day = date('Y-m-d');
 $out = gzopen("$folder/ortslagen-$day.tsv.gz", 'wb9');
 gzwrite($out, "# YASAIMAPP Ortslagen $day\n");
@@ -72,10 +74,11 @@ $count = 0;
 foreach ($tiles as [$south, $west]) {
     foreach (json_decode((string) file_get_contents(sprintf('%s/tile-%d-%d.json', $folder, $south, $west)), true) as $r) {
         $line = sprintf("%s\t%s\t%.5f\t%.5f", $r['kind'], str_replace(["\t", "\n", "\r"], ' ', $r['name']), $r['lat'], $r['lon']);
-        if (isset($seen[$line])) {
+        $key = md5($line, true);
+        if (isset($seen[$key])) {
             continue;
         }
-        $seen[$line] = true;
+        $seen[$key] = true;
         gzwrite($out, $line . "\n");
         $count++;
     }
