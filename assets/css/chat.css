@@ -389,7 +389,7 @@ button.chat-author:hover { color: var(--text); text-decoration: underline; }
 }
 /* The fold button only where the window floats. */
 .chat-head-buttons { display: flex; gap: .25rem; }
-#chat-minimize { display: none; }
+.chat-minimize { display: none; }
 @media (min-width: 861px) {
-    .chat-window.is-floating #chat-minimize { display: inline-flex; }
+    .chat-window.is-floating .chat-minimize { display: inline-flex; }
 }

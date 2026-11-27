@@ -24,15 +24,22 @@ function chat_window(): void
          stays at the bottom edge where the thumb is, and only the messages
          move underneath it. Hence the flex column with a fixed footer, and
          hence NO second scroll area inside it (trap 4 in CLAUDE.md). */ ?>
+    <?php /* SEVERAL AT ONCE AT THE DESK (27.11.2026: „Mehrfachchats
+         erlauben … mehrere Chatfenster mit verschiedenen Personen offen
+         halten"). This dialog is the first window and the pattern of every
+         further one: chat.js copies it per conversation and drops the ids
+         from the copy, so everything in it is found by its CLASS. The
+         ids stay on this one for whatever only asks whether a chat window
+         exists at all (headerchat.js). */ ?>
     <dialog class="chat-window" id="chat-window">
         <div class="chat-head">
-            <h2 id="chat-heading"><?= h(t('Chat')) ?></h2>
+            <h2 class="chat-title" id="chat-heading"><?= h(t('Chat')) ?></h2>
             <span class="chat-head-buttons">
                 <?php /* Fold to the head — only where the window floats (desktop),
                      see the end of chat.css. */ ?>
-                <button type="button" class="symbol-button" id="chat-minimize"
+                <button type="button" class="symbol-button chat-minimize" id="chat-minimize"
                         title="<?= h(t('Zuklappen')) ?>" aria-label="<?= h(t('Chat zuklappen')) ?>" aria-expanded="true"><?= icon('minus') ?></button>
-                <button type="button" class="symbol-button" id="chat-close"
+                <button type="button" class="symbol-button chat-close" id="chat-close"
                         title="<?= h(t('Schließen')) ?>" aria-label="<?= h(t('Chat schließen')) ?>"><?= icon('close') ?></button>
             </span>
         </div>
