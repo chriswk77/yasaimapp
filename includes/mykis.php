@@ -45,12 +45,15 @@
  *     (mykis_hosts.php says how, and why the lists live on the server
  *     only). Until then the whole field stood in Wirt, „Laubschicht"
  *     included, as the first coordinator had allowed.
- *   - THE ACCOMPANYING VEGETATION GOES TO beobachtung_bemerkungen, labelled
- *     „Begleitvegetation: …" (26.11.2026, a second coordinator: better
- *     there). It stood behind the substrate in Wirt until then, as the
- *     first coordinator had allowed — but the plants around are an
- *     observation about the site, not what the fungus grew on, and in Wirt
- *     a reader had to cut the two apart again.
+ *   - THE ACCOMPANYING VEGETATION GOES TO substrat_text, labelled
+ *     „Begleitvegetation: …", behind whatever of the substrate stayed
+ *     free text (27.11.2026, a third coordinator). MykIS' mask calls that
+ *     line „Bemerkung zur Ökologie", and it belongs to the ONE find.
+ *     beobachtung_bemerkungen, where it stood for a day on a second
+ *     coordinator's advice, belongs to the whole Fundprotokoll — every
+ *     find of the same day and place — and so would have put one find's
+ *     plants on all of them. Before that it stood behind the substrate in
+ *     Wirt, where a reader had to cut the two apart again.
  *   - THE ORTSLAGE IS THE NEAREST FIELD NAME, hamlet, wood or peak from
  *     OpenStreetMap within a kilometre (27.11.2026, place_names.php) —
  *     and only for finders at the 64th quadrant or exact, because finer
@@ -784,12 +787,13 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
     // another here, under their label (the column takes any remark).
     $vegetation = implode(', ', array_filter(array_map('trim', preg_split('/\R/u', $field('Begleitvegetation')) ?: [])));
     $substrate = mykis_substrate($field('Substrat / Wirt'));
+    $ecology = implode('; ', array_filter([$substrate['substrat_text'],
+        $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : ''], 'strlen'));
 
     $values = [
         'BASIS_datum1'   => $date,
         'datum2'         => $date,
         'erfasser'       => $holder,
-        'beobachtung_bemerkungen' => $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : '',
         'BASIS_ort'      => trim((string) ($p['municipality'] ?? '')),
         'BASIS_ortslage' => mykis_place_name($p, $level),
         'name_staat'     => 'Deutschland',
@@ -814,7 +818,7 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
         'bestimmer'      => mykis_person($field('Bestimmer')) ?: (mykis_person($field('Finder')) ?: $holder),
         'Wirt'           => $substrate['wirt'],
         'organ_substrat' => $substrate['organ_substrat'],
-        'substrat_text'  => $substrate['substrat_text'],
+        'substrat_text'  => $ecology,
         // „ex cultura, bestimmt am …" — empty for a find from the field.
         'art_bemerkung'  => collection_note($p),
         'beleg_nr'       => $voucher !== '' ? $voucher : $number,

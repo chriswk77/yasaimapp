@@ -472,7 +472,7 @@ echo "\nThe MykIS sheet\n";
     $ownRow = mykis_row(['extra' => (object) ['Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'Schröder, Sebastian', 'q4');
     check($at($ownRow, 'sammler') === 'Schröder, Sebastian' && $at($ownRow, 'bestimmer') === 'Schröder, Sebastian',
         'with no finder either, finder and determiner are the holder');
-    check($at($r, 'Wirt') === 'Fagus sylvatica' && $at($r, 'organ_substrat') === '' && $at($r, 'substrat_text') === '',
+    check($at($r, 'Wirt') === 'Fagus sylvatica' && $at($r, 'organ_substrat') === '',
         'a host of MykIS\' list goes to Wirt alone — ' . $at($r, 'Wirt'));
     $placed = static fn(string $v): array => array_values(mykis_substrate($v));
     check($placed('Laubstreu') === ['', 'Laubstreu', ''], 'a word of the substrate list goes to organ_substrat');
@@ -516,8 +516,13 @@ echo "\nThe MykIS sheet\n";
     check(mykis_lists_store('{"hosts": [["Fagus sylvatica"]], "organ": ["Laubstreu"]}') === null
         && mykis_lists_store('kein JSON') === null && is_file($path) === $hadFile,
         'a file that is not the lists is refused and nothing written');
-    check($at($r, 'beobachtung_bemerkungen') === 'Begleitvegetation: Quercus robur, Carpinus betulus',
-        'the plants around go, labelled, to beobachtung_bemerkungen — ' . $at($r, 'beobachtung_bemerkungen'));
+    check($at($r, 'substrat_text') === 'Begleitvegetation: Quercus robur, Carpinus betulus'
+        && $at($r, 'beobachtung_bemerkungen') === '',
+        'the plants around go, labelled, to substrat_text — the one find\'s, not the whole protocol\'s — ' . $at($r, 'substrat_text'));
+    $mixed = mykis_row(['extra' => (object) ['Substrat / Wirt' => 'Kiefer totholz', 'Begleitvegetation' => 'Quercus robur',
+                                             'Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'X', 'q4');
+    check($at($mixed, 'substrat_text') === 'Kiefer totholz; Begleitvegetation: Quercus robur',
+        'free substrate text first, the plants behind it — ' . $at($mixed, 'substrat_text'));
     check($at($r, 'BASIS_ortslage') === '' && !str_contains($csv, 'Wetterau'), 'no Ortslage — the tour name stays home');
     check([$at($r, 'geobgrad1'), $at($r, 'geobminute1'), $at($r, 'geobsekunde1')] === ['50', '7', '24,4']
         && [$at($r, 'geolgrad1'), $at($r, 'geolminute1'), $at($r, 'geolsekunde1')] === ['8', '39', '15,6'],
