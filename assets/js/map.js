@@ -8057,8 +8057,8 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
         const box = bubble.getBoundingClientRect();
         flyout.style.top = `${Math.round(box.bottom + 6)}px`;
         const width = flyout.offsetWidth;
-        const left = Math.min(box.left, window.innerWidth - width - 8);
-        flyout.style.left = `${Math.round(Math.max(8, left))}px`;
+        const left = Math.round(Math.max(8, Math.min(box.left, window.innerWidth - width - 8)));
+        flyout.style.left = `${left}px`;
     }
 
     function toggleFlyout(bubble) {
@@ -8067,7 +8067,9 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
         if (opening) drawRows();
         flyout.hidden = !opening;
         if (opening) placeFlyout(bubble);
-        for (const b of bubbles) b.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        // Only the bubble that opened the list stands pressed — it is the
+        // one the list hangs under.
+        for (const b of bubbles) b.setAttribute('aria-expanded', opening && b === bubble ? 'true' : 'false');
     }
 
     for (const b of bubbles) {

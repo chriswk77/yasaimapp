@@ -7325,6 +7325,28 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
 }
 .chat-entry.has-unread:hover { background: var(--accent-light); color: var(--accent-text-hover); }
 
+/* THE BUBBLE STAYS PRESSED WHILE ITS LIST IS OPEN (27.11.2026: „es gibt
+   keinen Zusammenhang zwischen dem aufgeklappten Menü und der Sprechblase
+   … auf die ich geklickt habe"). The same statement as the area button
+   one stands on (.app-tab.is-active), a stronger surface of the text
+   colour, plus what a chosen row says everywhere: a hairline of the
+   accent, damped to 55 per cent. Mixed into --ground-2 and not into
+   transparent, so it holds over the map too, where the floating bubble
+   stands on tiles. It covers the green as well — the list that hangs
+   below now carries the dots, and the green comes back when it closes.
+   Three classes deep and with :hover, because map.css comes later and
+   takes the hover surface back to --ground-3, which on the bar is the
+   bar itself.
+   A TIP ON THE LIST POINTING AT THE BUBBLE was tried the same day and
+   went: on the map the list hangs so close that the tip lay inside the
+   bar, ground on the same ground — measured rgb(7,28,26) on both. */
+.symbol-button.chat-entry[aria-expanded="true"],
+.symbol-button.chat-entry[aria-expanded="true"]:hover {
+    background: color-mix(in srgb, var(--text) 20%, var(--ground-2));
+    color: var(--text);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
 /* The flyout under the bubbles: one row per friend. Fixed, and placed by
    map.js under whichever bubble opened it (13.09.2026 — the corner it
    was pinned to here was the window's, and the floating bubble stands
@@ -7346,7 +7368,6 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
     border-radius: var(--radius);
     box-shadow: 0 6px 24px rgba(0, 0, 0, .35);
 }
-
 .chat-flyout-row {
     position: relative;
     display: flex;
