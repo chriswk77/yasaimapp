@@ -83,8 +83,8 @@ function app_tools(): array
  * THE CHAT BUBBLE IN THE HEADER of the pages with the app's buttons —
  * Fundbrowser, Bestimmung, Verwaltung (10.10.2026, after it
  * moved into the map's bar: „ja, bau ihn dort auch ein"). The same list
- * as on the map, „Chat mit …" per friend, the green dot where somebody
- * wrote. ON THE DESKTOP THE WINDOW OPENS RIGHT HERE (14.10.2026): the page
+ * as on the map — the friends' names, the green dot where somebody wrote,
+ * only those while somebody did (assets/js/chatflyout.js says why). ON THE DESKTOP THE WINDOW OPENS RIGHT HERE (14.10.2026): the page
  * carries the chat window too (chat_window(), printed by page_footer once
  * this bubble stood), and headerchat.js opens it floating. On the phone
  * each row stays a link to the map, which opens the conversation from its
@@ -109,14 +109,19 @@ function header_chat(PDO $pdo, int $me): void
     $rows = '';
     foreach ($friends as $f) {
         $id = (int) $f['user_id'];
+        /* WRITTEN AND WAITING APART, as on the map (27.11.2026): green only
+           where somebody wrote, grey where only status lines wait — the
+           flyout narrows to the green ones, so a grey one must not pass
+           for one. Before, any unread line made the row and the bubble
+           green here and only here. */
+        $written = ($unread[$id]['personal'] ?? 0) > 0;
         $waiting = ($unread[$id]['unread'] ?? 0) > 0;
-        $any = $any || $waiting;
+        $any = $any || $written;
         $name = (string) $f['display_name'];
-        $rows .= '<a class="chat-flyout-row' . ($waiting ? ' has-unread' : '') . '"'
+        $rows .= '<a class="chat-flyout-row' . ($written ? ' has-unread' : ($waiting ? ' has-status' : '')) . '"'
             . ' href="' . h(url() . '?window=friend-chat&friend=' . $id) . '"'
-            . ' data-friend="' . $id . '" data-name="' . h($name) . '"'
-            . ' title="' . h($waiting ? t('Chat mit %s — Neues da', $name) : t('Chat mit %s', $name)) . '">'
-            . icon('speech-bubble') . h(t('Chat mit %s', $name)) . '</a>';
+            . ' data-friend="' . $id . '" data-name="' . h($name) . '">'
+            . h($name) . '</a>';
     }
     // The window comes along with the bubble (page_footer prints it).
     $GLOBALS['chat_window_wanted'] = true;
@@ -126,8 +131,29 @@ function header_chat(PDO $pdo, int $me): void
         . ' aria-expanded="false" aria-controls="header-chat-list"'
         . ' title="' . h(t('Chats mit Freunden')) . '" aria-label="' . h(t('Chats mit Freunden')) . '">'
         . icon('speech-bubble') . '</button>'
-        . '<div class="chat-flyout" id="header-chat-list" hidden>' . $rows . '</div>'
+        . '<div class="chat-flyout" id="header-chat-list" hidden>' . chat_flyout_parts($rows) . '</div>'
         . '</div>';
+}
+
+/**
+ * THE INSIDE OF THE CHAT FLYOUT, for the map's bubble and the header's
+ * alike: the search field, the rows, the line for a search that finds
+ * nobody and „+ Chat beginnen". All of it rendered here and hidden;
+ * assets/js/chatflyout.js decides at each opening what stands in sight.
+ * Rendered rather than built in the browser, because the header's pages
+ * draw their icons on the server.
+ */
+function chat_flyout_parts(string $rows = ''): string
+{
+    // The field in a box of its own: clearable.js wraps it with its cross,
+    // and the hidden attribute must sit on what stands in the list.
+    return '<div class="chat-flyout-find" hidden>'
+        . '<input type="search" class="chat-flyout-search" autocomplete="off" spellcheck="false"'
+        . ' placeholder="' . h(t('Name suchen')) . '" aria-label="' . h(t('Name suchen')) . '"></div>'
+        . '<div class="chat-flyout-list">' . $rows . '</div>'
+        . '<p class="chat-flyout-none" hidden>' . h(t('Niemand gefunden.')) . '</p>'
+        . '<button type="button" class="chat-flyout-row chat-flyout-more" hidden>'
+        . icon('plus') . h(t('Chat beginnen')) . '</button>';
 }
 
 function page_header(string $title, array $options = []): void

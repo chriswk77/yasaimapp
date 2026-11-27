@@ -7338,7 +7338,7 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    min-width: 12rem;
+    min-width: 14rem;
     max-width: 80vw;
     padding: .25rem;
     background: var(--ground-2);
@@ -7363,6 +7363,29 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
 }
 .chat-flyout-row:hover,
 .chat-flyout-row:focus-visible { background: var(--ground-3); }
+
+/* THE ROWS SCROLL, THE FLYOUT DOES NOT (27.11.2026): with many friends the
+   names run long, and the search field above and „+ Chat beginnen" below
+   must stay where they are. The flyout itself never scrolls — one scroll
+   area, not two. */
+.chat-flyout-list {
+    display: flex;
+    flex-direction: column;
+    max-height: min(60vh, 26rem);
+    overflow-y: auto;
+}
+.chat-flyout-find { margin: .1rem .1rem .3rem; }
+.chat-flyout-search { width: 100%; }
+.chat-flyout-none {
+    margin: 0;
+    padding: .45rem .6rem;
+    color: var(--text-quiet);
+}
+/* „+ Chat beginnen" under the conversations that wait: a step away from
+   them, in the quiet colour — it is the way on, not one of the names. */
+.chat-flyout-more { margin-top: .2rem; color: var(--text-quiet); }
+.chat-flyout-more:hover,
+.chat-flyout-more:focus-visible { color: var(--text); }
 
 /* The green dot on a row where the other side has written — the same
    statement as on the bubble, at the row's right edge where it does not

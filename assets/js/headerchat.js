@@ -11,6 +11,8 @@
  * header carries no bubble it does nothing.
  */
 
+import { arrangeChatFlyout } from './chatflyout.js';
+
 const bubble = document.getElementById('header-chat');
 const list = document.getElementById('header-chat-list');
 
@@ -21,6 +23,8 @@ if (bubble && list) {
     };
     bubble.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Only who wrote, or everybody — decided anew at each opening.
+        if (list.hidden) arrangeChatFlyout(list);
         list.hidden = !list.hidden;
         bubble.setAttribute('aria-expanded', String(!list.hidden));
     });

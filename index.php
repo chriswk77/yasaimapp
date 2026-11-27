@@ -983,13 +983,12 @@ function clear_button(string $id, string $label): string
                 <?= icon('speech-bubble') ?>
             </button>
 
-            <?php /* The flyout both bubbles open: one row per friend, "Chat
-                 mit …", the green dot on the rows where the other side
-                 has written (22.08.2026 — all friends listed,
-                 so a NEW conversation can start from here too; there is
-                 no other door on the map). Fixed at the top left, below
-                 either bubble — both stand in that corner. */ ?>
-            <div class="chat-flyout" id="friend-chat-flyout" hidden></div>
+            <?php /* The flyout the bubbles open: one row per friend, the
+                 green dot on the rows where the other side has written,
+                 only those while somebody did, and „+ Chat beginnen" for
+                 the rest (assets/js/chatflyout.js). map.js fills the rows
+                 and places the list under whichever bubble opened it. */ ?>
+            <div class="chat-flyout" id="friend-chat-flyout" hidden><?= chat_flyout_parts() ?></div>
         <?php endif; ?>
 
         <div class="map-tools">

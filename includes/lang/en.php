@@ -922,6 +922,8 @@ return [
         => 'Trees, shrubs, herbs and ferns of Germany — with German names for 95 % of the species.',
     'Chat'
         => 'Chat',
+    'Chat beginnen'
+        => 'Start a chat',
     'Chat mit %s'
         => 'Chat with %s',
     'Chat mit %s — Neues da'
@@ -3471,6 +3473,10 @@ return [
         => 'Name or e-mail address',
     'Name und E-Mail-Adresse'
         => 'Name and e-mail address',
+    'Name suchen'
+        => 'Search name',
+    'Niemand gefunden.'
+        => 'Nobody found.',
     'Klicke auf der Karte ein Bundesland an, dann wird es geladen. Klickst du es noch einmal an, ist es wieder vom Gerät gelöscht.'
         => 'Click a state on the map to load it. Click it again and it is removed from the device.',
     '%s ließ sich nicht laden: %s'

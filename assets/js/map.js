@@ -30,6 +30,7 @@ import * as galleryOriginals from './galleryoriginals.js';
 import * as formState from './formstate.js';
 import { recognizeCoordinates } from './coordinates.js';
 import { icon, iconHtml } from './icons.js';
+import { arrangeChatFlyout } from './chatflyout.js';
 import { shapeGeometry, shapePoint } from './shapes.js';
 import { personName } from './names.js';
 import * as chat from './chat.js';
@@ -7993,10 +7994,11 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
 // TWO BUBBLES, ONE MEANING. One sits in the sidebar's corner, one floats
 // next to the ☰ while the sidebar is collapsed — whichever is visible,
 // both carry the same green dot and open the same flyout: one row per
-// friend, "Chat mit …", the rows with something new marked. ALL friends
-// stand in it, not only the conversations that already exist — the list
-// is the one door on the map through which a NEW conversation can start
-// (22.08.2026).
+// friend, the rows with something new marked. ALL friends stand in it,
+// not only the conversations that already exist — the list is the one
+// door on the map through which a NEW conversation can start
+// (22.08.2026). While somebody wrote, the list shows only those first,
+// with „+ Chat beginnen" for the rest (chatflyout.js says why).
 //
 // The section only wires what the page rendered: without friends there
 // are no bubbles, and everything here stays quiet.
@@ -8012,25 +8014,30 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
     if (bubbles.length === 0 || !flyout) return;
 
     const friends = start.friends ?? [];
+    const rowList = flyout.querySelector('.chat-flyout-list');
+    // The bubble the list hangs under — it is placed again whenever its
+    // shape changes (the full list after „+ Chat beginnen" is wider).
+    let openedBy = bubbles[0];
 
-    function drawRows() {
-        flyout.replaceChildren(...friends.map((f) => {
+    function drawRows(keep = false) {
+        rowList.replaceChildren(...friends.map((f) => {
             const rowButton = document.createElement('button');
             rowButton.type = 'button';
             rowButton.className = 'chat-flyout-row';
+            rowButton.dataset.name = f.name;
             const waiting = chat.friendUnreadFor(f.id) > 0;
             // The row says which kind is waiting, as the sidebar's bubble does.
             const written = chat.friendPersonalFor(f.id) > 0;
             rowButton.classList.toggle('has-unread', written);
             rowButton.classList.toggle('has-status', waiting && !written);
-            rowButton.title = waiting ? t('Chat mit %s — Neues da', f.name) : t('Chat mit %s', f.name);
-            rowButton.append(icon('speech-bubble'), document.createTextNode(t('Chat mit %s', f.name)));
+            rowButton.textContent = f.name;
             rowButton.addEventListener('click', () => {
                 closeFlyout();
                 chat.openFriendChat(f, start.user?.id);
             });
             return rowButton;
         }));
+        arrangeChatFlyout(flyout, { keep, onChange: () => { if (!flyout.hidden) placeFlyout(openedBy); } });
     }
 
     function closeFlyout() {
@@ -8056,6 +8063,7 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
 
     function toggleFlyout(bubble) {
         const opening = flyout.hidden;
+        openedBy = bubble;
         if (opening) drawRows();
         flyout.hidden = !opening;
         if (opening) placeFlyout(bubble);
@@ -8087,7 +8095,7 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
     chat.onUnreadChange(() => {
         const any = chat.friendUnreadAny();
         for (const b of bubbles) b.classList.toggle('has-unread', any);
-        if (!flyout.hidden) drawRows();
+        if (!flyout.hidden) drawRows(true);
     });
     const any = chat.friendUnreadAny();
     for (const b of bubbles) b.classList.toggle('has-unread', any);
