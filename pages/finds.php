@@ -307,6 +307,9 @@ page_header(t('Fundbrowser'), [
             <div class="finds-map" id="finds-map"
                  data-leaflet-js="<?= h(asset_url('assets/vendor/leaflet/leaflet.js')) ?>"
                  data-leaflet-css="<?= h(asset_url('assets/vendor/leaflet/leaflet.css')) ?>">
+                <?php /* The head the closed map wears on the phone (findmap.js,
+                     is-closed), like Richtung and Fläche above it. */ ?>
+                <span class="finds-map-head"><?= h(t('Position')) ?></span>
                 <div class="finds-map-canvas" id="finds-map-canvas"></div>
                 <div class="finds-map-bar">
                     <button type="button" class="button subtle small" data-map-action="place" hidden><?= icon('place') ?><?= h(t('Position setzen')) ?></button>

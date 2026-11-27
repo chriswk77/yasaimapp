@@ -56,6 +56,40 @@ export function mountFindMap(box, host) {
     let placing = false;       // „Position setzen": the next click sets the point
     let sketch = null;         // { corners, done, shape, band, dots } while an outline is drawn
 
+    /* ON THE PHONE THE MAP WAITS TO BE ASKED FOR (27.11.2026: „Wir können
+       im Prinzip auch die Karte erstmal ausblenden, brauchen sie gar nicht
+       laden und einen Button Position setzen machen … nur, wenn wir bewusst
+       die Position setzen wollen"). There it stood over everything in the
+       tab, and direction and outline — used more often — below it; and a
+       map costs data in the woods. Closed it is the bar alone,
+       „Position setzen", not loaded; that button or „Umriss ziehen" opens
+       it, and another find closes it again. At the desk it stands beside
+       the panel as before: there it costs no room. */
+    const phone = matchMedia('(max-width: 860px)');
+    let opened = false;
+    const closed = () => phone.matches && !opened;
+    function closedSync() {
+        box.classList.toggle('is-closed', closed());
+        if (!closed()) {
+            box.hidden = false;
+            return;
+        }
+        placeButton.hidden = !host.read()?.mayMove;
+        fitButton.hidden = true;
+        // Nothing to set and nothing to show: the closed map is not there at all.
+        box.hidden = placeButton.hidden;
+    }
+    /** Open the closed map and wait for it. */
+    async function open() {
+        opened = true;
+        box.hidden = false;
+        closedSync();
+        // Under the panel, often below the screen's edge: brought into sight, where the click goes next.
+        box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        await show();
+        return map !== null;
+    }
+
     function say(text) {
         message.textContent = text;
         message.hidden = text === '';
@@ -112,6 +146,10 @@ export function mountFindMap(box, host) {
      * box every time (a map built or resized in a hidden tab measures 0 × 0).
      */
     async function show() {
+        if (closed()) {
+            closedSync();
+            return;
+        }
         if (!map) {
             if (!window.WebGLRenderingContext) {
                 say(t('Die Karte lässt sich in diesem Browser nicht zeichnen.'));
@@ -140,6 +178,11 @@ export function mountFindMap(box, host) {
         if (area) { map.removeLayer(area); area = null; }
         placeButton.hidden = !here?.mayMove;
         fitButton.hidden = !here;
+        // Closed on the phone (a coordinate typed meanwhile): the bar alone says it.
+        if (closed()) {
+            closedSync();
+            return;
+        }
         if (!here) return;
 
         if (polygon.isUsable(here.outline)) {
@@ -198,7 +241,13 @@ export function mountFindMap(box, host) {
         // The point takes a drag only while this mode is on (redraw says why).
         redraw();
     }
-    placeButton.addEventListener('click', () => placeMode(!placing));
+    placeButton.addEventListener('click', async () => {
+        if (closed()) {
+            if (await open()) placeMode(true);
+            return;
+        }
+        placeMode(!placing);
+    });
     fitButton.addEventListener('click', () => fit());
 
     function onClick(e) {
@@ -220,7 +269,9 @@ export function mountFindMap(box, host) {
      * line follows the pointer and closes back to the first, „Ecke zurück"
      * takes the last one away, „Fertig" hands the corners to done().
      */
-    function beginOutline(done) {
+    async function beginOutline(done) {
+        // On the phone the map may still be closed: „Umriss ziehen" opens it.
+        if (closed() && !(await open())) return;
         if (!map) return;
         placeMode(false);
         endSketch();
@@ -302,6 +353,9 @@ export function mountFindMap(box, host) {
         placeMode(false);
         endSketch();
         fittedFor = null;
+        // The next find starts with the map closed again (phone, see `opened`).
+        opened = false;
+        closedSync();
     }
 
     return { show, redraw, beginOutline, reset };

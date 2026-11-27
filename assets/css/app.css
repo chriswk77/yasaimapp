@@ -6962,6 +6962,11 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 .finds-texts { flex: 1; min-width: 0; min-height: 0; display: flex; gap: 1.6rem; overflow: hidden; }
 .finds-texts .detail {
     position: static;
+    /* NO STACKING OF ITS OWN: the map gives the window z-index 1100 to float
+       over the map, and as a flex item here it kept it — on the phone the
+       Fundpunkt's texts slid OVER the sticky find bar when scrolled
+       (measured 27.11.2026). */
+    z-index: auto;
     flex: 1;
     min-height: 0;
     min-width: 0;
@@ -7182,6 +7187,8 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
     border: 1px solid var(--border);
     border-radius: var(--radius);
 }
+/* Its head only while closed on the phone (below). */
+.finds-map-head { display: none; }
 /* AN ID, NOT THE CLASS: MapLibre's stylesheet, loaded after this one, makes
    every .maplibregl-map position: relative — and a relative box without a
    height of its own is 0 px tall, a map nobody sees. */
@@ -7341,7 +7348,16 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
     .finds-face-tab-words { writing-mode: horizontal-tb; transform: none; }
     .finds-face-side { overflow: visible; }
     .finds-map { flex: none; height: 60vh; margin: 0 0 1rem; }
-    #finds-fund[data-tab="place"] .finds-texts { flex: none; }
+    /* DIRECTION AND OUTLINE ABOVE THE MAP (27.11.2026: „Richtung zeigen
+       und Umriss ziehen soll oberhalb der Karte stehen. Das benutzt man
+       öfters als die Position neu zu setzen"). */
+    #finds-fund[data-tab="place"] .finds-texts { flex: none; order: -1; }
+    /* The map closed (findmap.js, is-closed): only its bar, „Position
+       setzen", in the flow under the panel — no canvas, no frame. */
+    .finds-map.is-closed { height: auto; overflow: visible; background: none; border: 0; }
+    .finds-map.is-closed > :not(.finds-map-head, .finds-map-bar:not(.finds-map-draw)) { display: none !important; }
+    .finds-map.is-closed > .finds-map-head { display: block; margin-bottom: .4rem; font-weight: 600; }
+    .finds-map.is-closed > .finds-map-bar { position: static; padding: 0; background: none; border: 0; }
 }
 
 /* --- The personal chats: the bubble's dot and its flyout ------------------
