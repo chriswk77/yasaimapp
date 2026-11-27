@@ -2765,6 +2765,28 @@ export function mountPhotoWindow(host) {
     photoFrame.addEventListener('pointerup', wbDragEnd, true);
     photoFrame.addEventListener('pointercancel', wbDragEnd, true);
 
+    /* THE READ-ONLY LINE IN THE HEAD SPEAKS OF THE MODE ONE IS IN
+       (27.11.2026: on a foreign find, switched to „Bearbeiten", „bleibt bei
+       mir dieser Text mit dem Messen weiterhin unten stehen. Hier sollte
+       dann ein entsprechender Bearbeitungstext stehen"). Measuring keeps
+       its sentence — one may measure, it is only not kept. Editing says
+       one may not edit; where the sidebar has more to say (one's own edit
+       with +, another's to make valid: photo-develop-readonly), it says it
+       there and the head stays quiet, or the two would contradict. */
+    let measureMayEdit = true;
+    function readonlyNoteSync() {
+        const note = document.getElementById('photo-readonly-note');
+        if (!note) return;
+        if (!developMode) {
+            note.textContent = t('Nur zum Anschauen: Was du hier misst oder als Maßstab wählst, gilt nur in deinem Fenster und wird nicht gespeichert.');
+            note.hidden = measureMayEdit;
+            return;
+        }
+        const sidebarSays = foreign?.role === 'editor' || foreignEdit();
+        note.textContent = t('Nur zum Anschauen: Dieses Bild darfst du nicht bearbeiten.');
+        note.hidden = developMay() || Boolean(sidebarSays);
+    }
+
     function developPanelDraw() {
         // The crop that R opened has ended: back to the tab it came from, which draws the panel itself (cropKey).
         if (cropReturn()) return;
@@ -2775,6 +2797,7 @@ export function mountPhotoWindow(host) {
         // The others' edits of the picture, once per picture (the guard is foreignFetch's own).
         foreignFetch(developOf);
         versionsDraw();
+        readonlyNoteSync();
         if (!developAside || !developMode) return;
         developOriginalFetch();
         const may = developMay();
@@ -11193,7 +11216,8 @@ export function mountPhotoWindow(host) {
         if (vocabStored(titleField.value) !== (subject.title ?? '').trim()) {
             titleField.value = vocab(subject.title);
         }
-        document.getElementById('photo-readonly-note').hidden = mayEdit;
+        measureMayEdit = mayEdit;
+        readonlyNoteSync();
         {
             scaleSelect.textContent = '';
             // 'narration', and NOT a variable called state: the map's whole
