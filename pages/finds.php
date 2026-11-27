@@ -23,6 +23,7 @@ require_once __DIR__ . '/../includes/plate_window.php';
 require_once __DIR__ . '/../includes/point_window.php';
 require_once __DIR__ . '/../includes/gallery_windows.php';
 require_once __DIR__ . '/../includes/figure_window.php';
+require_once __DIR__ . '/../includes/shapes.php';
 
 $me = login_required();
 require_once __DIR__ . '/../includes/publication.php';
@@ -395,5 +396,11 @@ page_header(t('Fundbrowser'), [
         'mapLayers' => map_layers_for_js(),
     ] + point_window_start($pdo, $me), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
+<?php /* THE LISTS' MARKER SHAPES (27.11.2026): the point window's list tree
+     draws each list with its symbol (listtree.js → assets/js/shapes.js),
+     and without the stock every symbol came out an empty box — a gap
+     between tick and name, noticed in the tab „Listen" as „der Abstand …
+     recht groß ausgefallen". The map and the administration print it too. */ ?>
+<?= shape_stock() ?>
 <?php
 page_footer(['scripts' => ['assets/js/finds.js']]);

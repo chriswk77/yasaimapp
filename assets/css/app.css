@@ -7015,6 +7015,12 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
     #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) { flex: 0 1 15rem; }
     #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 36rem; min-width: 0; }
     #finds-fund[data-tab="lists"] #d-lists.is-tiled { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
+    /* NO FOLDING ROOM WHERE NOTHING FOLDS (27.11.2026: „bei Listen ohne
+       eigene Mappe oder bei Direktteilen ist das Einrücken da, das da
+       eigentlich keinen Sinn macht"). The empty triangle keeps rows of one
+       tree on one line (listtree.js); a tile without a single heading has
+       no other row to line up with. */
+    #finds-fund[data-tab="lists"] .list-selection-tile:not(:has(.is-heading)) .list-selection-arrow { display: none; }
     /* As wide as their longest name, from 12rem — „Waldbrände · von Ben" must not end in „…". */
     #finds-fund[data-tab="lists"] #d-lists .list-selection-tile { flex: 0 0 auto; min-width: 12rem; max-width: 24rem; }
 }
