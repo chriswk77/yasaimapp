@@ -101,6 +101,11 @@ const friendUnread = new Map();    // friend userId -> count
    only a quiet dot at their own place. */
 const unreadPersonal = new Map();
 const friendPersonal = new Map();
+/* THE FRIENDS A CONVERSATION EXISTS WITH (27.11.2026) — the chat list
+   draws a bubble with lines for them and an empty one for the rest. From
+   the start data, and it only grows: a line that arrives or one sent here
+   starts a conversation for good. */
+const friendStarted = new Set();
 
 /* THE OPEN FRIEND REQUESTS, kept here for the same reason as the counts
    above: they arrive in the very same poll (api/v1/chat.php), and
@@ -176,6 +181,11 @@ export function friendPersonalFor(friendId) {
     return friendPersonal.get(friendId) ?? 0;
 }
 
+/** Has anything been said with this friend yet? */
+export function friendStartedWith(friendId) {
+    return friendStarted.has(friendId) || (friendUnread.get(friendId) ?? 0) > 0;
+}
+
 export function friendUnreadFor(friendId) {
     return friendUnread.get(friendId) ?? 0;
 }
@@ -202,6 +212,7 @@ export function adoptFriends(friends) {
     for (const f of friends ?? []) {
         friendUnread.set(f.id, f.chat?.unread ?? 0);
         friendPersonal.set(f.id, f.chat?.personal ?? f.chat?.unread ?? 0);
+        if (f.chat?.started) friendStarted.add(f.id);
     }
     tellBadges();
 }
@@ -491,6 +502,21 @@ document.addEventListener('visibilitychange', () => {
 });
 let openArgs = [];
 
+/* THE HEADING IN TWO LENGTHS: the full one for the open window, the bare
+   name for the folded one, which shrinks to a small rectangle (chat.css,
+   27.11.2026). Both stand in the heading and the stylesheet shows one —
+   a sentence like „Chat mit %s" cannot be cut apart for the translation. */
+function setHeading(full, short) {
+    const a = document.createElement('span');
+    a.className = 'chat-title-full';
+    a.textContent = full;
+    const b = document.createElement('span');
+    b.className = 'chat-title-short';
+    b.textContent = short;
+    headEl.replaceChildren(a, b);
+    headEl.title = '';
+}
+
 /**
  * Open the chat of a container.
  *
@@ -504,7 +530,7 @@ export function openChat(container, me, restoring = false) {
     highest = 0;
 
     peopleEl.hidden = false;
-    headEl.textContent = container.name;
+    setHeading(container.name, container.name);
 
     /* THE COMPANY IS THIS CONTAINER'S, not the whole sidebar's. Here the
        names of THESE members have to be told apart — a second Finn in some
@@ -572,7 +598,7 @@ export function openFriendChat(friend, me, restoring = false) {
 
     peopleEl.hidden = true;
     peopleEl.open = false;
-    headEl.textContent = t('Chat mit %s', friend.name);
+    setHeading(t('Chat mit %s', friend.name), friend.name);
     membersEl.replaceChildren();
 
     const company = [friend.name];
@@ -766,6 +792,10 @@ formEl.addEventListener('submit', async (e) => {
     try {
         saveFloatDraftCleared();
         const answer = await api.post('chat', { ...room, text });
+        if (room.friend && !friendStarted.has(room.friend)) {
+            friendStarted.add(room.friend);
+            tellBadges();
+        }
         if (sameRoom(openFor, room) && answer?.message) {
             listEl.append(row(answer.message, ...openArgs));
             highest = Math.max(highest, answer.message.id);

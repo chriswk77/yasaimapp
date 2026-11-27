@@ -367,12 +367,14 @@ require_once __DIR__ . '/includes/friends.php';
 $startData['friends'] = [];
 if (!$guest && friends_ready($pdo)) {
     $friendUnread = friend_chat_unread($pdo, (int) $me['id']);
+    $friendStarted = friend_chat_started($pdo, (int) $me['id']);
     $overview = friends_overview($pdo, (int) $me['id']);
     foreach ($overview['friends'] as $f) {
         $startData['friends'][] = [
             'id'   => (int) $f['user_id'],
             'name' => $f['display_name'],
-            'chat' => $friendUnread[(int) $f['user_id']] ?? ['unread' => 0, 'latest' => 0],
+            'chat' => ($friendUnread[(int) $f['user_id']] ?? ['unread' => 0, 'latest' => 0])
+                + ['started' => isset($friendStarted[(int) $f['user_id']])],
         ];
     }
     // The answers that arrived while the map was closed — with the

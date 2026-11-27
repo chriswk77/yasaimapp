@@ -541,6 +541,36 @@ function friend_chat_unread(PDO $pdo, int $me): array
 }
 
 /**
+ * The friends I already have a conversation with — any line at all, mine,
+ * theirs or one of the map's own. The chat list marks them with a bubble
+ * that holds lines, the others with an empty one (27.11.2026: „wenn es
+ * schon einen Chat gibt … und bei Leuten, bei denen noch nichts ist, eben
+ * entsprechend einen leeren Chatverlauf"). A status line counts: the
+ * window it opens is not empty, and the empty bubble promises one that is.
+ *
+ * @return array<int, true>  friend's user id => true
+ */
+function friend_chat_started(PDO $pdo, int $me): array
+{
+    if (!friend_chat_ready($pdo)) {
+        return [];
+    }
+    $stmt = $pdo->prepare(
+        'SELECT IF(f.from_user_id = ?, f.to_user_id, f.from_user_id) AS friend_id
+           FROM map_friends f
+          WHERE (f.from_user_id = ? OR f.to_user_id = ?)
+            AND f.status = \'accepted\'
+            AND EXISTS (SELECT 1 FROM map_friend_messages n WHERE n.friendship_id = f.id)'
+    );
+    $stmt->execute([$me, $me, $me]);
+    $out = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_COLUMN) as $id) {
+        $out[(int) $id] = true;
+    }
+    return $out;
+}
+
+/**
  * Take the conversation with the friendship — friendship_remove() calls
  * this INSIDE its own flow, before the row disappears. Guarded, because
  * ending a friendship must work even while 0068 is not applied yet.

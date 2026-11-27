@@ -41,11 +41,26 @@
     align-items: center;
     justify-content: space-between;
     gap: .6rem;
-    padding: .7rem .5rem .7rem 1rem;
+    /* AS TALL AS ITS BUTTONS, AND A LITTLE AIR (27.11.2026: „die
+       Kopfzeile ist riesenhoch. Diese bitte schmaler machen"). It was
+       .7rem above and below a 32 px button — a 55 px bar over a window
+       that wants every line for the conversation. The house rule for a
+       header bar: as tall as a button in it, never the button shrunk. */
+    padding: .25rem .25rem .25rem .9rem;
     background: var(--ground-3);
     border-bottom: 1px solid var(--border);
 }
-.chat-head h2 { margin: 0; font-size: 1rem; }
+.chat-head h2 {
+    margin: 0;
+    min-width: 0;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* Two titles, one shown: the full one („Chat mit Ben") on the open window,
+   the bare name on the folded one (chat.js writes both). */
+.chat-title-short { display: none; }
 
 /* THE ONLY SCROLL AREA IN THIS WINDOW — trap 4. The dialog itself does not
    scroll (overflow:hidden above), the writing line stays put, and only the
@@ -340,13 +355,24 @@ button.chat-author:hover { color: var(--text); text-decoration: underline; }
     .chat-window.is-floating .chat-head { cursor: move; user-select: none; }
     .chat-window.is-floating .chat-head button { cursor: pointer; }
 
-    /* FOLDED: only the head stays, at the window's width, and no grip —
-       a head cannot be made taller. */
+    /* FOLDED: only the head stays, and no grip — a head cannot be made
+       taller. AND NO WIDER THAN IT NEEDS (27.11.2026: „nicht einfach nur
+       in der Höhe zusammenklappen, sondern auch … die Breite, soweit es
+       geht"): the bare name instead of „Chat mit …", the buttons right
+       after it, the window as wide as that — a small rectangle. It shrinks
+       toward the edge it is anchored to: the right one where it never
+       moved, the left one once it was dragged (chat.js sets either). */
     .chat-window.is-floating.is-minimized[open] {
+        width: auto;
+        min-width: 0;
+        max-width: min(20rem, calc(100vw - 1rem));
         height: auto;
         min-height: 0;
         resize: none;
     }
+    .chat-window.is-floating.is-minimized .chat-head { justify-content: flex-start; padding-left: .7rem; }
+    .chat-window.is-floating.is-minimized .chat-title-full { display: none; }
+    .chat-window.is-floating.is-minimized .chat-title-short { display: inline; }
     .chat-window.is-floating.is-minimized .chat-body { display: none; }
     .chat-window.is-floating.is-minimized .chat-head { border-bottom: 0; }
     /* Something new arrived while folded: the head says so in the accent. */

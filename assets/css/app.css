@@ -7385,6 +7385,11 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
 .chat-flyout-row:hover,
 .chat-flyout-row:focus-visible { background: var(--ground-3); }
 
+/* The symbol before the name: lines where a conversation exists, an empty
+   bubble in the quiet colour where nothing was said yet. */
+.chat-flyout-symbol { flex: none; color: var(--text-quiet); }
+.chat-flyout-symbol.is-empty { opacity: .6; }
+
 /* THE ROWS SCROLL, THE FLYOUT DOES NOT (27.11.2026): with many friends the
    names run long, and the search field above and „+ Chat beginnen" below
    must stay where they are. The flyout itself never scrolls — one scroll

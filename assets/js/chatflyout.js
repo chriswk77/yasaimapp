@@ -26,10 +26,26 @@
  * THE ROWS SAY ONLY THE NAME. They used to read „Chat mit Anna",
  * „Chat mit Ben" … — the bubble that opened the list already said what a
  * row does, and the same two words in front of every name made the names
- * the hardest thing to read.
+ * the hardest thing to read. The symbol in front says something else: a
+ * bubble with lines where a conversation exists, an empty one where
+ * nothing was said yet.
  */
 
+import { icon } from './icons.js';
+
 const SEARCH_FROM = 7;
+
+/**
+ * The symbol before a name: a bubble holding lines where a conversation
+ * exists, an empty, quieter one where nothing was said yet
+ * (27.11.2026). The same two as chat_flyout_symbol() in page.php.
+ */
+export function chatFlyoutSymbol(started) {
+    const el = icon(started ? 'speech-bubble-text' : 'speech-bubble');
+    el.classList.add('chat-flyout-symbol');
+    el.classList.toggle('is-empty', !started);
+    return el;
+}
 
 const bound = new WeakSet();
 const changed = new WeakMap();

@@ -30,7 +30,7 @@ import * as galleryOriginals from './galleryoriginals.js';
 import * as formState from './formstate.js';
 import { recognizeCoordinates } from './coordinates.js';
 import { icon, iconHtml } from './icons.js';
-import { arrangeChatFlyout } from './chatflyout.js';
+import { arrangeChatFlyout, chatFlyoutSymbol } from './chatflyout.js';
 import { shapeGeometry, shapePoint } from './shapes.js';
 import { personName } from './names.js';
 import * as chat from './chat.js';
@@ -8030,7 +8030,7 @@ setSidebar(sidebarStored === null ? (GUEST || isPhone()) : sidebarStored === tru
             const written = chat.friendPersonalFor(f.id) > 0;
             rowButton.classList.toggle('has-unread', written);
             rowButton.classList.toggle('has-status', waiting && !written);
-            rowButton.textContent = f.name;
+            rowButton.append(chatFlyoutSymbol(chat.friendStartedWith(f.id)), document.createTextNode(f.name));
             rowButton.addEventListener('click', () => {
                 closeFlyout();
                 chat.openFriendChat(f, start.user?.id);

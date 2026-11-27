@@ -105,6 +105,7 @@ function header_chat(PDO $pdo, int $me): void
         return;
     }
     $unread = friend_chat_unread($pdo, $me);
+    $started = friend_chat_started($pdo, $me);
     $any = false;
     $rows = '';
     foreach ($friends as $f) {
@@ -121,7 +122,7 @@ function header_chat(PDO $pdo, int $me): void
         $rows .= '<a class="chat-flyout-row' . ($written ? ' has-unread' : ($waiting ? ' has-status' : '')) . '"'
             . ' href="' . h(url() . '?window=friend-chat&friend=' . $id) . '"'
             . ' data-friend="' . $id . '" data-name="' . h($name) . '">'
-            . h($name) . '</a>';
+            . chat_flyout_symbol(isset($started[$id])) . h($name) . '</a>';
     }
     // The window comes along with the bubble (page_footer prints it).
     $GLOBALS['chat_window_wanted'] = true;
@@ -133,6 +134,19 @@ function header_chat(PDO $pdo, int $me): void
         . icon('speech-bubble') . '</button>'
         . '<div class="chat-flyout" id="header-chat-list" hidden>' . chat_flyout_parts($rows) . '</div>'
         . '</div>';
+}
+
+/**
+ * THE SYMBOL BEFORE A NAME in the chat list: a bubble holding lines where
+ * a conversation exists, an empty one where nothing was said yet
+ * (friend_chat_started() says why). map.js draws the same two through
+ * chatFlyoutSymbol() in chatflyout.js.
+ */
+function chat_flyout_symbol(bool $started): string
+{
+    return $started
+        ? icon('speech-bubble-text', ['class' => 'chat-flyout-symbol'])
+        : icon('speech-bubble', ['class' => 'chat-flyout-symbol is-empty']);
 }
 
 /**

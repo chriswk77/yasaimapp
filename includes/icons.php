@@ -552,6 +552,14 @@ function icon_stock_all(): array
         'speech-bubble' => [
             'path' => '<path d="M4.5 5.5h15a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H9.5L5.5 20v-3.5H4.5A1.5 1.5 0 0 1 3 15V7a1.5 1.5 0 0 1 1.5-1.5Z"/>',
         ],
+        /* THE SAME BUBBLE WITH TWO LINES OF TEXT IN IT — „there is a
+           conversation here" in the chat list, beside the empty bubble
+           for a friend one has not written with yet (27.11.2026). Lines,
+           not dots: three dots say „is typing" (see above). */
+        'speech-bubble-text' => [
+            'path' => '<path d="M4.5 5.5h15a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H9.5L5.5 20v-3.5H4.5A1.5 1.5 0 0 1 3 15V7a1.5 1.5 0 0 1 1.5-1.5Z"/>'
+                    . '<path d="M7.5 9.5h9M7.5 12.5h6"/>',
+        ],
 
         // Freunde: two — the second stands cropped behind, otherwise both
         // would be half the size of the single person next door.
