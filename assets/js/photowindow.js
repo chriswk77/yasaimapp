@@ -12335,6 +12335,8 @@ export function mountPhotoWindow(host) {
     /* Whether the person picked the layer himself since the window opened —
        then a picture switch leaves it alone (layerAutoPick). */
     let layerChosen = false;
+    /** The layer last on view per picture scale, for this window's life (layerAutoPick). */
+    const layerByScale = { macro: null, micro: null };
     const statsLabelSelect = document.getElementById('photo-stats-label');
 
     let statsAutoOpened = false;
@@ -12661,6 +12663,10 @@ export function mountPhotoWindow(host) {
         statsLabel = name;
         statsLabelSelect.value = name;
         layerChosen = true;
+        // Remembered for the picture's scale, so a picture of the other scale and back returns to it (layerAutoPick).
+        const scale = pictureScale(measureSubject());
+        // „Frei" picked by hand forgets it: the next picture of this scale stays free.
+        if (scale !== null) layerByScale[scale] = name !== MEASURE_FREE && layerFits(name, scale) ? name : null;
         /* A LAYER OF CUTOUTS ALONE OPENS ON ITS LAST NAME (22.11.2026):
            its statistics have nothing to reckon under „Alles", its tiles
            and the „Umbenennen" stand in a name's tab. Only on arriving, and
@@ -12702,7 +12708,7 @@ export function mountPhotoWindow(host) {
         statsLabelSync();
         layerApply(name);
     });
-    photoWindow.addEventListener('close', () => { layerChosen = false; ownLabelLayers.clear(); });
+    photoWindow.addEventListener('close', () => { layerChosen = false; ownLabelLayers.clear(); layerByScale.macro = layerByScale.micro = null; });
 
     /* THE DESK'S MENUS OF OUR OWN — „Motivname", „Maßstab", „Messung"
        (04.11.2026: „ein eigenes CSS-Dropdown, das sich
@@ -13328,8 +13334,35 @@ export function mountPhotoWindow(host) {
                 statsLabelSelect.value = layers[0];
             }
         }
+        /* A LAYER THAT DOES NOT FIT THE PICTURE GIVES WAY (27.11.2026:
+           „mein Dropdown-Menü … steht auf Basidia. Und ich wechsle … zu
+           einem Makrobild, dann ist die Schnellauswahl weg, aber die Messung
+           an sich Basidia ist noch da … eigentlich kann ich keine Basidien
+           dort messen"). The rule above — a layer picked by hand holds
+           through every picture switch — holds WITHIN a scale: a spore
+           series runs over micro pictures, never onto the cap. Arrived on
+           a picture of the other scale (pictureScale), the chooser goes to
+           the layer last used on that scale in this window, else to one the
+           find already holds there (the first of the quick switches), else
+           to „Frei". And each scale remembers its own: back on a micro
+           picture, Basidien are there again. A picture whose name says no
+           scale keeps whatever stands. */
+        const scale = pictureScale(measureSubject());
+        const fits = (name) => name && name !== MEASURE_FREE && layerFits(name, scale)
+            && [...statsLabelSelect.options].some((o) => o.value === name);
+        if (scale !== null && statsLabel !== MEASURE_FREE && !layerFits(statsLabel, scale)) {
+            const next = [layerByScale[scale], ...pictureLayers(false, true)].find(fits) ?? MEASURE_FREE;
+            statsLabel = next;
+            statsLabelSelect.value = next;
+        } else if (scale !== null && statsLabel === MEASURE_FREE && fits(layerByScale[scale])) {
+            // „Frei" because the last picture was of the other scale: this scale's own layer comes back.
+            statsLabel = layerByScale[scale];
+            statsLabelSelect.value = statsLabel;
+        }
+        if (scale !== null && statsLabel !== MEASURE_FREE) layerByScale[scale] = statsLabel;
         layerArrived = statsLabel;
     }
+
 
     /**
      * THE QUICK SWITCHES behind the chooser — one per layer THE FIND holds
