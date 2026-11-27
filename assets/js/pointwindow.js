@@ -1630,6 +1630,8 @@ export function mountPointWindow(host) {
                 legacy: true,
                 // Every sublist open, not the sidebar's folds (see the option).
                 unfolded: true,
+                // A tile per Mappe where the host lays them side by side (the Fundbrowser, cockpit.js).
+                tilePerFolder: host.listTiles === true,
             });
 
             drawExtraFields(point.extra ?? {});

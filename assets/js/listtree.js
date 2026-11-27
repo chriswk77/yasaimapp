@@ -247,7 +247,7 @@ export function mountListTree(host) {
         return out;
     }
 
-    function drawListSelection(container, { checked, onChange = null, legacy = false, skip = null, joint = false, unfolded = false }) {
+    function drawListSelection(container, { checked, onChange = null, legacy = false, skip = null, joint = false, unfolded = false, tilePerFolder = false }) {
         const children = listChildren();
         // The folded branches: the sidebar's remembered set, or one of this drawing's own.
         const folded = unfolded ? new Set() : state.collapsed;
@@ -268,8 +268,24 @@ export function mountListTree(host) {
             return box;
         };
         container.classList.toggle('is-tiled', joint);
-        const ownTile = joint ? tile() : container;
+        let ownTile = joint ? tile() : container;
         if (joint) container.append(ownTile);
+        /* A TILE PER MAPPE where the caller has the width for them side by
+           side (the Fundbrowser's tab „Listen", 27.11.2026: „alles
+           nebeneinander setzen, in einzelne Kacheln aufteilen"): each Mappe
+           its own tile, the lists outside a Mappe one tile between them.
+           Only the drawing moves — folding goes by the entries' parents,
+           not by where their rows stand. */
+        let tileKind = null;
+        const tileFor = (kind) => {
+            if (!(joint && tilePerFolder)) return;
+            if (kind === 'loose' && tileKind === 'loose') return;
+            if (tileKind !== null) {
+                ownTile = tile();
+                container.append(ownTile);
+            }
+            tileKind = kind;
+        };
 
         /* MY OWN JOINT LISTS ARE SPECIAL LISTS AND STAND IN THE BLOCK BELOW,
            not in my tree (22.09.2026: „Es sind eben Sonderlisten.
@@ -430,7 +446,12 @@ export function mountListTree(host) {
            point lies in a list, never in a Mappe. A Mappe with nothing to
            choose in it is left out — an empty fold here is a dead end. */
         for (const item of topLevel(children)) {
-            if (item.list) { level(null, 0, [item.list]); continue; }
+            if (item.list) {
+                tileFor('loose');
+                level(null, 0, [item.list]);
+                continue;
+            }
+            tileFor('folder');
             const key = 'f' + item.folder.id;
             const row = document.createElement('div');
             row.className = 'list-selection-row is-heading is-folder';
@@ -480,7 +501,8 @@ export function mountListTree(host) {
            as before. */
         // An own tile with nothing in it is a frame around nothing — whoever
         // keeps only joint lists (Ben in the demo data) sees the joint tile alone.
-        if (joint && ownTile.childElementCount === 0) ownTile.remove();
+        // With a tile per Mappe, every one that stayed empty (a Mappe left out, a skipped list).
+        if (joint) for (const t of [...container.children]) if (t.childElementCount === 0) t.remove();
 
         if (joint) {
             const extra = [

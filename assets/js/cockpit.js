@@ -264,6 +264,8 @@ export function mountCockpit(start, host) {
     const windowApi = mountPointWindow({
         GUEST,
         fields,
+        // The tab „Listen" sets the Mappen side by side, one tile each (listtree.js, tilePerFolder).
+        listTiles: true,
         // „Direkt teilen": the start data's hints, as the map has them (point_window_start).
         hintStart: start.hints ?? null,
         map: { getCenter: () => centre, getZoom: () => 17, invalidateSize: nothing },

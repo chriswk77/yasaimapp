@@ -7003,6 +7003,21 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
    to me. */
 #finds-fund[data-tab="place"] #d-panel-place > :is(#d-hint-received, #d-hints-field, #d-lists-field),
 #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-direction-field, #d-polygon-field) { display: none !important; }
+/* AT THE DESK SIDE BY SIDE, A TILE EACH (27.11.2026: „ganz schön
+   platzverschwenderisch, wenn wir das untereinander platzieren … nur links
+   etwas Text und rechts alles Riesenkacheln, die frei sind"): „Direkt
+   teilen" a column of its own, then the lists, a tile per Mappe
+   (listtree.js, tilePerFolder) and the joint lists', flowing in a row and
+   wrapping where the page ends. The phone keeps them under one another. */
+@media (min-width: 861px) {
+    #finds-fund[data-tab="lists"] #d-panel-place { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1.5rem 2rem; }
+    #finds-fund[data-tab="lists"] #d-panel-place > .field { margin: 0; }
+    #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) { flex: 0 1 15rem; }
+    #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 36rem; min-width: 0; }
+    #finds-fund[data-tab="lists"] #d-lists.is-tiled { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
+    /* As wide as their longest name, from 12rem — „Waldbrände · von Ben" must not end in „…". */
+    #finds-fund[data-tab="lists"] #d-lists .list-selection-tile { flex: 0 0 auto; min-width: 12rem; max-width: 24rem; }
+}
 /* The texts in two columns on the page's width — a field never broken
    between them. */
 #finds-fund[data-tab="text"] #d-panel-text { display: block !important; columns: 2 28rem; column-gap: 2.5rem; }
