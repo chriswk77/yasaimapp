@@ -943,19 +943,51 @@ function mykis_coordinators(PDO $pdo): array
 }
 
 /**
- * The coordinator a find goes to — by the state it lies in.
+ * WHERE A SPLIT STATE IS CUT: the first MTB row of its southern part.
  *
- * A SPLIT STATE WAITS. Baden-Württemberg has two coordinators, north and
- * south, and where the line runs is not settled (25.09.2026). A guess
- * would send a find to the wrong one, and „each find once" leaves no
- * second chance — so those finds stay pending until the rule stands here.
+ * BADEN-WÜRTTEMBERG IS CUT BETWEEN ROWS 72 AND 73 (27.11.2026, from the
+ * northern coordinator: she takes the sheets 62xx to 72xx, the south
+ * takes 73xx and below). The row is the sheet number's first two digits
+ * and runs from north to south, so one number says it — around
+ * Stuttgart/Böblingen. A cut by the sheet and not by a drawn line,
+ * because the coordinators share their work by sheets: a find on a
+ * sheet that straddles the line still belongs to ONE of them.
+ */
+const MYKIS_SPLIT_ROWS = ['BAW' => 73];
+
+/** The part of a split state a sheet lies in — 'Nord', 'Süd' or null without a usable sheet. */
+function mykis_split_part(string $region, ?string $sheet): ?string
+{
+    $line = MYKIS_SPLIT_ROWS[$region] ?? null;
+    $sheet = trim((string) $sheet);
+    if ($line === null || !preg_match('/^\d{3,4}$/', $sheet)) {
+        return null;
+    }
+    return intdiv((int) $sheet, 100) >= $line ? 'Süd' : 'Nord';
+}
+
+/**
+ * The coordinator a find goes to — by the state it lies in, and in a
+ * split state by its MTB sheet (MYKIS_SPLIT_ROWS).
+ *
+ * A SPLIT STATE WITHOUT ITS LINE STILL WAITS, and so does a find there
+ * without a sheet: a guess would send it to the wrong one, and „each find
+ * once" leaves no second chance.
  */
 function mykis_coordinator_for(array $coordinators, array $point): ?array
 {
     $region = strtoupper(trim((string) ($point['region'] ?? '')));
     $rows = array_values(array_filter($coordinators,
         static fn(array $c): bool => $c['region'] === $region));
-    return count($rows) === 1 && ($rows[0]['part'] ?? null) === null ? $rows[0] : null;
+    if (count($rows) === 1 && ($rows[0]['part'] ?? null) === null) {
+        return $rows[0];
+    }
+    $part = mykis_split_part($region, isset($point['mtb']) ? (string) $point['mtb'] : null);
+    if ($part === null) {
+        return null;
+    }
+    $rows = array_values(array_filter($rows, static fn(array $c): bool => ($c['part'] ?? null) === $part));
+    return count($rows) === 1 ? $rows[0] : null;
 }
 
 /**

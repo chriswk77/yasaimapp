@@ -176,8 +176,13 @@ function mykis_render(PDO $pdo, ?array $message): void
             $done = $delivered[(int) $c['id']] ?? null; ?>
             <tr>
                 <td><?= h($state) ?>
-                    <?php if ($c['part']): ?>
-                        <br><span class="hint-text small"><?= h(t('Grenze Nord/Süd noch offen — Funde von hier warten.')) ?></span>
+                    <?php if ($c['part']):
+                        $line = MYKIS_SPLIT_ROWS[$c['region']] ?? null; ?>
+                        <br><span class="hint-text small"><?= h($line === null
+                            ? t('Grenze Nord/Süd noch offen — Funde von hier warten.')
+                            : ($c['part'] === 'Süd'
+                                ? t('Messtischblätter ab %dxx', $line)
+                                : t('Messtischblätter bis %dxx', $line - 1))) ?></span>
                     <?php endif; ?>
                 </td>
                 <td><?= h($c['name']) ?><?php if ($c['deputy']): ?><br><span class="hint-text small"><?= h(t('Vertretung: %s', $c['deputy'])) ?></span><?php endif; ?></td>

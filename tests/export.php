@@ -578,8 +578,15 @@ echo "\nThe MykIS sheet\n";
     ];
     check((mykis_coordinator_for($coordinators, ['region' => 'HES'])['id'] ?? null) === 1,
         'a find in Hessen goes to Hessen');
-    check(mykis_coordinator_for($coordinators, ['region' => 'BAW']) === null,
-        'a find in a split state waits — the line between north and south is not settled');
+    check((mykis_coordinator_for($coordinators, ['region' => 'BAW', 'mtb' => '7220'])['id'] ?? null) === 3
+        && (mykis_coordinator_for($coordinators, ['region' => 'BAW', 'mtb' => '6223'])['id'] ?? null) === 3,
+        'Baden-Württemberg up to row 72 goes north');
+    check((mykis_coordinator_for($coordinators, ['region' => 'BAW', 'mtb' => '7320'])['id'] ?? null) === 2
+        && (mykis_coordinator_for($coordinators, ['region' => 'BAW', 'mtb' => '8220'])['id'] ?? null) === 2,
+        'Baden-Württemberg from row 73 goes south');
+    check(mykis_coordinator_for($coordinators, ['region' => 'BAW']) === null
+        && mykis_coordinator_for($coordinators, ['region' => 'BAW', 'mtb' => '']) === null,
+        'a find in a split state without a sheet waits — a guess would send it to the wrong one');
     check(mykis_coordinator_for($coordinators, ['region' => 'NRW']) === null, 'no coordinator, no delivery');
     check(mykis_cutoff(new DateTimeImmutable('2026-06-03 04:00')) === '2026-06-01 00:00:00'
         && mykis_cutoff(new DateTimeImmutable('2026-12-01 00:10')) === '2026-12-01 00:00:00',

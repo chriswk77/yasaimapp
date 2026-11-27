@@ -6703,6 +6703,8 @@ return [
     'Es bekommt nur, wer zugestimmt hat: den Haken setzt du, sobald die Zusage da ist. Unbeaufsichtigt läuft der Versand über cronjobs/daily.php — höchstens 20 Mails je Aufruf, der Rest beim nächsten; außerhalb von Juni und Dezember tut er nichts.'
         => 'Only coordinators who agreed receive anything: tick them once their consent is in. Unattended, the delivery runs through cronjobs/daily.php — at most 20 mails per call, the rest with the next; outside June and December it does nothing.',
     'Grenze Nord/Süd noch offen — Funde von hier warten.' => 'North/south line not settled yet — finds from here wait.',
+    'Messtischblätter ab %dxx' => 'MTB sheets %dxx and south',
+    'Messtischblätter bis %dxx' => 'MTB sheets up to %dxx',
     'Vertretung: %s' => 'Deputy: %s',
     '%s hat zugestimmt' => '%s has agreed',
     '%d · zuletzt %s' => '%d · last %s',
