@@ -6992,41 +6992,19 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 #finds-fund #d-subpanel-photos,
 #finds-fund #d-subpanel-sequences,
 #finds-fund #d-subpanel-files { display: none !important; }
-#finds-fund:is([data-tab="place"], [data-tab="lists"]) #d-panel-place,
+#finds-fund[data-tab="place"] #d-panel-place,
 #finds-fund[data-tab="sequences"] #d-panel-photos,
 #finds-fund[data-tab="files"] #d-panel-photos { display: flex !important; }
 #finds-fund[data-tab="sequences"] #d-subpanel-sequences,
 #finds-fund[data-tab="files"] #d-subpanel-files { display: block !important; }
-/* ONE PANEL, TWO TABS (pages/finds.php, 27.11.2026): „Fundpunkt" keeps
-   the find's point and who it is shown to — direction, outline, „Direkt
-   teilen", a find shown to me —, „Listen" the filing alone. „Direkt
-   teilen" stood under „Listen" for an afternoon („passt besser zu
-   Fundpunkt statt zu Listen": a hint shows this one point, it files
-   nothing). */
-/* „Direkt teilen" has nothing that folds: no empty triangle before its names (see the lists' tiles below). */
-#finds-fund #d-hints .list-selection-arrow { display: none; }
-#finds-fund[data-tab="place"] #d-panel-place > #d-lists-field,
-#finds-fund[data-tab="lists"] #d-panel-place > :is(#d-direction-field, #d-polygon-field, #d-hint-received, #d-hints-field) { display: none !important; }
-/* AT THE DESK SIDE BY SIDE, A TILE EACH (27.11.2026: „ganz schön
-   platzverschwenderisch, wenn wir das untereinander platzieren … nur links
-   etwas Text und rechts alles Riesenkacheln, die frei sind"): the lists, a
-   tile per Mappe (listtree.js, tilePerFolder) and the joint lists',
-   flowing in a row and wrapping where the page ends. The phone keeps them
-   under one another. */
-@media (min-width: 861px) {
-    #finds-fund[data-tab="lists"] #d-panel-place > .field { margin: 0; }
-    #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 auto; min-width: 0; }
-    #finds-fund[data-tab="lists"] #d-lists.is-tiled { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
-    /* NO FOLDING ROOM WHERE NOTHING FOLDS (27.11.2026: „bei Listen ohne
-       eigene Mappe oder bei Direktteilen ist das Einrücken da, das da
-       eigentlich keinen Sinn macht"). The empty triangle keeps rows of one
-       tree on one line (listtree.js); a tile without a single heading has
-       no other row to line up with. „Direkt teilen" left for „Fundpunkt"
-       the same day; its rows there are the window's own. */
-    #finds-fund[data-tab="lists"] .list-selection-tile:not(:has(.is-heading)) .list-selection-arrow { display: none; }
-    /* As wide as their longest name, from 12rem — „Waldbrände · von Ben" must not end in „…". */
-    #finds-fund[data-tab="lists"] #d-lists .list-selection-tile { flex: 0 0 auto; min-width: 12rem; max-width: 24rem; }
-}
+/* NOTHING FOLDS IN THE LISTS HERE (listtree.js, unfolded), so where a
+   tile has no heading at all — „Direkt teilen", the lists outside a Mappe
+   (a tile per Mappe: tilePerFolder) — the empty triangle has no row to
+   line up with and goes (27.11.2026: „bei Listen ohne eigene Mappe oder
+   bei Direktteilen ist das Einrücken da, das da eigentlich keinen Sinn
+   macht"). */
+#finds-fund #d-hints .list-selection-arrow,
+#finds-fund .list-selection-tile:not(:has(.is-heading)) .list-selection-arrow { display: none; }
 /* The texts in two columns on the page's width — a field never broken
    between them. */
 #finds-fund[data-tab="text"] #d-panel-text { display: block !important; columns: 2 28rem; column-gap: 2.5rem; }

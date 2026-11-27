@@ -1740,33 +1740,13 @@ function syncTabs() {
     }
     if (tabButton(tab).hidden) showTab(tab);
     // The find's remembered tab, now that it may have appeared.
-    else if (wantedTab && wantedTab !== tab && !tabButton(wantedTab).hidden) showTab(wantedTab);
+    // A tab remembered that no longer exists („Listen", one afternoon of 27.11.2026) is no wish.
+    else if (wantedTab && wantedTab !== tab && tabButton(wantedTab) && !tabButton(wantedTab).hidden) showTab(wantedTab);
 }
 for (const id of Object.keys(twins)) {
     const twin = document.getElementById(id);
     if (twin) new MutationObserver(syncTabs).observe(twin, { attributes: true, attributeFilter: ['hidden'] });
 }
-/* „LISTEN" ONLY WHERE IT HAS SOMETHING TO SHOW (27.11.2026): a foreign
-   find has no list of mine to tick (pointwindow.js empties the tree), a
-   guest none at all — the tab would be an empty page. („Direkt teilen"
-   stands under „Fundpunkt" since the same day.) */
-const listsBlock = document.getElementById('d-lists');
-const listsShown = () => {
-    const field = document.getElementById('d-lists-field');
-    return !!field && !field.hidden && listsBlock?.querySelector('input') !== null;
-};
-const listsTabSync = () => {
-    const button = tabButton('lists');
-    const hide = !listsShown();
-    if (button.hidden === hide) return;
-    button.hidden = hide;
-    syncTabs();
-};
-const placePanel = document.getElementById('d-panel-place');
-if (placePanel) {
-    new MutationObserver(listsTabSync).observe(placePanel, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
-}
-listsTabSync();
 syncTabs();
 
 /* THE RAIL'S WIDTH IS DRAGGED AT ITS EDGE, as the plates' strip's

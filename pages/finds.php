@@ -223,25 +223,20 @@ page_header(t('Fundbrowser'), [
              and „Zeigen" stand at the bar's right end, where every tab sees
              them — finds.js moves them out of the window's footer. */ ?>
         <div class="sidebar-tabs detail-tabs finds-tabs" role="tablist" id="finds-tabs"
-             aria-label="<?= h(t('Übersicht, Tafeln, Bilder, Dateien, Sequenzen, Listen oder Fundpunkt')) ?>">
+             aria-label="<?= h(t('Übersicht, Tafeln, Bilder, Dateien, Sequenzen oder Fundpunkt')) ?>">
             <button type="button" role="tab" data-tab="text" aria-selected="true"><?= h(t('Übersicht')) ?></button>
             <button type="button" role="tab" data-tab="plates" aria-selected="false" tabindex="-1"><?= h(t('Tafeln')) ?> <span class="tab-count" id="finds-plate-count" hidden>0</span></button>
             <button type="button" role="tab" data-tab="pictures" aria-selected="false" tabindex="-1"><?= h(t('Bilder')) ?> <span class="tab-count" id="finds-picture-count" hidden>0</span></button>
             <button type="button" role="tab" data-tab="files" aria-selected="false" tabindex="-1" hidden><?= h(t('Dateien')) ?></button>
             <button type="button" role="tab" data-tab="sequences" aria-selected="false" tabindex="-1"><?= h(t('Sequenzen')) ?></button>
-            <?php /* „FUNDPUNKT" AND „LISTEN" (27.11.2026: the tab „Karte"
-                 held the direction, the outline, „Direkt teilen" and the
-                 lists — „ziemlich viele Sachen, die eigentlich nur mäßig was
-                 mit dem Oberbegriff Karte zu tun haben"). Both show the point
-                 window's one panel (#d-panel-place), each its part
-                 (app.css): the find's point — the map, its position, its
-                 outline, the way to it, and who it is shown to („Direkt
-                 teilen passt besser zu Fundpunkt", the same day) — and
-                 where it is filed, at the page's width. The map's own point
+            <?php /* „FUNDPUNKT", NOT „KARTE" (27.11.2026: the tab held the
+                 direction, the outline, „Direkt teilen" and the lists —
+                 „ziemlich viele Sachen, die eigentlich nur mäßig was mit dem
+                 Oberbegriff Karte zu tun haben"). For an afternoon the lists
+                 had a tab of their own; then „Ich finde, das Umbenennen
+                 reicht": everything about the find's point stands here,
+                 where it is and where it is filed. The map's own point
                  window keeps its three tabs. */ ?>
-            <?php /* „Listen" before „Fundpunkt", the map last (27.11.2026: „Fundpunkt
-                 und Listen vertauschen, sodass Fundpunkt als letztes dasteht"). */ ?>
-            <button type="button" role="tab" data-tab="lists" aria-selected="false" tabindex="-1"><?= h(t('Listen')) ?></button>
             <button type="button" role="tab" data-tab="place" aria-selected="false" tabindex="-1"><?= h(t('Fundpunkt')) ?></button>
             <div class="finds-tabs-end" id="finds-tabs-end">
                 <span class="finds-saved" id="finds-saved" aria-live="polite"></span>
