@@ -12764,9 +12764,13 @@ export function mountPhotoWindow(host) {
             if (yes) pickFold(menu);
             if (yes) menu.querySelector('.is-active')?.scrollIntoView({ block: 'nearest' });
         };
-        pick.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') open(true); });
+        /* data-click: opened by a click only, never by passing over it —
+           the Motivname, a name changed seldom and read often, would drop
+           its list over the picture whenever the pointer crossed the bar. */
+        const byHover = !pick.hasAttribute('data-click');
+        pick.addEventListener('pointerenter', (e) => { if (byHover && e.pointerType === 'mouse') open(true); });
         pick.addEventListener('pointerleave', (e) => {
-            if (e.pointerType !== 'mouse') return;
+            if (!byHover || e.pointerType !== 'mouse') return;
             clearTimeout(timer);
             timer = setTimeout(() => open(false), 250);
         });
@@ -12825,7 +12829,9 @@ export function mountPhotoWindow(host) {
            entry, and it stands last in the bar — nothing after it jumps, and
            its width was what pushed the quick switches into two rows at a
            narrower desk (measured at 1400 px with the gallery open). */
-        if (pick.hasAttribute('data-multi')) {
+        /* NOR THE TEXT WITH A PENCIL (data-click): the pencil follows the
+           name it edits; a width of the widest entry left it standing apart. */
+        if (pick.hasAttribute('data-multi') || pick.hasAttribute('data-click')) {
             pick._wordsWidth = '';
             return;
         }
@@ -12878,8 +12884,10 @@ export function mountPhotoWindow(host) {
             words.className = 'photo-pick-text';
             words.textContent = text;
             // A small sign in front where the bar has no word for the menu (Motivname, Maßstab).
+            // A pick opened by a click (data-click) ends in a pencil, not a select's arrow.
             button.replaceChildren(...(lead ? [icon(lead, { class: 'photo-pick-lead' })] : []), words,
-                icon('fold-triangle', { class: 'photo-pick-arrow' }));
+                pick.hasAttribute('data-click') ? icon('pencil', { class: 'photo-pick-edit' })
+                    : icon('fold-triangle', { class: 'photo-pick-arrow' }));
             // As wide as the widest entry (pickWidth) — measured anew, the list may have changed with the words.
             pickWidth(pick);
         }

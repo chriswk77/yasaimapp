@@ -176,8 +176,13 @@ function photo_window_render(): void
                              — the house rule: a frame means one can write. */ ?>
                         <span class="photo-topbar-text" id="photo-title-text" hidden></span>
                         <?php /* At the desk the menu of our own (photowindow.js,
-                             pickMount; the field above stays its wiring). */ ?>
-                        <span class="photo-pick" id="photo-title-pick">
+                             pickMount; the field above stays its wiring).
+                             data-click: TEXT WITH A PENCIL, OPENED BY A CLICK
+                             (27.11.2026: „da man Bildnamen ja nicht allzu oft
+                             umbenennt … nicht mehr als Dropdown … das aufklappt,
+                             wenn man mit der Maus drüber fährt, sondern als Text
+                             mit einem … Stiftsymbol, auf das man klickt"). */ ?>
+                        <span class="photo-pick" id="photo-title-pick" data-click>
                             <button type="button" class="photo-pick-button" aria-haspopup="listbox" aria-expanded="false"
                                     title="<?= h(t('Motivname')) ?>"></button>
                             <span class="photo-pick-menu" role="listbox" hidden></span>

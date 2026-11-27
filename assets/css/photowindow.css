@@ -437,6 +437,15 @@
 /* The triangle points down, as a select's arrow; open, it points up. */
 .photo-pick-button .photo-pick-arrow { font-size: .7em; color: var(--text-quiet); transform: rotate(90deg); transition: transform .12s; }
 .photo-pick-button[aria-expanded="true"] .photo-pick-arrow { transform: rotate(-90deg); }
+/* THE MOTIVNAME AS TEXT WITH A PENCIL (data-click, photowindow.js
+   pickMount; 27.11.2026): no field's dress — a name one reads more often
+   than one changes —, the pencil the deliberate step that opens the list,
+   as the coordinate's pencil in the point window. Under the pointer the
+   pencil comes up in the text's colour. */
+.photo-pick[data-click] .photo-pick-button { border-color: transparent; background: none; padding: 0 .25rem; }
+.photo-pick[data-click] .photo-pick-edit { color: var(--text-quiet); font-size: .9em; }
+.photo-pick[data-click] .photo-pick-button:is(:hover, [aria-expanded="true"]) { border-color: transparent; }
+.photo-pick[data-click] .photo-pick-button:is(:hover, [aria-expanded="true"]) .photo-pick-edit { color: var(--text); }
 /* The sign in front of Motivname and Maßstab, quiet, standing for the word. */
 .photo-pick-button .photo-pick-lead { color: var(--text-quiet); margin-right: -.2rem; }
 .photo-pick-menu {
