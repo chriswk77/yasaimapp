@@ -1508,9 +1508,10 @@ body.detail-collapsed .detail { width: var(--grip-width); }
 .microscope-head { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; }
 /* The device at the head's right end, its buttons the objectives' kind. */
 .microscope-head-end { display: flex; align-items: center; gap: .8rem; margin-left: auto; }
-/* Fund · Mikroskop · Schlüssel beside the window's title — the row itself
-   is .area-switch (app.css), the same as in the find's bar. */
-.microscope-views { margin-left: .6rem; }
+/* Fund · Mikroskop · Schlüssel after the arrow, before the find's name —
+   the row itself is .area-switch (app.css), at the same place as in the
+   find's bar. */
+.microscope-views { flex: none; }
 /* The way back from the page behind — floating over what the window
    stepped aside for, in the middle at the bottom: toasts float at the
    right. It is the one thing to do there, so its button is the loud one. */

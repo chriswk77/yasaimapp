@@ -6435,7 +6435,8 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
     color: var(--text);
     font-weight: 600;
 }
-.finds-fund-actions .area-switch { margin-right: .5rem; }
+/* Before the name, after the arrow (pages/finds.php): it keeps its width, the name gives way. */
+.finds-fund-bar > .area-switch { flex: none; }
 .finds-fund-actions :is(#d-photo-microscope, #d-key, #d-key-back) { display: none !important; }
 /* THE CAMERA RUNS while the window stands aside (microscope.js, markLive):
    a dot on the row's „Mikroskop" — green, because it says „on", and it is

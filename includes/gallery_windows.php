@@ -242,16 +242,9 @@ function gallery_windows_render(): void
             <div class="microscope-head">
                 <button type="submit" value="close" class="button subtle small window-x" id="microscope-close"
                         title="<?= h(t('Schließen')) ?>" aria-label="<?= h(t('Schließen')) ?>"><?= icon('arrow-left') ?></button>
-                <?php /* THE SPECIES LARGE, THE WINDOW'S NAME SMALL
-                     (15.11.2026: „oben links fett mikroskopieren und ganz klein
-                     rechts daneben die Art. Das bitte genau umdrehen und auch
-                     mit der Schriftgröße"): at the microscope one wants to
-                     see which find the pictures go to; that one is
-                     microscoping, the window itself says. */ ?>
-                <h2 id="microscope-point"></h2>
-                <p class="hint-text small"><?= h(t('Mikroskopieren')) ?></p>
                 <?php /* FUND · MIKROSKOP · SCHLÜSSEL — THE SAME ROW AS IN THE
-                     FIND'S BAR (pages/finds.php says why; 24.11.2026: „eine
+                     FIND'S BAR, and like there BEFORE THE SPECIES' NAME, right after the
+                     arrow (27.11.2026; pages/finds.php says why; 24.11.2026: „eine
                      einheitliche Kopfzeile mit den 3 Buttons"). It began
                      here on 05.11.2026 as the window's own three views
                      („ich brauche einen weg zwischen mikroskopieren Bilder
@@ -275,6 +268,14 @@ function gallery_windows_render(): void
                     <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
                     <?php endif; ?>
                 </div>
+                <?php /* THE SPECIES LARGE, THE WINDOW'S NAME SMALL
+                     (15.11.2026: „oben links fett mikroskopieren und ganz klein
+                     rechts daneben die Art. Das bitte genau umdrehen und auch
+                     mit der Schriftgröße"): at the microscope one wants to
+                     see which find the pictures go to; that one is
+                     microscoping, the window itself says. */ ?>
+                <h2 id="microscope-point"></h2>
+                <p class="hint-text small"><?= h(t('Mikroskopieren')) ?></p>
                 <?php /* THE DEVICE IN THE HEAD (04.11.2026: „Die
                      Geräteauswahl würde ich in die Kopfzeile legen"): which
                      microscope this camera hangs on is the frame of the whole

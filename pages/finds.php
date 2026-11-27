@@ -101,6 +101,53 @@ page_header(t('Fundbrowser'), [
                  anzeigen"); the word stays as tooltip and for the screen reader. */ ?>
             <button type="button" class="symbol-button small" id="finds-back"
                     title="<?= h(t('Zurück')) ?>" aria-label="<?= h(t('Zurück')) ?>"><?= icon('arrow-left') ?></button>
+            <?php /* BEFORE THE SPECIES' NAME, apart from the buttons that act on
+                 the find (27.11.2026: „die Buttons Fund, Mikroskop und
+                 Bestimmung auf die linke Seite … noch vor den Artnamen …
+                 Dann haben wir diese Umschalter etwas getrennt von den
+                 Steuerknöpfen"). Where one is comes left, what one can do
+                 right; and before the name, not after it, so a long name
+                 never moves the switch the hand reaches for blindly. The
+                 microscope window's head puts it at the same place
+                 (gallery_windows.php).
+
+                 FUND · MIKROSKOP · SCHLÜSSEL, ONE ROW FOR ALL THREE
+                 (24.11.2026: „eine einheitliche Kopfzeile mit den 3
+                 Buttons … und dort switchen wir zwischen den Sachen …
+                 von allen drei Modulen kann man in jeweils die 2 anderen
+                 springen"). Whoever identifies a find changes between
+                 its pictures, the microscope and the key all the time,
+                 and every change used to be a page of its own: the key
+                 a full load away, the camera's session ended by it.
+                 Now the three are areas of the ONE find that stands in
+                 this page, and nothing is loaded anew between them —
+                 the key's page lives in the frame below, the microscope
+                 is the window it always was, with the same row in its
+                 head (gallery_windows.php).
+
+                 ALL THREE FOLLOW THE FIND („der Fundwechsel wechselt
+                 alle Module mit … wir bleiben nicht bei einem alten Stand
+                 in irgendeinem Modul hängen"): another find opened here
+                 is the find the camera saves to and the key keys for
+                 (finds.js, areas).
+
+                 The two buttons beside „Fund" show only where their
+                 area can work — finds.js mirrors the point window's own
+                 „Mikroskopieren" and „Schlüsseln", which keep deciding
+                 that and stay in the page unseen.
+
+                 THE THIRD IS CALLED „BESTIMMUNG" AND IS EVERYBODY'S
+                 (24.11.2026; it was „Schlüssel" and stood only where a
+                 module offers a key tool): identify_tool() names where
+                 it leads — the module's tool, else the core's page with
+                 the Internet-Links and the finds of the species. */ ?>
+            <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
+                <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
+                <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
+                <?php if (identify_tool(user_current()) !== null): ?>
+                <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
+                <?php endif; ?>
+            </div>
             <?php /* THE WINDOW'S OWN HEADER STANDS IN THIS BAR
                  (12.10.2026: „der doppelte Artname und die Info … ganz in die
                  Kopfzeile"): its name and facts line, and at the right the ⓘ
@@ -109,43 +156,6 @@ page_header(t('Fundbrowser'), [
                  pointwindow.js goes on writing into them. */ ?>
             <div class="finds-fund-heading" id="finds-fund-heading"></div>
             <div class="finds-fund-actions" id="finds-fund-actions">
-                <?php /* FUND · MIKROSKOP · SCHLÜSSEL, ONE ROW FOR ALL THREE
-                     (24.11.2026: „eine einheitliche Kopfzeile mit den 3
-                     Buttons … und dort switchen wir zwischen den Sachen …
-                     von allen drei Modulen kann man in jeweils die 2 anderen
-                     springen"). Whoever identifies a find changes between
-                     its pictures, the microscope and the key all the time,
-                     and every change used to be a page of its own: the key
-                     a full load away, the camera's session ended by it.
-                     Now the three are areas of the ONE find that stands in
-                     this page, and nothing is loaded anew between them —
-                     the key's page lives in the frame below, the microscope
-                     is the window it always was, with the same row in its
-                     head (gallery_windows.php).
-
-                     ALL THREE FOLLOW THE FIND („der Fundwechsel wechselt
-                     alle Module mit … wir bleiben nicht bei einem alten Stand
-                     in irgendeinem Modul hängen"): another find opened here
-                     is the find the camera saves to and the key keys for
-                     (finds.js, areas).
-
-                     The two buttons beside „Fund" show only where their
-                     area can work — finds.js mirrors the point window's own
-                     „Mikroskopieren" and „Schlüsseln", which keep deciding
-                     that and stay in the page unseen.
-
-                     THE THIRD IS CALLED „BESTIMMUNG" AND IS EVERYBODY'S
-                     (24.11.2026; it was „Schlüssel" and stood only where a
-                     module offers a key tool): identify_tool() names where
-                     it leads — the module's tool, else the core's page with
-                     the Internet-Links and the finds of the species. */ ?>
-                <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
-                    <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
-                    <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
-                    <?php if (identify_tool(user_current()) !== null): ?>
-                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
-                    <?php endif; ?>
-                </div>
                 <?php /* ON THE PUBLIC SITE — THE FIND'S, IN ITS HEAD (25.11.2026:
                      „Positionieren würde ich es gerne woanders. Und zwar
                      allgemeiner, ein Fund direkt in der Kopfzeile. Mit einem
