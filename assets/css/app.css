@@ -7358,6 +7358,8 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
     .finds-map.is-closed > :not(.finds-map-head, .finds-map-bar:not(.finds-map-draw)) { display: none !important; }
     .finds-map.is-closed > .finds-map-head { display: block; margin-bottom: .4rem; font-weight: 600; }
     .finds-map.is-closed > .finds-map-bar { position: static; padding: 0; background: none; border: 0; }
+    /* Opened, over the whole screen (findmap.js, is-full). */
+    .finds-map.is-full { position: fixed; inset: 0; z-index: 3000; height: auto; margin: 0; border: 0; border-radius: 0; }
 }
 
 /* --- The personal chats: the bubble's dot and its flyout ------------------

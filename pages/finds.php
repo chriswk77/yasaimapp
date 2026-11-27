@@ -315,6 +315,9 @@ page_header(t('Fundbrowser'), [
                     <button type="button" class="button subtle small" data-map-action="place" hidden><?= icon('place') ?><?= h(t('Position setzen')) ?></button>
                     <button type="button" class="button subtle small" data-map-action="fit" hidden
                             title="<?= h(t('Den ganzen Fund ins Bild holen')) ?>"><?= icon('fit') ?><?= h(t('Zum Fund')) ?></button>
+                    <?php /* The way out of the full-screen map on the phone (findmap.js). */ ?>
+                    <button type="button" class="symbol-button small" data-map-action="close" hidden
+                            title="<?= h(t('Schließen')) ?>" aria-label="<?= h(t('Schließen')) ?>"><?= icon('close') ?></button>
                 </div>
                 <div class="finds-map-bar finds-map-draw" hidden>
                     <b><?= h(t('Umriss ziehen')) ?></b>

@@ -47,6 +47,7 @@ export function mountFindMap(box, host) {
     const message = box.querySelector('.finds-map-message');
     const placeButton = box.querySelector('[data-map-action="place"]');
     const fitButton = box.querySelector('[data-map-action="fit"]');
+    const closeButton = box.querySelector('[data-map-action="close"]');
 
     let map = null;            // the bridge, once it stands
     let loading = null;        // the promise of it
@@ -64,12 +65,19 @@ export function mountFindMap(box, host) {
        map costs data in the woods. Closed it is the bar alone,
        „Position setzen", not loaded; that button or „Umriss ziehen" opens
        it, and another find closes it again. At the desk it stands beside
-       the panel as before: there it costs no room. */
+       the panel as before: there it costs no room.
+       OPENED, IT TAKES THE WHOLE SCREEN (the same day: „diese Karten dann
+       auch als Fullscreen … als Fullscreen-Overlay und nicht noch versuchen,
+       sie in einen Rahmen innerhalb der Seite zu pressen"), and closes
+       itself when its job is done — the point set, the outline finished or
+       given up —, or by its cross. */
     const phone = matchMedia('(max-width: 860px)');
     let opened = false;
     const closed = () => phone.matches && !opened;
     function closedSync() {
         box.classList.toggle('is-closed', closed());
+        box.classList.toggle('is-full', phone.matches && opened);
+        if (closeButton) closeButton.hidden = !(phone.matches && opened);
         if (!closed()) {
             box.hidden = false;
             return;
@@ -84,11 +92,18 @@ export function mountFindMap(box, host) {
         opened = true;
         box.hidden = false;
         closedSync();
-        // Under the panel, often below the screen's edge: brought into sight, where the click goes next.
-        box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         await show();
         return map !== null;
     }
+    /** The full-screen map's job is done, or it is dismissed: closed again (phone only). */
+    function shut() {
+        if (!phone.matches || !opened) return;
+        placeMode(false);
+        endSketch();
+        opened = false;
+        closedSync();
+    }
+    closeButton?.addEventListener('click', () => shut());
 
     function say(text) {
         message.textContent = text;
@@ -213,6 +228,7 @@ export function mountFindMap(box, host) {
             const at = marker.getLatLng();
             placeMode(false);
             host.moved(at.lat, at.lng);
+            shut();
         });
         marker.addTo(map);
 
@@ -259,6 +275,7 @@ export function mountFindMap(box, host) {
         if (!placing) return;
         placeMode(false);
         host.moved(e.latlng.lat, e.latlng.lng);
+        shut();
     }
 
     // --- Drawing an outline ----------------------------------------------------
@@ -330,22 +347,26 @@ export function mountFindMap(box, host) {
         } else if (action === 'cancel') {
             endSketch();
             redraw();
+            shut();
         } else if (action === 'done' && sketch.corners.length >= 3) {
             const { corners, done } = sketch;
             endSketch();
             done(corners);
+            shut();
         }
     });
 
     /* ESCAPE TAKES BACK THE LAST CORNER, and ends the drawing when there is
        none — the big map's rule (photowindow.js has the same for its tools). */
     window.addEventListener('keydown', (e) => {
-        if (e.key !== 'Escape' || (!sketch && !placing) || !box.checkVisibility?.()) return;
+        const full = phone.matches && opened;
+        if (e.key !== 'Escape' || (!sketch && !placing && !full) || !box.checkVisibility?.()) return;
         e.preventDefault();
         e.stopPropagation();
         if (placing) placeMode(false);
-        else if (sketch.corners.length > 0) { sketch.corners.pop(); drawSketch(); }
-        else { endSketch(); redraw(); }
+        else if (sketch && sketch.corners.length > 0) { sketch.corners.pop(); drawSketch(); }
+        else if (sketch) { endSketch(); redraw(); shut(); }
+        else shut();
     }, true);
 
     /** The find goes (another one opens, the page goes back): no tool stays armed. */
