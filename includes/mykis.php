@@ -45,6 +45,9 @@
  *     (mykis_hosts.php says how, and why the lists live on the server
  *     only). Until then the whole field stood in Wirt, „Laubschicht"
  *     included, as the first coordinator had allowed.
+ *   - OUR „WUCHSSTELLE" IS MYKIS' OWN LIST (27.11.2026, find_fields.php):
+ *     its first ticked word goes to wuchsstelle, which takes one; further
+ *     words stand in substrat_text as „Wuchsstelle: …" (mykis_site).
  *   - THE ACCOMPANYING VEGETATION GOES TO substrat_text, labelled
  *     „Begleitvegetation: …", behind whatever of the substrate stayed
  *     free text (27.11.2026, a third coordinator). MykIS' mask calls that
@@ -133,6 +136,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/collections.php';
 // mykis_substrate(): where „Substrat / Wirt" goes among MykIS' lists.
 require_once __DIR__ . '/mykis_hosts.php';
+require_once __DIR__ . '/find_fields.php';
 // place_name_at(): the Ortslage, from the names fetched per state.
 require_once __DIR__ . '/place_names.php';
 
@@ -787,7 +791,9 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
     // another here, under their label (the column takes any remark).
     $vegetation = implode(', ', array_filter(array_map('trim', preg_split('/\R/u', $field('Begleitvegetation')) ?: [])));
     $substrate = mykis_substrate($field('Substrat / Wirt'));
+    $site = mykis_site($field('Wuchsstelle'));
     $ecology = implode('; ', array_filter([$substrate['substrat_text'],
+        $site['rest'] !== '' ? 'Wuchsstelle: ' . $site['rest'] : '',
         $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : ''], 'strlen'));
 
     $values = [
@@ -819,6 +825,7 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
         'Wirt'           => $substrate['wirt'],
         'organ_substrat' => $substrate['organ_substrat'],
         'substrat_text'  => $ecology,
+        'wuchsstelle'    => $site['site'],
         // „ex cultura, bestimmt am …" — empty for a find from the field.
         'art_bemerkung'  => collection_note($p),
         'beleg_nr'       => $voucher !== '' ? $voucher : $number,
@@ -903,6 +910,40 @@ function mykis_mtb(?string $sheet, ?string $quadrant, int $keep = 3): string
     }
     $digits = substr(trim((string) $quadrant), 0, max(0, $keep));
     return preg_match('/^[1-4]{1,3}$/', $digits) ? $sheet . ',' . $digits : $sheet;
+}
+
+/**
+ * Our „Wuchsstelle" placed for the sheet: the FIRST word of MykIS' own list
+ * to the column wuchsstelle — it takes one —, everything else, further
+ * ticked words and words typed by hand, back as free text for
+ * substrat_text, where nothing is refused.
+ *
+ * READ AS THE PICKER WRITES (termsRead in assets/js/findtraits.js): the
+ * known words first, the longest first, because three of them hold a comma
+ * („auf Dung, Kot, Losung"); what is left is split at commas.
+ *
+ * @return array{site: string, rest: string}
+ */
+function mykis_site(string $value): array
+{
+    $known = array_merge(...array_column(FIND_SITE_GROUPS, 'terms'));
+    usort($known, static fn(string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+    $rest = ', ' . trim($value) . ', ';
+    $found = [];
+    foreach ($known as $term) {
+        $at = mb_stripos($rest, ', ' . $term . ', ');
+        if ($at === false) {
+            continue;
+        }
+        $found[$at] = $term;
+        // Kept as wide as it was, so the places of the words still to find stay true.
+        $rest = mb_substr($rest, 0, $at) . ', ' . str_repeat(' ', mb_strlen($term)) . ', '
+              . mb_substr($rest, $at + mb_strlen($term) + 4);
+    }
+    ksort($found);
+    $found = array_values($found);
+    $free = array_values(array_filter(array_map('trim', explode(',', $rest)), 'strlen'));
+    return ['site' => $found[0] ?? '', 'rest' => implode(', ', [...array_slice($found, 1), ...$free])];
 }
 
 /**

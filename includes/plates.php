@@ -127,7 +127,7 @@ const PLATE_SORTS     = ['L', 'B', 'Q'];
    it on saving. */
 const PLATE_DETAILS = [
     'species', 'number', 'date', 'place', 'place_full', 'place_name', 'mtb', 'gps', 'elevation', 'finder',
-    'determiner', 'certainty', 'amount', 'substrate', 'vegetation', 'odour', 'taste', 'spore_print',
+    'determiner', 'certainty', 'amount', 'substrate', 'site', 'vegetation', 'odour', 'taste', 'spore_print',
     'voucher', 'remark', 'note',
 ];
 /* A LEERZEILE among them (plateparts.js, DETAIL_GAP, 09.11.2026): the one

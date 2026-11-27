@@ -2737,10 +2737,10 @@ export function mountPointWindow(host) {
             }
         }
         /* AN AUFSAMMLUNG IS NO FIND: of the find fields only who collected
-           it, the substrate and what grew around it — determiner, certainty,
+           it, the substrate, its growth site and what grew around it — determiner, certainty,
            quantity and voucher belong to the species that grow from it. */
         if (collectionUi.isCollection()) {
-            const keep = new Set(['finder', 'substrat / wirt', 'begleitvegetation']);
+            const keep = new Set(['finder', 'substrat / wirt', 'wuchsstelle', 'begleitvegetation']);
             return [...byNameMap.values()].filter(f => keep.has(f.name.toLowerCase()));
         }
         /* WHAT IS MARKED 'last' GOES BELOW EVERYTHING — the find description,
@@ -2922,11 +2922,11 @@ export function mountPointWindow(host) {
             // One line to start with; autoheight grows it to the text.
             if (orphan && input.tagName === 'TEXTAREA') input.rows = 1;
 
-            /* Odour, taste, spore print: the picker's button at the field's
+            /* Odour, taste, growth site, spore print: the picker's button at the field's
                end, its panel under it (findtraits.js) — both gone where one
                may not write (pointwindow.css, .is-read). */
             if (f.picker && input.tagName === 'INPUT') {
-                const pick = traitPicker(f.picker, input, iconHtml);
+                const pick = traitPicker(f.picker, input, iconHtml, f.groups ?? null);
                 const row = document.createElement('div');
                 row.className = 'trait-row';
                 row.append(input, pick.button);

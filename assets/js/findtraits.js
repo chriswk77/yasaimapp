@@ -22,6 +22,11 @@
  *
  * The lists are fixed here and nowhere else; a term added later is added
  * here and to the English catalogue.
+ *
+ *   Wuchsstelle          the same as odour and taste, but its groups come
+ *                        WITH THE FIELD (find_fields.php, 'groups') — MykIS'
+ *                        own words, which the server reads too for the DGfM
+ *                        sheet, so they live once, there (27.11.2026).
  */
 
 import { t } from './i18n.js';
@@ -234,7 +239,7 @@ export function sporeWordsAt(gr, fx, fy) {
  * event, so the window marks itself unsaved as for a typed word.
  * @returns {{button: HTMLButtonElement, panel: HTMLElement}}
  */
-export function traitPicker(kind, input, iconHtml) {
+export function traitPicker(kind, input, iconHtml, groups = null) {
     const open = document.createElement('button');
     open.type = 'button';
     /* A SIGN, NOT WORDS (12.11.2026: „ein einfaches Symbol …
@@ -258,7 +263,16 @@ export function traitPicker(kind, input, iconHtml) {
         document.addEventListener('pointerdown', outside, true);
         document.addEventListener('keydown', escape, true);
     });
-    const announce = () => input.dispatchEvent(new Event('input', { bubbles: true }));
+    /* A TICK OF OUR OWN DOES NOT REDRAW THE PANEL (27.11.2026, seen with
+       the growth site's second group): the redraw below is for a word typed
+       by hand, and it opens the FIRST group holding a pick — so a tick in
+       the second group threw the panel back to the first. Our own
+       announcement passes it by; the panel has already marked the tick. */
+    let announcing = false;
+    const announce = () => {
+        announcing = true;
+        try { input.dispatchEvent(new Event('input', { bubbles: true })); } finally { announcing = false; }
+    };
     /* IT CLOSES WHEN ONE MOVES ON (09.11.2026: „Das Angeklickte
        soll übernommen werden. Und damit brauche ich das aufgeklappte Menü
        auch nicht mehr") — a press anywhere outside its field, or Escape.
@@ -274,10 +288,10 @@ export function traitPicker(kind, input, iconHtml) {
     const fill = () => {
         panel.textContent = '';
         if (kind === 'spore_print') sporePanel(panel, input, announce);
-        else termsPanel(panel, input, kind === 'odour' ? ODOUR_GROUPS : TASTE_GROUPS, announce);
+        else termsPanel(panel, input, groups ?? (kind === 'odour' ? ODOUR_GROUPS : TASTE_GROUPS), announce);
     };
     // A word typed by hand moves the chips along while the panel is open.
-    input.addEventListener('input', () => { if (!panel.hidden && kind !== 'spore_print') fill(); });
+    input.addEventListener('input', () => { if (!panel.hidden && kind !== 'spore_print' && !announcing) fill(); });
     return { button: open, panel };
 }
 

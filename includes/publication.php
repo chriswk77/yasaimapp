@@ -368,7 +368,7 @@ function publication_picture_key(array $page, array $rights, string $siteUrl): s
    (the same day: „oben einfach die kurzen Daten haben zum Fund. Und
    unten unsere Fundbeschreibung, weil der Text kann ja länger sein"):
    the short facts stand together, the long text below them. */
-const PUBLICATION_DETAIL_ORDER = ['Finder', 'Bestimmer', 'Anzahl / Menge', 'Substrat / Wirt', 'Begleitvegetation',
+const PUBLICATION_DETAIL_ORDER = ['Finder', 'Bestimmer', 'Anzahl / Menge', 'Substrat / Wirt', 'Wuchsstelle', 'Begleitvegetation',
     'Geruch', 'Geschmack', 'Sporenpulverfarbe', 'Beleg-Nr.', 'Beleg aufbewahrt'];
 
 /** @return list<array{0: string, 1: string, 2?: string}> label, value, and for the spore print its colour */

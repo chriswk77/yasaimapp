@@ -200,6 +200,7 @@ const PLATE_SENTENCES = {
     'Bestimmungssicherheit': 'Certainty',
     'Anzahl / Menge': 'Abundance',
     'Substrat / Wirt': 'Substrate / host',
+    'Wuchsstelle': 'Growth site',
     'Begleitvegetation': 'Associated vegetation',
     'Geruch': 'Smell',
     'Geschmack': 'Taste',

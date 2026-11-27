@@ -85,6 +85,7 @@ export function findDetails(point, isFind) {
         certainty:  extra[CERTAINTY_FIELD] ?? '',
         amount:     extra['Anzahl / Menge'] ?? '',
         substrate:  extra['Substrat / Wirt'] ?? '',
+        site:       extra['Wuchsstelle'] ?? '',
         vegetation: extra['Begleitvegetation'] ?? '',
         voucher:    extra['Beleg-Nr.'] ?? '',
         /* THE KEYING WAYS for the plate's group „Schlüssel" (findkeying.js,

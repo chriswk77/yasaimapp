@@ -519,6 +519,16 @@ echo "\nThe MykIS sheet\n";
     check($at($r, 'substrat_text') === 'Begleitvegetation: Quercus robur, Carpinus betulus'
         && $at($r, 'beobachtung_bemerkungen') === '',
         'the plants around go, labelled, to substrat_text — the one find\'s, not the whole protocol\'s — ' . $at($r, 'substrat_text'));
+    check(mykis_site('auf Holz, unterseitig') === ['site' => 'auf Holz', 'rest' => 'unterseitig']
+        && mykis_site('Auf Dung, Kot, Losung') === ['site' => 'auf Dung, Kot, Losung', 'rest' => '']
+        && mykis_site('unter Laub, entrindet') === ['site' => 'entrindet', 'rest' => 'unter Laub']
+        && mykis_site('') === ['site' => '', 'rest' => ''],
+        'the growth site: the first word of MykIS\' list to its column, a comma inside a word kept, the rest free');
+    $sited = mykis_row(['extra' => (object) ['Wuchsstelle' => 'auf Holz, unterseitig', 'Begleitvegetation' => 'Quercus robur',
+                                             'Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'X', 'q4');
+    check($at($sited, 'wuchsstelle') === 'auf Holz'
+        && $at($sited, 'substrat_text') === 'Wuchsstelle: unterseitig; Begleitvegetation: Quercus robur',
+        'one growth site to its column, the second into the free text — ' . $at($sited, 'substrat_text'));
     $mixed = mykis_row(['extra' => (object) ['Substrat / Wirt' => 'Kiefer totholz', 'Begleitvegetation' => 'Quercus robur',
                                              'Bestimmungssicherheit' => 'makroskopisch sicher']] + $sure, 'X', 'q4');
     check($at($mixed, 'substrat_text') === 'Kiefer totholz; Begleitvegetation: Quercus robur',

@@ -44,6 +44,7 @@ export function detailLabels(tr = t) {
         ['certainty', tr('Bestimmungssicherheit')],
         ['amount', tr('Anzahl / Menge')],
         ['substrate', tr('Substrat / Wirt')],
+        ['site', tr('Wuchsstelle')],
         ['vegetation', tr('Begleitvegetation')],
         ['odour', tr('Geruch')],
         ['taste', tr('Geschmack')],
@@ -65,7 +66,7 @@ export function detailLabels(tr = t) {
 export const DETAIL_ICONS = {
     number: 'hash', date: 'calendar', place: 'place', place_full: 'place', place_name: 'place', mtb: 'map', gps: 'crosshair',
     elevation: 'mountain', finder: 'person', determiner: 'key', certainty: 'check', amount: 'bars',
-    substrate: 'stack', vegetation: 'tree', voucher: 'label', remark: 'speech-bubble', note: 'sticky-note',
+    substrate: 'stack', site: 'subject-site', vegetation: 'tree', voucher: 'label', remark: 'speech-bubble', note: 'sticky-note',
     odour: 'scent', taste: 'drop', spore_print: 'spore',
 };
 

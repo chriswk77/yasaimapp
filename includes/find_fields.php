@@ -3,7 +3,7 @@
  * The find fields — the fixed field set of every species list.
  *
  * WHAT BELONGS TO A FIND MAPPING belongs to every one: Finder, Bestimmer,
- * Bestimmungssicherheit, Menge, Substrat, Begleitvegetation, Geruch,
+ * Bestimmungssicherheit, Menge, Substrat, Wuchsstelle, Begleitvegetation, Geruch,
  * Geschmack, Sporenpulverfarbe, Belegnummer, whether a voucher is kept,
  * and the find description (the text for others).
  * If these fields were created per list individually, the same thing would
@@ -25,6 +25,29 @@
  */
 
 declare(strict_types=1);
+
+/**
+ * THE GROWTH SITES, word for word as MykIS' „liste_wuchsstelle" writes
+ * them (the current version, sent by a coordinator on 27.11.2026 — 30
+ * words, accepted as they are by the RLZ portal; an older MykIS spelled
+ * its lists differently, see mykis_hosts.php). Only these exact words
+ * reach MykIS' column wuchsstelle; a word typed by hand goes to its free
+ * text. The list mixes two questions, so the picker asks them apart:
+ * what the fungus grows on, and where on its substrate. The order within
+ * a group is the field's, the common ones first.
+ */
+const FIND_SITE_GROUPS = [
+    ['name' => 'Worauf', 'terms' => [
+        'auf Boden', 'auf Erde, Humus', 'auf Holz', 'im oder an Moos (bryophil)', 'im Gras', 'auf Sand, Kies',
+        'auf Steinen', 'auf Dung, Kot, Losung', 'auf Mist', 'auf Brandstelle', 'auf Kraut (herbicol)',
+        'auf oder in Pilzen', 'auf Flechten (lichenophil)', 'auf Insekten', 'auf Harz', 'im Wasser',
+    ]],
+    ['name' => 'Wo am Substrat', 'terms' => [
+        'berindet', 'teilentrindet', 'entrindet', 'unter der Rinde', 'Schnittfläche', 'in Höhlung',
+        'oberseitig (topical)', 'unterseitig', 'seitlich (lateral)', 'innenseitig', 'Basis (Stamm, Stängel, Halm)',
+        'Wurzelbereich', 'Kronenbereich', 'unterirdisch',
+    ]],
+];
 
 /**
  * The set, in display order. The same shape as the custom fields from
@@ -62,6 +85,14 @@ function find_fields(): array
            species list is (map.js, speciesNeedsSync). */
         ['name' => 'Substrat / Wirt',   'type' => 'text',       'is_species' => true,  'options' => null, 'fixed' => true,
          'species_groups' => ['plants', 'insects', 'fungi']],
+        /* THE GROWTH SITE (27.11.2026: „die sind ja jetzt schön sortiert
+           und schön benannt"): MykIS' own list, as the current version and
+           the RLZ portal carry it, to tick like the odours — several at
+           once, „auf Holz, unterseitig". Text like the rest; the groups
+           travel with the field, so the browser's picker and the DGfM
+           sheet (mykis_site) read the SAME words and no twin can drift. */
+        ['name' => 'Wuchsstelle',       'type' => 'text',       'is_species' => false, 'options' => null, 'fixed' => true,
+         'picker' => 'site', 'groups' => FIND_SITE_GROUPS],
         ['name' => 'Begleitvegetation', 'type' => 'multiline', 'is_species' => true,  'options' => null, 'fixed' => true,
          'species_groups' => ['plants']],
         /* ODOUR, TASTE, SPORE PRINT (09.11.2026: „mit festen
