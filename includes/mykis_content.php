@@ -81,11 +81,24 @@ function mykis_process(PDO $pdo, int $userId): ?array
             }
             set_time_limit(300);
             $upload = $_FILES['places'] ?? null;
+            // Germany's file is some 6 MB — a server whose upload limit is
+            // smaller must say so, not call the file a wrong one.
+            if (is_array($upload) && in_array($upload['error'] ?? 0, [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                return ['error', t('Die Datei ist größer, als dieser Server annimmt (%s). Es wurde nichts übernommen.', (string) ini_get('upload_max_filesize'))];
+            }
             $count = is_array($upload) && ($upload['error'] ?? 1) === UPLOAD_ERR_OK
                 ? place_names_import($pdo, (string) $upload['tmp_name']) : null;
-            return $count === null
-                ? ['error', t('Das ist keine Datei mit Ortslagen — es wurde nichts übernommen.')]
-                : ['success', t('Ortslagen übernommen: %d Namen.', $count)];
+            if ($count === null) {
+                return ['error', t('Das ist keine Datei mit Ortslagen — es wurde nichts übernommen.')];
+            }
+            // A newer file knows other names: every find is looked up
+            // afresh — as many now as the request's time allows, the rest
+            // by the five-minute cron (place_names_fill_run).
+            $fill = place_names_refill($pdo, microtime(true) + 120);
+            $left = place_names_pending($pdo);
+            return ['success', $left > 0
+                ? t('Ortslagen übernommen: %d Namen. %d Funde haben ihre Ortslage schon, die übrigen %d folgen in den nächsten Minuten.', $count, $fill['looked'], $left)
+                : t('Ortslagen übernommen: %d Namen.', $count)];
 
         case 'deliver':
             $done = mykis_deliver($pdo, null, microtime(true) + 60);

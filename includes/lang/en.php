@@ -11008,4 +11008,12 @@ return [
         => 'It belongs on your homepage, in the file “fundbuch-key.php” in the folder “inc”.',
     'Das ist keine Adresse einer Homepage. Ein Beispiel: https://beispiel.de/'
         => 'That is not the address of a homepage. An example: https://example.org/',
+    // The Ortslage at every find (migration 0206).
+    'Ortslage' => 'Locality',
+    '„%s“ ist der nächste Flurname, Weiler, Wald oder Gipfel im Umkreis von einem Kilometer — aus OpenStreetMap.'
+        => '“%s” is the nearest field name, hamlet, wood or peak within one kilometre — from OpenStreetMap.',
+    'Ortslagen übernommen: %d Namen. %d Funde haben ihre Ortslage schon, die übrigen %d folgen in den nächsten Minuten.'
+        => 'Ortslagen taken over: %d names. %d finds already have their locality, the other %d follow in the next few minutes.',
+    'Die Datei ist größer, als dieser Server annimmt (%s). Es wurde nichts übernommen.'
+        => 'The file is larger than this server accepts (%s). Nothing was taken over.',
 ];

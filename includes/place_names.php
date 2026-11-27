@@ -255,3 +255,106 @@ function place_names_state(PDO $pdo): ?array
     $row = $pdo->query('SELECT made, names, imported_at FROM map_place_name_imports ORDER BY id DESC LIMIT 1')->fetch(PDO::FETCH_ASSOC);
     return $row ? ['made' => (string) $row['made'], 'names' => (int) $row['names'], 'imported_at' => (string) $row['imported_at']] : null;
 }
+
+/*
+ * THE ORTSLAGE AT EVERY FIND (migration 0206, 27.11.2026: „nicht nur für
+ * die DGFM interessant"). map_points.place_name keeps the name looked up
+ * here, so the map, the plates and the search read a column instead of
+ * asking 450,000 names for every point on every load.
+ *
+ * NULL IS „NOT LOOKED UP", '' IS „NOTHING WITHIN A KILOMETRE". The two must
+ * differ, or a town-centre find would be looked up again on every run.
+ * Three ways fill it: a find created or moved (point_save, at once — the
+ * lookup is a query of our own, no outside service to wait for), every
+ * upload of the Ortslagen file (all finds afresh, because a newer file
+ * knows other names), and the five-minute cron for whatever came in past
+ * point_save — imports, a file taken in while the upload's time ran out.
+ *
+ * updated_at STAYS: like the municipality (municipality_record), the
+ * Ortslage is derived on the side and must not win a sync against the
+ * user's own edit.
+ */
+
+/** Whether migration 0206 is in. */
+function place_names_point_ready(PDO $pdo): bool
+{
+    return column_exists($pdo, 'map_points', 'place_name');
+}
+
+/** Whether there is anything to look names up in — 0205, 0206 and a file. */
+function place_names_fillable(PDO $pdo): bool
+{
+    return place_names_ready($pdo) && place_names_point_ready($pdo)
+        && $pdo->query('SELECT 1 FROM map_place_names LIMIT 1')->fetchColumn() !== false;
+}
+
+/** One find's Ortslage looked up and kept. Quiet when there is nothing to look in. */
+function place_name_record(PDO $pdo, int $pointId): void
+{
+    if (!place_names_fillable($pdo)) {
+        return;
+    }
+    $stmt = $pdo->prepare('SELECT lat, lon FROM map_points WHERE id = ?');
+    $stmt->execute([$pointId]);
+    $p = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($p === false || !is_numeric($p['lat']) || !is_numeric($p['lon'])) {
+        return;
+    }
+    $pdo->prepare('UPDATE map_points SET place_name = ? WHERE id = ?')
+        ->execute([place_name_at($pdo, (float) $p['lat'], (float) $p['lon']), $pointId]);
+}
+
+/** How many finds still wait for their lookup. */
+function place_names_pending(PDO $pdo): int
+{
+    return place_names_fillable($pdo)
+        ? (int) $pdo->query('SELECT COUNT(*) FROM map_points WHERE place_name IS NULL')->fetchColumn()
+        : 0;
+}
+
+/**
+ * The finds without a lookup, filled until the deadline — the loop the
+ * upload and the cron share. A thousand finds take a second or two; the
+ * deadline is for the stock of a whole installation after a new file.
+ *
+ * @return array{looked: int, named: int}
+ */
+function place_names_fill_run(PDO $pdo, float $deadline): array
+{
+    $looked = 0;
+    $named = 0;
+    if (!place_names_fillable($pdo)) {
+        return ['looked' => 0, 'named' => 0];
+    }
+    $update = $pdo->prepare('UPDATE map_points SET place_name = ? WHERE id = ?');
+    while (microtime(true) < $deadline) {
+        $rows = $pdo->query('SELECT id, lat, lon FROM map_points WHERE place_name IS NULL ORDER BY id LIMIT 500')
+            ->fetchAll(PDO::FETCH_ASSOC);
+        if ($rows === []) {
+            break;
+        }
+        foreach ($rows as $r) {
+            // A point without a usable coordinate gets '' — or it would
+            // stand first in every round and never let the loop move on.
+            $name = is_numeric($r['lat']) && is_numeric($r['lon'])
+                ? place_name_at($pdo, (float) $r['lat'], (float) $r['lon']) : '';
+            $update->execute([$name, $r['id']]);
+            $looked++;
+            $named += $name !== '' ? 1 : 0;
+            if (microtime(true) >= $deadline) {
+                break;
+            }
+        }
+    }
+    return ['looked' => $looked, 'named' => $named];
+}
+
+/** After a new file: every find is looked up afresh, as many now as the time allows. */
+function place_names_refill(PDO $pdo, float $deadline): array
+{
+    if (!place_names_fillable($pdo)) {
+        return ['looked' => 0, 'named' => 0];
+    }
+    $pdo->exec('UPDATE map_points SET place_name = NULL');
+    return place_names_fill_run($pdo, $deadline);
+}

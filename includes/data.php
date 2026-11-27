@@ -18,6 +18,7 @@ require_once __DIR__ . '/geoid.php';
 require_once __DIR__ . '/elevation.php';
 // Municipality, region, country — the filing scheme of the record photos.
 require_once __DIR__ . '/municipality.php';
+require_once __DIR__ . '/place_names.php';
 // The time buckets for the sync. Only because of EIMER_AUSDRUCK: the
 // expression that assigns a point to its bucket must exist exactly once.
 require_once __DIR__ . '/bucket.php';
@@ -1116,7 +1117,8 @@ function autolists_refresh(PDO $pdo, int $userId, int $pointId): void
     $stmt = $pdo->prepare(
         'SELECT id, title, note, extra, extra_species, found_at, created_at, lat, lon,
                 elevation_m, mtb, mtb_quadrant, municipality, region, country, protected_area,
-                find_number
+                find_number'
+        . (place_names_point_ready($pdo) ? ', place_name' : '') . '
            FROM map_points WHERE id = ? AND user_id = ?'
     );
     $stmt->execute([$pointId, $userId]);
@@ -1217,7 +1219,8 @@ function autolists_compute(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare(
         'SELECT id, title, note, extra, extra_species, found_at, created_at, lat, lon,
                 deleted_at, elevation_m, mtb, mtb_quadrant, municipality, region, country,
-                protected_area, find_number
+                protected_area, find_number'
+        . (place_names_point_ready($pdo) ? ', place_name' : '') . '
            FROM map_points WHERE user_id = ?'
     );
     $stmt->execute([$userId]);
@@ -1395,6 +1398,9 @@ function point_haystack(array $p): string
         $parts[] = (string) $p['municipality'];
         $parts[] = (string) ($p['region'] ?? '');
         $parts[] = (string) ($p['country'] ?? '');
+    }
+    if (!empty($p['place_name'])) {
+        $parts[] = (string) $p['place_name'];
     }
     if (!empty($p['protected_area'])) {
         $parts[] = (string) $p['protected_area'];
@@ -1704,6 +1710,10 @@ function point_prepare(array $p, array $lists, array $photos = [], array $redLis
         'municipality'            => $p['municipality'] ?? null,
         'region'          => $p['region'] ?? null,
         'country'               => $p['country'] ?? null,
+        // The Ortslage (0206): the nearest field name, hamlet, wood or
+        // peak within a kilometre — said after the municipality, never part
+        // of the folder (place_names.php).
+        'place_name'          => ($p['place_name'] ?? '') !== '' ? $p['place_name'] : null,
         'folder'              => municipality_folder(
             $p['country'] ?? null, $p['region'] ?? null, $p['municipality'] ?? null),
         // Minted at creation, or null — then the id IS the number and the
@@ -2682,6 +2692,9 @@ function point_create(PDO $pdo, int $userId, array $data): int
             if (column_exists($pdo, 'map_points', 'municipality')) {
                 municipality_record($pdo, $userId, $pointId, true);
             }
+            // The Ortslage beside it — a query of our own, no service to
+            // wait for (place_names.php; quiet before 0206 or a file).
+            place_name_record($pdo, $pointId);
         }
 
         // The title's reference first, the derived table after it — the
@@ -3053,6 +3066,8 @@ function point_update(PDO $pdo, int $userId, int $pointId, array $data): bool
                     ->execute([$pointId, $userId]);
                 municipality_record($pdo, $userId, $pointId, true);
             }
+            // The Ortslage belongs to the coordinate just as much.
+            place_name_record($pdo, $pointId);
 
             // The protected area belongs to the coordinate likewise:
             // whoever drags a find out of the nature reserve must not keep

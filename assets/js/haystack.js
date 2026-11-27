@@ -47,6 +47,8 @@ export function pointHaystack(point) {
     // "mittenwald" finds the find, "bay" everything from Bavaria — and both
     // are closer to what someone actually types than a sheet number.
     if (point.municipality) parts.push(point.municipality, point.region ?? '', point.country ?? '');
+    // The Ortslage beside it (0206): „goldsteintal" finds what lies there.
+    if (point.place_name) parts.push(point.place_name);
     // The protected area likewise: "altkönig" finds all finds from the
     // area, and that is exactly the question one asks of a find stock —
     // what did I find there.

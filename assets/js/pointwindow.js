@@ -2538,13 +2538,21 @@ export function mountPointWindow(host) {
            from now. */
         if (point.folder || point.ablage) {
             const path = point.folder || point.ablage;
-            const shown = placeWritten(path);
+            const shown = placeWritten(path, point.place_name);
             const piece = document.createElement('span');
             piece.className = 'fact-place';
             piece.textContent = shown;
             piece.title = path + ' — ' + t('Staat / Landesteil / Gemeinde — das Ablageschema der Belegfotos');
             parts.push(piece.outerHTML);
-            row(t('Ort'), shown, t('Ordner der Belegfotos: %s', path), 'place');
+            /* THE ORTSLAGE'S SOURCE IN THE HINT (0206): one row, the same
+               words as the short line — the Fundbrowser draws every row as
+               a piece of its line, and a row of its own would put the place
+               there twice. A name from OpenStreetMap is a neighbour's name
+               for the spot, not a surveyed boundary, and may lie up to a
+               kilometre away; the hint says so. */
+            row(t('Ort'), shown, t('Ordner der Belegfotos: %s', path) + (point.place_name
+                ? '. ' + t('„%s“ ist der nächste Flurname, Weiler, Wald oder Gipfel im Umkreis von einem Kilometer — aus OpenStreetMap.', point.place_name)
+                : ''), 'place');
         }
 
         // THE MAP SHEET, COMPLETE — "5817/444", sheet, quarter, sixteenth,

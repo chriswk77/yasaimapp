@@ -107,6 +107,7 @@ function cron_jobs(): array
         'municipalities'  => ['label' => 'Gemeinden', 'lock' => 'municipalities', 'run' => 'cron_job_municipalities'],
         // The hyphen is the old lock name, not a typo — see above.
         'protected_areas' => ['label' => 'Schutzgebiete', 'lock' => 'protected-areas', 'run' => 'cron_job_protected_areas'],
+        'place_names'     => ['label' => 'Ortslagen', 'lock' => 'place_names', 'run' => 'cron_job_place_names'],
         'cloud_moves'     => ['label' => 'Umzüge', 'lock' => 'cloud_moves', 'run' => 'cron_job_cloud_moves'],
         'mykis'           => ['label' => 'Kartierung', 'lock' => 'mykis', 'run' => 'cron_job_mykis'],
         'rain'            => ['label' => 'Regen', 'lock' => 'rain', 'run' => 'cron_job_rain'],
@@ -288,7 +289,7 @@ function cron_job_login_attempts(PDO $pdo, float $deadline): array
  * what it does not finish it continues the next night, as before.
  */
 const CRON_GROUPS = [
-    'every_5_minutes' => ['cloud_moves', 'elevation', 'municipalities', 'protected_areas', 'cloud_names', 'picture_stamps', 'thumbs', 'sidecar_move'],
+    'every_5_minutes' => ['cloud_moves', 'elevation', 'municipalities', 'protected_areas', 'place_names', 'cloud_names', 'picture_stamps', 'thumbs', 'sidecar_move'],
     'hourly'   => ['species', 'cloud_copies'],
     'daily'    => ['login_attempts', 'cloud_names_all', 'rain', 'mykis', 'picture_archives', 'backup'],
 ];
@@ -481,6 +482,25 @@ function cron_job_protected_areas(PDO $pdo, float $deadline): array
     if ($without)  $parts[] = "$without liegen in keinem";
     if ($failed)   $parts[] = "$failed fehlgeschlagen (kommen beim nächsten Lauf wieder dran)";
     return ['parts' => $parts, 'open' => protected_areas_pending($pdo)];
+}
+
+/**
+ * THE ORTSLAGE of every find not looked up yet (includes/place_names.php,
+ * migration 0206): imports, and whatever an upload of the Ortslagen file
+ * left when its time ran out. No outside service — a query of our own per
+ * find, a thousand in a second or two —, so it takes at most 20 of the
+ * bundle's seconds and is quiet when nothing waits. Its button is the
+ * upload itself (tab DGfM-Kartierung), which runs the same loop.
+ */
+function cron_job_place_names(PDO $pdo, float $deadline): array
+{
+    require_once PROJECT_PATH . '/includes/place_names.php';
+    $r = place_names_fill_run($pdo, min($deadline, microtime(true) + 20));
+    $parts = [];
+    if ($r['looked'] > 0) {
+        $parts[] = $r['looked'] . ' Funde nachgesehen, ' . $r['named'] . ' mit Ortslage';
+    }
+    return ['parts' => $parts, 'open' => place_names_pending($pdo)];
 }
 
 /**

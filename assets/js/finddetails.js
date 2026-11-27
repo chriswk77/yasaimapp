@@ -19,11 +19,18 @@ import { sporePrintRead } from './findtraits.js';
    land and state joined by a bare comma, the municipality after a comma
    and a space — „DE,THU, Arenshausen". One function, because the point
    window's place line and the plate's details say it alike; a path
-   without a state keeps what it has. '' stays ''. */
-export function placeWritten(path) {
+   without a state keeps what it has. '' stays ''.
+   THE ORTSLAGE FOLLOWS after one more comma and a space (0206,
+   27.11.2026: „die Ortslage auch an den Fundort hängen … zum Beispiel de
+   Hess Wiesbaden, und dann die nähere Ortslage noch dran") — the way his
+   own file names always carried it („DE,HE, Rambach, Goldsteintal"). It
+   is said, never filed: the folder path stays country/state/municipality. */
+export function placeWritten(path, placeName = '') {
     const [country, land, ...place] = path.split('/');
-    return land === undefined ? country
+    const written = land === undefined ? country
         : place.length ? `${country},${land}, ${place.join(', ')}` : `${country},${land}`;
+    const extra = String(placeName ?? '').trim();
+    return extra && written ? `${written}, ${extra}` : written;
 }
 
 /**
@@ -65,6 +72,11 @@ export function findDetails(point, isFind) {
         date:       point.found_at ? readableDate(point.found_at) : '',
         place:      point.municipality ?? '',
         place_full: placeWritten(point.folder || point.ablage || ''),
+        /* THE ORTSLAGE A DETAIL OF ITS OWN, not part of place_full (0206):
+           plates go public (the front page shows them), and a name within
+           a kilometre tells the spot about as finely as the 64th quadrant.
+           Whoever wants it on a plate ticks it; nobody gets it unasked. */
+        place_name: point.place_name ?? '',
         mtb:        point.mtb ? point.mtb + (q ? '/' + q : '') : '',
         gps:        point.lat != null ? `${Number(point.lat).toFixed(5)}, ${Number(point.lon).toFixed(5)}` : '',
         elevation:  point.elevation_m != null ? `${point.elevation_m} m` : '',

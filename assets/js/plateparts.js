@@ -34,6 +34,8 @@ export function detailLabels(tr = t) {
         ['date', tr('Funddatum')],
         ['place', tr('Fundort')],
         ['place_full', tr('Fundort mit Land und Bundesland'), tr('Fundort')],
+        // Off unless ticked — finddetails.js says why (0206).
+        ['place_name', tr('Ortslage')],
         ['mtb', tr('MTB')],
         ['gps', tr('GPS')],
         ['elevation', tr('Höhe')],
@@ -61,7 +63,7 @@ export function detailLabels(tr = t) {
    the same library. The species has none, as it has no label: its name
    is the heading. */
 export const DETAIL_ICONS = {
-    number: 'hash', date: 'calendar', place: 'place', place_full: 'place', mtb: 'map', gps: 'crosshair',
+    number: 'hash', date: 'calendar', place: 'place', place_full: 'place', place_name: 'place', mtb: 'map', gps: 'crosshair',
     elevation: 'mountain', finder: 'person', determiner: 'key', certainty: 'check', amount: 'bars',
     substrate: 'stack', vegetation: 'tree', voucher: 'label', remark: 'speech-bubble', note: 'sticky-note',
     odour: 'scent', taste: 'drop', spore_print: 'spore',
