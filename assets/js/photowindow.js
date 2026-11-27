@@ -12772,11 +12772,13 @@ export function mountPhotoWindow(host) {
         };
         /* data-click: opened by a click only, never by passing over it —
            the Motivname, a name changed seldom and read often, would drop
-           its list over the picture whenever the pointer crossed the bar. */
-        const byHover = !pick.hasAttribute('data-click');
-        pick.addEventListener('pointerenter', (e) => { if (byHover && e.pointerType === 'mouse') open(true); });
+           its list over the picture whenever the pointer crossed the bar.
+           Asked at each pass, not once: Maßstab and Medium carry it only
+           while the picture has one (scalePickLabel, mediumPickLabel). */
+        const byHover = () => !pick.hasAttribute('data-click');
+        pick.addEventListener('pointerenter', (e) => { if (byHover() && e.pointerType === 'mouse') open(true); });
         pick.addEventListener('pointerleave', (e) => {
-            if (!byHover || e.pointerType !== 'mouse') return;
+            if (!byHover() || e.pointerType !== 'mouse') return;
             clearTimeout(timer);
             timer = setTimeout(() => open(false), 250);
         });
@@ -12884,8 +12886,11 @@ export function mountPhotoWindow(host) {
         const pick = document.getElementById(id);
         if (!pick) return;
         const button = pick.querySelector('.photo-pick-button');
-        if (button.dataset.text !== text || pick._wordsWidth === undefined) {
+        // Drawn anew when the words change, or the pencil comes or goes (data-click).
+        const click = String(pick.hasAttribute('data-click'));
+        if (button.dataset.text !== text || button.dataset.click !== click || pick._wordsWidth === undefined) {
             button.dataset.text = text;
+            button.dataset.click = click;
             const words = document.createElement('span');
             words.className = 'photo-pick-text';
             words.textContent = text;
@@ -13161,6 +13166,13 @@ export function mountPhotoWindow(host) {
         // Closed it says the scale alone, never the device (04.11.2026) — the device is the open list's heads.
         // Short — the ruler in front says what it is („langer Text ist in der Zeile nicht cool").
         const scaleNow = measureSubject()?.scale ?? null;
+        /* SET ONCE, THEN TEXT WITH A PENCIL (27.11.2026: „Maßstab setzt man
+           auch nur einmal am Bild und das Medium auch nur einmal und danach
+           braucht man es eigentlich nicht mehr"): a picture with a scale
+           shows it as the Motivname does, opened by a click; one without
+           keeps the menu that opens under the pointer, where it is still
+           to be done. */
+        document.getElementById('photo-scale-pick').toggleAttribute('data-click', scaleNow !== null);
         pickSay('photo-scale-pick', select.options[0]?.textContent ?? '',
             scaleNow?.preset_id ? 'preset:' + scaleNow.preset_id : '', 'ruler');
     }
@@ -13249,6 +13261,8 @@ export function mountPhotoWindow(host) {
         const may = subject !== null && scaleMayEdit();
         pick.hidden = subject === null || (!label && !may) || !pictureIsMicro(subject);
         pick.classList.toggle('is-read', !may);
+        // Set once, then text with a pencil (scalePickLabel says why) — only where one may change it.
+        pick.toggleAttribute('data-click', may && !!label);
         pickSay('photo-medium-pick', label || t('Medium'), null, 'microscope');
         pick.querySelector('.photo-pick-button').classList.toggle('is-empty', !label);
     }
