@@ -51,8 +51,12 @@
  *     first coordinator had allowed — but the plants around are an
  *     observation about the site, not what the fungus grew on, and in Wirt
  *     a reader had to cut the two apart again.
- *   - NO ORTSLAGE. The tour name was meant for it, but on most finds it is
- *     „Tagestour", and BASIS_ort and the MTB say where the find is.
+ *   - THE ORTSLAGE IS THE NEAREST FIELD NAME, hamlet, wood or peak from
+ *     OpenStreetMap within a kilometre (27.11.2026, place_names.php) —
+ *     and only for finders at the 64th quadrant or exact, because finer
+ *     than that it would give away what a coarser choice kept back. The
+ *     tour name was meant for it once, but on most finds it is
+ *     „Tagestour".
  *   - THE IDENTIFICATION CERTAINTY GOES TO Qualität AS WE WRITE IT — MykIS
  *     keeps no vocabulary of its own there.
  *   - EMPTY ON PURPOSE: the site note (fo_bemerkung), county, postcode, source, stage, revision,
@@ -126,6 +130,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/collections.php';
 // mykis_substrate(): where „Substrat / Wirt" goes among MykIS' lists.
 require_once __DIR__ . '/mykis_hosts.php';
+// place_name_at(): the Ortslage, from the names fetched per state.
+require_once __DIR__ . '/place_names.php';
 
 /** The template's head, in the template's order and spelling. */
 const MYKIS_COLUMNS = [
@@ -724,6 +730,21 @@ function mykis_taxref(mixed $references): bool
 }
 
 /**
+ * The Ortslage of a find — at the 64th quadrant and exact only, and only
+ * where somebody building the sheet has named the database
+ * (place_names_source).
+ */
+function mykis_place_name(array $p, string $level): string
+{
+    $pdo = place_names_source();
+    if ($pdo === null || !in_array($level, ['q64', 'exact'], true)
+        || !is_numeric($p['lat'] ?? null) || !is_numeric($p['lon'] ?? null)) {
+        return '';
+    }
+    return place_name_at($pdo, (float) $p['lat'], (float) $p['lon']);
+}
+
+/**
  * One find as a row of the sheet — mykis_eligible() has passed it — at the
  * finder's precision: coordinates and their inaccuracy only for 'exact',
  * the MTB cut to the chosen step; no precision is the default step.
@@ -770,6 +791,7 @@ function mykis_row(array $p, string $holder, ?string $precision = null): array
         'erfasser'       => $holder,
         'beobachtung_bemerkungen' => $vegetation !== '' ? 'Begleitvegetation: ' . $vegetation : '',
         'BASIS_ort'      => trim((string) ($p['municipality'] ?? '')),
+        'BASIS_ortslage' => mykis_place_name($p, $level),
         'name_staat'     => 'Deutschland',
         'name_provinz'   => MYKIS_STATES[$region] ?? '',
         '    MTB'        => $mtb,
@@ -1190,6 +1212,7 @@ function mykis_pending(PDO $pdo, ?string $cutoff): array
 function mykis_deliver(PDO $pdo, ?string $cutoff, float $deadline): array
 {
     require_once __DIR__ . '/mail.php';
+    place_names_source($pdo, true);
     $done = ['mails' => 0, 'finds' => 0, 'confirmations' => 0, 'failed' => 0, 'open' => 0];
     $sent = 0;
     // At least one mail per call, whatever the clock says — a call that
@@ -1613,6 +1636,11 @@ function mykis_coordinator_mail(array $coordinators, array $files, int $part, in
                Landeskoordinator so nicht schreiben") — they know how the
                DGfM treats exact places better than any mail could say. */
             . "Messtischblatt bis zum 64stel-Quadranten.\n\n"
+            // OpenStreetMap's licence (ODbL) asks for its source by name.
+            . (place_names_source() === null ? '' : "Bei Findern, die den 64stel-Quadranten oder genaue Koordinaten "
+                . "abgeben, steht in „BASIS_ortslage“ der nächste Flurname, Weiler oder Wald im Umkreis von "
+                . "einem Kilometer, nach OpenStreetMap ("
+                . PLACE_NAME_CREDIT . ").\n\n")
             . "Fragen zu einem Fund richten Sie bitte direkt an den Finder, unter der Adresse oben. "
             . ($whom !== '' ? "Eine Antwort auf diese Mail geht an $whom, zuständig für den Versand.\n\n" : "\n")
             . "Neue Funde kommen zweimal im Jahr, Anfang Juni und Anfang Dezember, weil Sie "

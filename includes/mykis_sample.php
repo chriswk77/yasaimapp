@@ -97,6 +97,7 @@ function mykis_sample_files(string $day): array
  */
 function mykis_sample_mails(PDO $pdo): array
 {
+    place_names_source($pdo, true);
     $hessen = [['id' => 0, 'name' => 'Harald Zühlsdorf', 'region' => 'HES', 'part' => null]];
     if (mykis_ready($pdo)) {
         $row = $pdo->query("SELECT id, name, region, part FROM map_mykis_coordinators WHERE region = 'HES' LIMIT 1")->fetch();

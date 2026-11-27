@@ -492,6 +492,27 @@ echo "\nThe MykIS sheet\n";
         check($placed('Fagus sylvatica') === ['', '', 'Fagus sylvatica'],
             'without the lists on the server everything goes to the free text — a row MykIS takes');
     }
+    /* THE ORTSLAGE: the nearest name within a kilometre, from what
+       Overpass answered — and nothing for a coarse finder. */
+    $parsed = place_names_parse("node\t50.1\t8.6\tAm Hirschberg\tlocality\t\t\n"
+        . "way\t50.2\t8.7\tStadtwald\t\t\tforest\n"
+        . "node\t50.3\t8.8\tFeldberg\t\tpeak\t\n"
+        . "node\t50.4\t8.9\t\tlocality\t\t\n"
+        . "relation\t\t\tKaputt\tlocality\t\t\n");
+    check(array_column($parsed, 'kind') === ['locality', 'wood', 'peak']
+        && $parsed[0]['name'] === 'Am Hirschberg' && $parsed[1]['lat'] === 50.2,
+        'Overpass\' lines become field name, wood (its centre) and peak; nameless and placeless lines go');
+    $near = [['name' => 'Am Hirschberg', 'lat' => 50.0, 'lon' => 8.0],
+             ['name' => 'Im Grund', 'lat' => 50.005, 'lon' => 8.0],
+             ['name' => 'Fernwald', 'lat' => 50.02, 'lon' => 8.0]];
+    check(place_name_nearest($near, 50.004, 8.0) === 'Im Grund'
+        && place_name_nearest($near, 50.0, 8.0) === 'Am Hirschberg'
+        && place_name_nearest($near, 50.012, 8.03) === '',
+        'the nearest name wins, and none beyond a kilometre');
+    place_names_source(null, true);
+    check(mykis_place_name(['lat' => 50.0, 'lon' => 8.0], 'exact') === ''
+        && $at(mykis_row($sure, 'X', 'exact'), 'BASIS_ortslage') === '',
+        'without names in the database the Ortslage stays empty');
     check(mykis_lists_store('{"hosts": [["Fagus sylvatica"]], "organ": ["Laubstreu"]}') === null
         && mykis_lists_store('kein JSON') === null && is_file($path) === $hadFile,
         'a file that is not the lists is refused and nothing written');

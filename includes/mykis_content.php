@@ -72,6 +72,21 @@ function mykis_process(PDO $pdo, int $userId): ?array
                 ? ['error', t('Das ist keine Wirtliste aus MykIS — es wurde nichts übernommen.')]
                 : ['success', t('Wirtliste übernommen: %d Wirte und %d Substrate.', $counts['hosts'], $counts['organ'])];
 
+        /* THE ORTSLAGE'S NAMES, built at the desk from OpenStreetMap
+           (admin/place_names_build.php) and taken in here — place_names.php
+           says why not fetched by the server. */
+        case 'places':
+            if (!place_names_ready($pdo)) {
+                return ['error', t('Die Ortslagen brauchen die Migration 0205 — sie ist noch nicht eingespielt.')];
+            }
+            set_time_limit(300);
+            $upload = $_FILES['places'] ?? null;
+            $count = is_array($upload) && ($upload['error'] ?? 1) === UPLOAD_ERR_OK
+                ? place_names_import($pdo, (string) $upload['tmp_name']) : null;
+            return $count === null
+                ? ['error', t('Das ist keine Datei mit Ortslagen — es wurde nichts übernommen.')]
+                : ['success', t('Ortslagen übernommen: %d Namen.', $count)];
+
         case 'deliver':
             $done = mykis_deliver($pdo, null, microtime(true) + 60);
             if ($done['mails'] === 0 && $done['confirmations'] === 0 && $done['failed'] === 0) {
@@ -211,6 +226,23 @@ function mykis_render(PDO $pdo, ?array $message): void
         </label>
     </form>
 </div>
+<?php if (place_names_ready($pdo)):
+    $places = place_names_state($pdo); ?>
+<div class="column-header">
+    <p class="hint-text"><?= h($places === null
+        ? t('Die Ortslage ist der nächste Flurname, Weiler oder Wald im Umkreis von einem Kilometer. Sie kommt aus OpenStreetMap und geht nur bei Findern mit, die den 64stel-Quadranten oder genaue Koordinaten abgeben. Die Namen kommen als Datei, die am Rechner gebaut wird.')
+        : t('Ortslagen aus OpenStreetMap: %d Namen, Stand %s.', $places['names'], date('d.m.Y', strtotime($places['made'])))) ?></p>
+    <form method="post" action="<?= h($target) ?>" enctype="multipart/form-data" class="mykis-places">
+        <?= csrf_field() ?>
+        <input type="hidden" name="section" value="mapping">
+        <input type="hidden" name="action" value="places">
+        <label class="button small subtle">
+            <?= h($places === null ? t('Ortslagen hochladen') : t('Neue Ortslagen hochladen')) ?>
+            <input type="file" name="places" accept=".gz,application/gzip" hidden>
+        </label>
+    </form>
+</div>
+<?php endif; ?>
 <p class="hint-text small provider-currency"><?= h(t('Liste nach dgfm-ev.de, Landeskoordinatoren für Pilzkartierung — Stand 25.09.2026.')) ?></p>
 
 <script>
@@ -220,7 +252,7 @@ for (const box of document.querySelectorAll('.mykis-consent')) {
     box.addEventListener('change', () => box.form.requestSubmit());
 }
 // The file sends itself once chosen — the same: one step, no second button.
-for (const file of document.querySelectorAll('.mykis-lists input[type=file]')) {
+for (const file of document.querySelectorAll('.mykis-lists input[type=file], .mykis-places input[type=file]')) {
     file.addEventListener('change', () => file.files.length && file.form.requestSubmit());
 }
 </script>

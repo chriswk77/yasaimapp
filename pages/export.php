@@ -66,6 +66,10 @@ if ($format === 'mykis') {
     }
 }
 
+// The sheet's Ortslage looks names up in the database (place_names.php).
+if ($format === 'mykis') {
+    place_names_source($pdo, true);
+}
 $file = export_build($points, $format, 'YASAIMAPP', $options);
 
 header('Content-Type: ' . $file['mime']);

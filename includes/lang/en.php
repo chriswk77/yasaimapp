@@ -6722,6 +6722,16 @@ return [
         => 'Host list from MykIS: %d hosts and %d substrates. A host like "Fagus sylvatica" goes to "Wirt", a word like "Laubstreu" to "organ_substrat", everything else to "substrat_text".',
     'Wirtliste hochladen' => 'Upload host list',
     'Neue Wirtliste hochladen' => 'Upload a new host list',
+    'Die Ortslagen brauchen die Migration 0205 — sie ist noch nicht eingespielt.'
+        => 'The Ortslagen need migration 0205 — it has not been applied yet.',
+    'Das ist keine Datei mit Ortslagen — es wurde nichts übernommen.'
+        => 'That is no file of Ortslagen — nothing was taken over.',
+    'Ortslagen übernommen: %d Namen.' => 'Ortslagen taken over: %d names.',
+    'Die Ortslage ist der nächste Flurname, Weiler oder Wald im Umkreis von einem Kilometer. Sie kommt aus OpenStreetMap und geht nur bei Findern mit, die den 64stel-Quadranten oder genaue Koordinaten abgeben. Die Namen kommen als Datei, die am Rechner gebaut wird.'
+        => 'The Ortslage is the nearest field name, hamlet or wood within one kilometre. It comes from OpenStreetMap and goes along only for finders who hand over the 64th quadrant or exact coordinates. The names come as a file built on a desk computer.',
+    'Ortslagen aus OpenStreetMap: %d Namen, Stand %s.' => 'Ortslagen from OpenStreetMap: %d names, as of %s.',
+    'Ortslagen hochladen' => 'Upload Ortslagen',
+    'Neue Ortslagen hochladen' => 'Upload new Ortslagen',
     'Bestätigt am %s' => 'Confirmed on %s',
     // How precisely a finder hands over their finds (0129)
     'Viertelquadrant — etwa 5,5 × 6 km, ohne Koordinaten' => 'Quarter quadrant — about 5.5 × 6 km, no coordinates',
