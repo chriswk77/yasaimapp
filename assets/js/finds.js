@@ -2613,6 +2613,14 @@ function loadDetail(f) {
                 cockpit.overview(finds);
             }
             cockpit.open(d);
+            /* THE MAP OF A FIND OPENED ON „FUNDPUNKT" (27.11.2026: after a
+               reload the map stayed empty — „Erst als ich zu Sequenzen
+               gewechselt bin und wieder zurück, wurde mir die Map dann
+               richtig geladen"). The remembered tab is shown before the
+               find has loaded, and on the page's first find before the
+               cockpit even exists: showTab's mapShown went nowhere. Asked
+               again now that the find is in the window. */
+            if (tab === 'place') cockpit.mapShown();
             // The plates come with their own answer; the face and the viewer once they are there.
             Promise.resolve(tools.plates.show(f.id)).then(() => {
                 if (current !== f) return;
