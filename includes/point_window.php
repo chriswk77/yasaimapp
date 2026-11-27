@@ -462,7 +462,7 @@ function point_window_render(): void
                  cloud connected and migration 0153 applied. */ ?>
             <div id="d-subpanel-files" role="tabpanel" aria-labelledby="d-subtab-files" hidden>
             <div class="field" id="d-files-field">
-                <p class="file-intro"><?= h(t('Weitere Dateien zum Fund, zum Beispiel Notizen, PDFs oder RAW-Bilder. Sie liegen in deiner Cloud beim Fund und ziehen mit ihm um. Nur du siehst sie.')) ?></p>
+                <p class="file-intro hint-text"><?= h(t('Weitere Dateien zum Fund, zum Beispiel Notizen, PDFs oder RAW-Bilder. Sie liegen in deiner Cloud beim Fund und ziehen mit ihm um. Nur du siehst sie.')) ?></p>
                 <div class="file-drop" id="d-files-drop">
                     <span class="file-drop-text"><?= h(t('Dateien oder Ordner hierher ziehen')) ?></span>
                     <div class="button-row">
