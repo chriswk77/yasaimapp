@@ -101,14 +101,20 @@ page_header(t('Fundbrowser'), [
                  anzeigen"); the word stays as tooltip and for the screen reader. */ ?>
             <button type="button" class="symbol-button small" id="finds-back"
                     title="<?= h(t('Zurück')) ?>" aria-label="<?= h(t('Zurück')) ?>"><?= icon('arrow-left') ?></button>
-            <?php /* BEFORE THE SPECIES' NAME, apart from the buttons that act on
-                 the find (27.11.2026: „die Buttons Fund, Mikroskop und
-                 Bestimmung auf die linke Seite … noch vor den Artnamen …
-                 Dann haben wir diese Umschalter etwas getrennt von den
-                 Steuerknöpfen"). Where one is comes left, what one can do
-                 right; and before the name, not after it, so a long name
-                 never moves the switch the hand reaches for blindly. The
-                 microscope window's head puts it at the same place
+            <?php /* THE WINDOW'S OWN HEADER STANDS IN THIS BAR
+                 (12.10.2026: „der doppelte Artname und die Info … ganz in die
+                 Kopfzeile"): its name and facts line, and at the right the ⓘ
+                 and the trash can that stood beside them. assets/js/finds.js
+                 moves the elements here — they keep their ids, and
+                 pointwindow.js goes on writing into them. */ ?>
+            <div class="finds-fund-heading" id="finds-fund-heading"></div>
+            <?php /* BEHIND THE SPECIES' NAME, as three signs (27.11.2026:
+                 „mach es Fund auch nur als Symbol und setz es hinter den
+                 Artnamen"). Apart from the buttons that act on the find,
+                 which stay at the right end (before that day the row
+                 stood among them). The bar's grid puts it there and
+                 leaves the facts line under the name (app.css). The
+                 microscope window's head follows the same order
                  (gallery_windows.php).
 
                  FUND · MIKROSKOP · SCHLÜSSEL, ONE ROW FOR ALL THREE
@@ -142,21 +148,15 @@ page_header(t('Fundbrowser'), [
                  it leads — the module's tool, else the core's page with
                  the Internet-Links and the finds of the species. */ ?>
             <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
-                <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
-                <button type="button" class="button subtle small square" data-area="microscope" aria-pressed="false" hidden
+                <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"
+                        title="<?= h(t('Fund')) ?>" aria-label="<?= h(t('Fund')) ?>"><?= icon('photo') ?></button>
+                <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden
                         title="<?= h(t('Mikroskop')) ?>" aria-label="<?= h(t('Mikroskop')) ?>"><?= icon('microscope') ?></button>
                 <?php if (identify_tool(user_current()) !== null): ?>
-                <button type="button" class="button subtle small square" data-area="key" aria-pressed="false" hidden
+                <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden
                         title="<?= h(t('Bestimmung')) ?>" aria-label="<?= h(t('Bestimmung')) ?>"><?= icon('key') ?></button>
                 <?php endif; ?>
             </div>
-            <?php /* THE WINDOW'S OWN HEADER STANDS IN THIS BAR
-                 (12.10.2026: „der doppelte Artname und die Info … ganz in die
-                 Kopfzeile"): its name and facts line, and at the right the ⓘ
-                 and the trash can that stood beside them. assets/js/finds.js
-                 moves the elements here — they keep their ids, and
-                 pointwindow.js goes on writing into them. */ ?>
-            <div class="finds-fund-heading" id="finds-fund-heading"></div>
             <div class="finds-fund-actions" id="finds-fund-actions">
                 <?php /* ON THE PUBLIC SITE — THE FIND'S, IN ITS HEAD (25.11.2026:
                      „Positionieren würde ich es gerne woanders. Und zwar

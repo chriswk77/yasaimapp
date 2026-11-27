@@ -242,9 +242,17 @@ function gallery_windows_render(): void
             <div class="microscope-head">
                 <button type="submit" value="close" class="button subtle small window-x" id="microscope-close"
                         title="<?= h(t('Schließen')) ?>" aria-label="<?= h(t('Schließen')) ?>"><?= icon('arrow-left') ?></button>
+                <?php /* THE SPECIES LARGE, THE WINDOW'S NAME SMALL
+                     (15.11.2026: „oben links fett mikroskopieren und ganz klein
+                     rechts daneben die Art. Das bitte genau umdrehen und auch
+                     mit der Schriftgröße"): at the microscope one wants to
+                     see which find the pictures go to; that one is
+                     microscoping, the window itself says. */ ?>
+                <h2 id="microscope-point"></h2>
+                <p class="hint-text small"><?= h(t('Mikroskopieren')) ?></p>
                 <?php /* FUND · MIKROSKOP · SCHLÜSSEL — THE SAME ROW AS IN THE
-                     FIND'S BAR, and like there BEFORE THE SPECIES' NAME, right after the
-                     arrow (27.11.2026; pages/finds.php says why; 24.11.2026: „eine
+                     FIND'S BAR, and like there BEHIND THE SPECIES' NAME and the window's
+                     own small title (27.11.2026; pages/finds.php says why; 24.11.2026: „eine
                      einheitliche Kopfzeile mit den 3 Buttons"). It began
                      here on 05.11.2026 as the window's own three views
                      („ich brauche einen weg zwischen mikroskopieren Bilder
@@ -257,8 +265,9 @@ function gallery_windows_render(): void
                      and the camera runs on — no objective asked again
                      (microscope.js, stepAside). */ ?>
                 <div class="area-switch microscope-views" id="microscope-views" role="group" aria-label="<?= h(t('Bereich')) ?>">
-                    <button type="button" class="button subtle small" data-area="find" aria-pressed="false"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
-                    <button type="button" class="button subtle small square is-active" data-area="microscope" aria-pressed="true"
+                    <button type="button" class="button subtle small" data-area="find" aria-pressed="false"
+                            title="<?= h(t('Fund')) ?>" aria-label="<?= h(t('Fund')) ?>"><?= icon('photo') ?></button>
+                    <button type="button" class="button subtle small is-active" data-area="microscope" aria-pressed="true"
                             title="<?= h(t('Mikroskop')) ?>" aria-label="<?= h(t('Mikroskop')) ?>"><?= icon('microscope') ?></button>
                     <?php /* The third only where the page behind has a key area
                          for this find (the host's areas.keyOffered) — on the
@@ -266,18 +275,10 @@ function gallery_windows_render(): void
                          (includes/modules.php, identify_tool) the button does
                          not exist at all. */ ?>
                     <?php if (identify_tool(user_current()) !== null): ?>
-                    <button type="button" class="button subtle small square" data-area="key" aria-pressed="false" hidden
+                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden
                             title="<?= h(t('Bestimmung')) ?>" aria-label="<?= h(t('Bestimmung')) ?>"><?= icon('key') ?></button>
                     <?php endif; ?>
                 </div>
-                <?php /* THE SPECIES LARGE, THE WINDOW'S NAME SMALL
-                     (15.11.2026: „oben links fett mikroskopieren und ganz klein
-                     rechts daneben die Art. Das bitte genau umdrehen und auch
-                     mit der Schriftgröße"): at the microscope one wants to
-                     see which find the pictures go to; that one is
-                     microscoping, the window itself says. */ ?>
-                <h2 id="microscope-point"></h2>
-                <p class="hint-text small"><?= h(t('Mikroskopieren')) ?></p>
                 <?php /* THE DEVICE IN THE HEAD (04.11.2026: „Die
                      Geräteauswahl würde ich in die Kopfzeile legen"): which
                      microscope this camera hangs on is the frame of the whole
@@ -293,7 +294,7 @@ function gallery_windows_render(): void
                          end (04.11.2026: „zusammen in ein Button …
                          ganz rechts ein Zahnrad"). It opens the window below;
                          choosing stays with the buttons beside it. */ ?>
-                    <button type="button" class="button subtle small square" id="microscope-manage"
+                    <button type="button" class="button subtle small" id="microscope-manage"
                             title="<?= h(t('Einstellungen')) ?>" aria-label="<?= h(t('Einstellungen')) ?>"><?= icon('gear') ?></button>
                 </div>
             </div>
@@ -442,7 +443,7 @@ function gallery_windows_render(): void
                              adds a new one alike. Quiet: the standing offer. */ ?>
                         <legend class="microscope-side-head">
                             <span><?= h(t('Objektiv')) ?></span>
-                            <button type="button" class="button subtle small square" id="microscope-calibrate-start"
+                            <button type="button" class="button subtle small" id="microscope-calibrate-start"
                                     title="<?= h(t('Objektiv eichen')) ?>" aria-label="<?= h(t('Objektiv eichen')) ?>"><?= icon('ruler') ?></button>
                         </legend>
                         <div class="microscope-objective-list" id="microscope-objectives"></div>
