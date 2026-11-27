@@ -6998,41 +6998,31 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 #finds-fund[data-tab="sequences"] #d-subpanel-sequences,
 #finds-fund[data-tab="files"] #d-subpanel-files { display: block !important; }
 /* ONE PANEL, TWO TABS (pages/finds.php, 27.11.2026): „Fundpunkt" keeps
-   what belongs beside its map — direction and outline —, „Listen" the
-   filing and who sees the find — the lists, „Direkt teilen", a find shown
-   to me. */
-#finds-fund[data-tab="place"] #d-panel-place > :is(#d-hint-received, #d-hints-field, #d-lists-field),
-#finds-fund[data-tab="lists"] #d-panel-place > :is(#d-direction-field, #d-polygon-field) { display: none !important; }
+   the find's point and who it is shown to — direction, outline, „Direkt
+   teilen", a find shown to me —, „Listen" the filing alone. „Direkt
+   teilen" stood under „Listen" for an afternoon („passt besser zu
+   Fundpunkt statt zu Listen": a hint shows this one point, it files
+   nothing). */
+/* „Direkt teilen" has nothing that folds: no empty triangle before its names (see the lists' tiles below). */
+#finds-fund #d-hints .list-selection-arrow { display: none; }
+#finds-fund[data-tab="place"] #d-panel-place > #d-lists-field,
+#finds-fund[data-tab="lists"] #d-panel-place > :is(#d-direction-field, #d-polygon-field, #d-hint-received, #d-hints-field) { display: none !important; }
 /* AT THE DESK SIDE BY SIDE, A TILE EACH (27.11.2026: „ganz schön
    platzverschwenderisch, wenn wir das untereinander platzieren … nur links
-   etwas Text und rechts alles Riesenkacheln, die frei sind"): „Direkt
-   teilen" a column of its own, then the lists, a tile per Mappe
-   (listtree.js, tilePerFolder) and the joint lists', flowing in a row and
-   wrapping where the page ends. The phone keeps them under one another. */
+   etwas Text und rechts alles Riesenkacheln, die frei sind"): the lists, a
+   tile per Mappe (listtree.js, tilePerFolder) and the joint lists',
+   flowing in a row and wrapping where the page ends. The phone keeps them
+   under one another. */
 @media (min-width: 861px) {
-    #finds-fund[data-tab="lists"] #d-panel-place { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1.5rem 2rem; }
     #finds-fund[data-tab="lists"] #d-panel-place > .field { margin: 0; }
-    #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) { flex: 0 1 15rem; }
-    #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 36rem; min-width: 0; }
-    /* TWO DIFFERENT THINGS, TOLD APART (27.11.2026: „weil das ja 2 völlig
-       verschiedene Sachen sind … Vielleicht auch direkt teilen mit einer
-       anderen Hintergrundfarbe als die Listenkacheln"): „Direkt teilen" —
-       who sees this one find — stands left of a hairline from top to
-       bottom, its tile without the lists' raised ground, only framed;
-       the lists — where the find is filed — keep their tiles on
-       --ground-3. */
-    #finds-fund[data-tab="lists"] #d-panel-place > :is(#d-hints-field, #d-hint-received) {
-        padding-right: 2rem;
-        border-right: 1px solid var(--border);
-        align-self: stretch;
-    }
-    #finds-fund[data-tab="lists"] #d-hints .list-selection-tile { background: var(--ground-2); }
+    #finds-fund[data-tab="lists"] #d-lists-field { flex: 1 1 auto; min-width: 0; }
     #finds-fund[data-tab="lists"] #d-lists.is-tiled { flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 1rem; }
     /* NO FOLDING ROOM WHERE NOTHING FOLDS (27.11.2026: „bei Listen ohne
        eigene Mappe oder bei Direktteilen ist das Einrücken da, das da
        eigentlich keinen Sinn macht"). The empty triangle keeps rows of one
        tree on one line (listtree.js); a tile without a single heading has
-       no other row to line up with. */
+       no other row to line up with. „Direkt teilen" left for „Fundpunkt"
+       the same day; its rows there are the window's own. */
     #finds-fund[data-tab="lists"] .list-selection-tile:not(:has(.is-heading)) .list-selection-arrow { display: none; }
     /* As wide as their longest name, from 12rem — „Waldbrände · von Ben" must not end in „…". */
     #finds-fund[data-tab="lists"] #d-lists .list-selection-tile { flex: 0 0 auto; min-width: 12rem; max-width: 24rem; }

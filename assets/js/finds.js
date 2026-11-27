@@ -1748,13 +1748,12 @@ for (const id of Object.keys(twins)) {
 }
 /* „LISTEN" ONLY WHERE IT HAS SOMETHING TO SHOW (27.11.2026): a foreign
    find has no list of mine to tick (pointwindow.js empties the tree), a
-   guest none at all; without a friend to share with and nothing shared to
-   me the tab would be an empty page. */
+   guest none at all — the tab would be an empty page. („Direkt teilen"
+   stands under „Fundpunkt" since the same day.) */
 const listsBlock = document.getElementById('d-lists');
 const listsShown = () => {
-    const field = (id) => { const el = document.getElementById(id); return !!el && !el.hidden; };
-    return (field('d-lists-field') && listsBlock?.querySelector('input') !== null)
-        || field('d-hints-field') || field('d-hint-received');
+    const field = document.getElementById('d-lists-field');
+    return !!field && !field.hidden && listsBlock?.querySelector('input') !== null;
 };
 const listsTabSync = () => {
     const button = tabButton('lists');

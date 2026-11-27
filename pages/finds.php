@@ -233,11 +233,12 @@ page_header(t('Fundbrowser'), [
                  held the direction, the outline, „Direkt teilen" and the
                  lists — „ziemlich viele Sachen, die eigentlich nur mäßig was
                  mit dem Oberbegriff Karte zu tun haben"). Both show the point
-                 window's one panel (#d-panel-place), each its half
-                 (app.css): where the find lies — the map, its position, its
-                 outline, the way to it — and where it is filed and who sees
-                 it, at the page's width. The map's own point window keeps
-                 its three tabs. */ ?>
+                 window's one panel (#d-panel-place), each its part
+                 (app.css): the find's point — the map, its position, its
+                 outline, the way to it, and who it is shown to („Direkt
+                 teilen passt besser zu Fundpunkt", the same day) — and
+                 where it is filed, at the page's width. The map's own point
+                 window keeps its three tabs. */ ?>
             <?php /* „Listen" before „Fundpunkt", the map last (27.11.2026: „Fundpunkt
                  und Listen vertauschen, sodass Fundpunkt als letztes dasteht"). */ ?>
             <button type="button" role="tab" data-tab="lists" aria-selected="false" tabindex="-1"><?= h(t('Listen')) ?></button>

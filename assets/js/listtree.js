@@ -224,10 +224,12 @@ export function mountListTree(host) {
      *   Unterlisten immer ausgeklappt sind. Hier haben wir Platz … aus Local
      *   Storage würde ich das hier nicht nehmen"). The sidebar is a narrow
      *   column one keeps tidy, the point window's „Karte" tab has room, and
-     *   whoever files a find wants to see every list it could go into. A fold
-     *   still works there, for the moment only: it is not stored, it does not
-     *   reach the sidebar, and the next opening starts open again — a
-     *   triangle that does nothing would be a promise the window cannot keep.
+     *   whoever files a find wants to see every list it could go into.
+     *   NOTHING FOLDS THERE AT ALL since 27.11.2026 („mach mir das
+     *   Zuklappen in der Listenspalte weg … Wir zeigen sie ja eh alle
+     *   geöffnet, aber wozu soll man sie zuklappen können?"): no triangle,
+     *   no click on a Mappe or a heading. Until then a fold worked for the
+     *   moment only, unstored.
      */
     /**
      * The joint lists I may file points into — the leaves of every joint
@@ -255,6 +257,8 @@ export function mountListTree(host) {
         const byId = new Map();
 
         container.innerHTML = '';
+        // Nothing folds in it (see the option): the stylesheet drops the heading's pointer.
+        container.classList.toggle('is-unfolded', unfolded);
 
         /* ONE TILE PER KIND (22.09.2026: „für gemeinsame Listen
            bitte eine eigene Kachel"). Where the joint block is drawn, the box
@@ -398,7 +402,7 @@ export function mountListTree(host) {
                     onChange?.();
                 });
 
-                if (hasChildren) {
+                if (hasChildren && !unfolded) {
                     const fold = () => {
                         if (folded.has(list.id)) folded.delete(list.id);
                         else folded.add(list.id);
@@ -482,11 +486,12 @@ export function mountListTree(host) {
                 row.remove();
                 continue;
             }
+            // Where everything stands open, a Mappe does not fold either (see the option).
+            if (unfolded) continue;
             const fold = () => {
                 if (folded.has(key)) folded.delete(key);
                 else folded.add(key);
                 applyState();
-                if (unfolded) return;
                 settings.set('collapsedLists', [...state.collapsed]);
                 drawList();
             };
@@ -602,6 +607,14 @@ export function mountListTree(host) {
             for (const e of rows) {
                 e.row.hidden = isHidden(e);
                 if (!e.hasChildren) continue;
+                /* NO TRIANGLE WHERE NOTHING FOLDS: the arrow stays as the
+                   empty place that keeps the rows on their lines. */
+                if (unfolded) {
+                    e.arrow.innerHTML = '';
+                    e.arrow.tabIndex = -1;
+                    e.arrow.setAttribute('aria-hidden', 'true');
+                    continue;
+                }
 
                 const collapsed = folded.has(e.id);
                 e.arrow.innerHTML = disclosureTriangle();

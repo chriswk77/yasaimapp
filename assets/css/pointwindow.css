@@ -522,6 +522,8 @@ body.detail-collapsed .detail { width: var(--grip-width); }
    before, cursor:default stood here expressly, because only the triangle
    did anything and the row was meant to look like nothing. */
 .list-selection-row.is-heading { cursor: pointer; }
+/* Where nothing folds (listtree.js, unfolded) a heading is only a name. */
+.list-selection.is-unfolded .list-selection-row.is-heading { cursor: default; }
 .list-selection-row.is-heading .list-selection-entry { cursor: inherit; }
 
 /* The arrow also stands where there is nothing to fold — then empty.
