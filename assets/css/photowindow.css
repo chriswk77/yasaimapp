@@ -333,7 +333,12 @@
     .photo-window-top,
     .photo-window.is-measure-open .photo-window-top { display: contents; }
     .photo-phone-bar > .photo-mode { order: 0; }
-    .photo-window-top > .photo-topbar-scale:has(#photo-title) { order: 1; }
+    /* THE MOTIVNAME FIRST, THEN THE MODES (27.11.2026, tried in the
+       preview: „wenn der Motivname ganz links wäre und dann erst die 2
+       Modi" — „Ich finde es so auch besser"). The name heads the picture
+       and stands where the eye starts; the modes and „Messung" are tools
+       and now stand together, the measuring mode beside what it measures. */
+    .photo-window-top > .photo-topbar-scale:has(#photo-title) { order: -1; margin-right: .4rem; }
     .photo-phone-bar > .photo-topbar-scale:has(#photo-stats-label) { order: 2; }
     .photo-phone-bar > .photo-layer-chips { order: 3; }
     .photo-phone-bar::after { content: ''; order: 5; flex: 1; }
