@@ -565,7 +565,9 @@ function point_window_render(): void
                 <div class="list-selection is-tiled detail-hints" id="d-hints"></div>
             </div>
 
-            <div class="field">
+            <?php /* The id for the Fundbrowser, which gives the lists a tab of
+                 their own at its width (app.css, data-tab="lists"). */ ?>
+            <div class="field" id="d-lists-field">
                 <label><?= h(t('Listen')) ?></label>
                 <div class="list-selection" id="d-lists"></div>
             </div>

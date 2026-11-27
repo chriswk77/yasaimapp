@@ -1746,6 +1746,28 @@ for (const id of Object.keys(twins)) {
     const twin = document.getElementById(id);
     if (twin) new MutationObserver(syncTabs).observe(twin, { attributes: true, attributeFilter: ['hidden'] });
 }
+/* „LISTEN" ONLY WHERE IT HAS SOMETHING TO SHOW (27.11.2026): a foreign
+   find has no list of mine to tick (pointwindow.js empties the tree), a
+   guest none at all; without a friend to share with and nothing shared to
+   me the tab would be an empty page. */
+const listsBlock = document.getElementById('d-lists');
+const listsShown = () => {
+    const field = (id) => { const el = document.getElementById(id); return !!el && !el.hidden; };
+    return (field('d-lists-field') && listsBlock?.querySelector('input') !== null)
+        || field('d-hints-field') || field('d-hint-received');
+};
+const listsTabSync = () => {
+    const button = tabButton('lists');
+    const hide = !listsShown();
+    if (button.hidden === hide) return;
+    button.hidden = hide;
+    syncTabs();
+};
+const placePanel = document.getElementById('d-panel-place');
+if (placePanel) {
+    new MutationObserver(listsTabSync).observe(placePanel, { subtree: true, childList: true, attributes: true, attributeFilter: ['hidden'] });
+}
+listsTabSync();
 syncTabs();
 
 /* THE RAIL'S WIDTH IS DRAGGED AT ITS EDGE, as the plates' strip's

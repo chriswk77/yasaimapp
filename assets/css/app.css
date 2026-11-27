@@ -6987,11 +6987,17 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 #finds-fund #d-subpanel-photos,
 #finds-fund #d-subpanel-sequences,
 #finds-fund #d-subpanel-files { display: none !important; }
-#finds-fund[data-tab="place"] #d-panel-place,
+#finds-fund:is([data-tab="place"], [data-tab="lists"]) #d-panel-place,
 #finds-fund[data-tab="sequences"] #d-panel-photos,
 #finds-fund[data-tab="files"] #d-panel-photos { display: flex !important; }
 #finds-fund[data-tab="sequences"] #d-subpanel-sequences,
 #finds-fund[data-tab="files"] #d-subpanel-files { display: block !important; }
+/* ONE PANEL, TWO TABS (pages/finds.php, 27.11.2026): „Fundpunkt" keeps
+   what belongs beside its map — direction and outline —, „Listen" the
+   filing and who sees the find — the lists, „Direkt teilen", a find shown
+   to me. */
+#finds-fund[data-tab="place"] #d-panel-place > :is(#d-hint-received, #d-hints-field, #d-lists-field),
+#finds-fund[data-tab="lists"] #d-panel-place > :is(#d-direction-field, #d-polygon-field) { display: none !important; }
 /* The texts in two columns on the page's width — a field never broken
    between them. */
 #finds-fund[data-tab="text"] #d-panel-text { display: block !important; columns: 2 28rem; column-gap: 2.5rem; }
@@ -7161,8 +7167,8 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
 .finds-plate-empty .hint-text { margin: 0; }
 .finds-plate-editor:has(> .plate-window[open]:not(:modal)) > .finds-plate-empty { display: none; }
 
-/* KARTE: the find's own map (findmap.js) on the left, the window's panel —
-   direction, outline, „Direkt teilen", lists — in a column beside it. */
+/* FUNDPUNKT: the find's own map (findmap.js) on the left, the window's
+   panel — direction and outline — in a column beside it. */
 #finds-fund:not([data-tab="place"]) .finds-map { display: none; }
 #finds-fund[data-tab="place"] .finds-texts { flex: 0 0 26rem; }
 .finds-map {
@@ -7311,8 +7317,18 @@ button.finds-face-row-text:hover .finds-face-row-name { text-decoration: underli
     .finds-result { grid-template-columns: 3.2rem minmax(0, 1fr); }
     .finds-result > span:nth-child(n+3):nth-child(-n+6) { display: none; }
     .finds-fund-bar { flex-wrap: wrap; }
+    /* THE NAME ON A LINE OF ITS OWN under the buttons (27.11.2026, looked
+       at in a phone's width): beside the arrow, the three signs and the
+       three buttons the name was cut to „B…" and the facts stood a word
+       per line in the sliver left. */
+    .finds-fund-bar > .finds-fund-heading { order: 5; flex-basis: 100%; }
+    .finds-fund-bar > .finds-fund-actions { margin-left: auto; }
     .finds-fund-body { flex-direction: column; }
     .finds-tabs { flex-wrap: wrap; }
+    /* SEVEN TABS IN TWO ROWS, NOT FOUR (27.11.2026, with „Fundpunkt" and
+       „Listen" in place of „Karte"): each as wide as its word, the air
+       beside it halved, the words a step smaller. */
+    #finds-tabs [role="tab"] { flex: 1 1 auto; padding: .5rem .25rem; border-left-width: .3rem; border-right-width: .3rem; font-size: .82rem; }
     .finds-pictures { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
     .finds-rail { border-right: 0; overflow: visible; }
     .finds-rail-edge { display: none; }

@@ -222,13 +222,23 @@ page_header(t('Fundbrowser'), [
              and „Zeigen" stand at the bar's right end, where every tab sees
              them — finds.js moves them out of the window's footer. */ ?>
         <div class="sidebar-tabs detail-tabs finds-tabs" role="tablist" id="finds-tabs"
-             aria-label="<?= h(t('Text, Tafeln, Bilder, Dateien, Sequenzen oder Karte')) ?>">
+             aria-label="<?= h(t('Übersicht, Tafeln, Bilder, Dateien, Sequenzen, Fundpunkt oder Listen')) ?>">
             <button type="button" role="tab" data-tab="text" aria-selected="true"><?= h(t('Übersicht')) ?></button>
             <button type="button" role="tab" data-tab="plates" aria-selected="false" tabindex="-1"><?= h(t('Tafeln')) ?> <span class="tab-count" id="finds-plate-count" hidden>0</span></button>
             <button type="button" role="tab" data-tab="pictures" aria-selected="false" tabindex="-1"><?= h(t('Bilder')) ?> <span class="tab-count" id="finds-picture-count" hidden>0</span></button>
             <button type="button" role="tab" data-tab="files" aria-selected="false" tabindex="-1" hidden><?= h(t('Dateien')) ?></button>
             <button type="button" role="tab" data-tab="sequences" aria-selected="false" tabindex="-1"><?= h(t('Sequenzen')) ?></button>
-            <button type="button" role="tab" data-tab="place" aria-selected="false" tabindex="-1"><?= h(t('Karte')) ?></button>
+            <?php /* „FUNDPUNKT" AND „LISTEN" (27.11.2026: the tab „Karte"
+                 held the direction, the outline, „Direkt teilen" and the
+                 lists — „ziemlich viele Sachen, die eigentlich nur mäßig was
+                 mit dem Oberbegriff Karte zu tun haben"). Both show the point
+                 window's one panel (#d-panel-place), each its half
+                 (app.css): where the find lies — the map, its position, its
+                 outline, the way to it — and where it is filed and who sees
+                 it, at the page's width. The map's own point window keeps
+                 its three tabs. */ ?>
+            <button type="button" role="tab" data-tab="place" aria-selected="false" tabindex="-1"><?= h(t('Fundpunkt')) ?></button>
+            <button type="button" role="tab" data-tab="lists" aria-selected="false" tabindex="-1"><?= h(t('Listen')) ?></button>
             <div class="finds-tabs-end" id="finds-tabs-end">
                 <span class="finds-saved" id="finds-saved" aria-live="polite"></span>
             </div>
