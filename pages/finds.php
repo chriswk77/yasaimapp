@@ -159,8 +159,13 @@ page_header(t('Fundbrowser'), [
                      has a plate of his (findpublish.js). */ ?>
                 <?php if (publication_site_label($pdo, $me) !== null): ?>
                 <div class="finds-publish" id="finds-publish" hidden>
-                    <button type="button" class="button subtle small" id="finds-publish-toggle"
-                            aria-haspopup="true" aria-expanded="false" aria-controls="finds-publish-menu"><?= icon('globe') ?><span id="finds-publish-word"></span></button>
+                    <?php /* THE GLOBE ALONE (27.11.2026: „den Text entfernen. Also
+                         es soll nur noch die Weltkugel da sein … wenn
+                         veröffentlicht ist, ist die Weltkugel grün"): its
+                         colour says the state, the word stands in its tooltip
+                         (findpublish.js, draw). */ ?>
+                    <button type="button" class="symbol-button small" id="finds-publish-toggle"
+                            aria-haspopup="true" aria-expanded="false" aria-controls="finds-publish-menu"><?= icon('globe') ?></button>
                     <div class="finds-publish-menu" id="finds-publish-menu" hidden>
                         <fieldset class="field question">
                             <legend id="finds-publish-question"></legend>

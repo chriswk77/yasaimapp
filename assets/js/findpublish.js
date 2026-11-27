@@ -67,10 +67,11 @@ function draw() {
     const waiting = state.others.filter(o => !o.cleared).map(o => personName(o.name));
     const word = !state.published ? t('Nicht veröffentlicht')
         : waiting.length > 0 ? t('Wartet auf Einverständnis') : t('Veröffentlicht');
-    document.getElementById('finds-publish-word').textContent = word;
+    // No word on the button any more — the globe's colour says it, the tooltip in words.
     toggle.classList.toggle('is-published', state.shown);
     toggle.classList.toggle('is-waiting', state.published && !state.shown);
-    toggle.title = t('Auf %s zeigen?', state.site || t('der öffentlichen Seite'));
+    toggle.title = word;
+    toggle.setAttribute('aria-label', word);
 
     document.getElementById('finds-publish-question').textContent = t('Auf %s zeigen?', state.site || t('der öffentlichen Seite'));
     on.checked = state.published;
