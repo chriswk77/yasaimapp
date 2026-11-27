@@ -6435,6 +6435,13 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
     color: var(--text);
     font-weight: 600;
 }
+/* MIKROSKOP AND BESTIMMUNG AS SIGNS ALONE (27.11.2026: „Da ist das
+   Symbol eindeutig, nur Fund behält sein Text. Der ist auch schön kurz"):
+   square, and „Fund" beside it the same height — the token as height for
+   all three, because a button with a word grew a pixel past its
+   min-height and the squares stood a pixel short. */
+.area-switch .button { height: var(--field-height-small); }
+.area-switch .button.square { width: var(--field-height-small); padding: 0; justify-content: center; }
 /* Before the name, after the arrow (pages/finds.php): it keeps its width, the name gives way. */
 .finds-fund-bar > .area-switch { flex: none; }
 /* ONLY THE NAME MOVES IN, THE FACTS STAY AT THE LEFT (27.11.2026: „die

@@ -258,14 +258,16 @@ function gallery_windows_render(): void
                      (microscope.js, stepAside). */ ?>
                 <div class="area-switch microscope-views" id="microscope-views" role="group" aria-label="<?= h(t('Bereich')) ?>">
                     <button type="button" class="button subtle small" data-area="find" aria-pressed="false"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
-                    <button type="button" class="button subtle small is-active" data-area="microscope" aria-pressed="true"><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
+                    <button type="button" class="button subtle small square is-active" data-area="microscope" aria-pressed="true"
+                            title="<?= h(t('Mikroskop')) ?>" aria-label="<?= h(t('Mikroskop')) ?>"><?= icon('microscope') ?></button>
                     <?php /* The third only where the page behind has a key area
                          for this find (the host's areas.keyOffered) — on the
                          map there is none, and for a guest
                          (includes/modules.php, identify_tool) the button does
                          not exist at all. */ ?>
                     <?php if (identify_tool(user_current()) !== null): ?>
-                    <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
+                    <button type="button" class="button subtle small square" data-area="key" aria-pressed="false" hidden
+                            title="<?= h(t('Bestimmung')) ?>" aria-label="<?= h(t('Bestimmung')) ?>"><?= icon('key') ?></button>
                     <?php endif; ?>
                 </div>
                 <?php /* THE SPECIES LARGE, THE WINDOW'S NAME SMALL

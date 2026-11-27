@@ -143,9 +143,11 @@ page_header(t('Fundbrowser'), [
                  the Internet-Links and the finds of the species. */ ?>
             <div class="area-switch" id="finds-areas" role="group" aria-label="<?= h(t('Bereich')) ?>" hidden>
                 <button type="button" class="button subtle small is-active" data-area="find" aria-pressed="true"><?= icon('photo') ?><?= h(t('Fund')) ?></button>
-                <button type="button" class="button subtle small" data-area="microscope" aria-pressed="false" hidden><?= icon('microscope') ?><?= h(t('Mikroskop')) ?></button>
+                <button type="button" class="button subtle small square" data-area="microscope" aria-pressed="false" hidden
+                        title="<?= h(t('Mikroskop')) ?>" aria-label="<?= h(t('Mikroskop')) ?>"><?= icon('microscope') ?></button>
                 <?php if (identify_tool(user_current()) !== null): ?>
-                <button type="button" class="button subtle small" data-area="key" aria-pressed="false" hidden><?= icon('key') ?><?= h(t('Bestimmung')) ?></button>
+                <button type="button" class="button subtle small square" data-area="key" aria-pressed="false" hidden
+                        title="<?= h(t('Bestimmung')) ?>" aria-label="<?= h(t('Bestimmung')) ?>"><?= icon('key') ?></button>
                 <?php endif; ?>
             </div>
             <?php /* THE WINDOW'S OWN HEADER STANDS IN THIS BAR
