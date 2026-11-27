@@ -6437,6 +6437,26 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
 }
 /* Before the name, after the arrow (pages/finds.php): it keeps its width, the name gives way. */
 .finds-fund-bar > .area-switch { flex: none; }
+/* ONLY THE NAME MOVES IN, THE FACTS STAY AT THE LEFT (27.11.2026: „die
+   Informationszeile unten drunter, die kannst du schon ganz nach links
+   wieder rücken. Nur der Artenname soll dann etwas eingerückt sein durch
+   die Buttons"). At the desk the bar is a grid: arrow, switch, name and
+   the buttons in the first row, the facts in the second from where the
+   switch begins — where they stood before the switch came left. The
+   heading's box dissolves (display: contents) so its name and its facts
+   take a row each. NO COLUMN GAP, MARGINS INSTEAD: a switch that is
+   hidden (a find with no microscope, no key) leaves its column at nought,
+   and a gap would still stand there twice. The phone keeps the wrapping
+   row (max-width: 860px below). */
+@media (min-width: 861px) {
+    .finds-fund-bar { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; column-gap: 0; row-gap: .15rem; }
+    .finds-fund-bar > .finds-fund-heading { display: contents; }
+    #finds-back { grid-column: 1; grid-row: 1; }
+    .finds-fund-bar > .area-switch { grid-column: 2; grid-row: 1; margin-left: .9rem; }
+    .finds-fund-titlerow { grid-column: 3; grid-row: 1; margin-left: .9rem; }
+    .finds-fund-facts { grid-column: 2 / 4; grid-row: 2; margin-left: .9rem; }
+    .finds-fund-actions { grid-column: 4; grid-row: 1; margin-left: .9rem; }
+}
 .finds-fund-actions :is(#d-photo-microscope, #d-key, #d-key-back) { display: none !important; }
 /* THE CAMERA RUNS while the window stands aside (microscope.js, markLive):
    a dot on the row's „Mikroskop" — green, because it says „on", and it is
