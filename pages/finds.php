@@ -238,6 +238,11 @@ page_header(t('Fundbrowser'), [
                  where it is and where it is filed. The map's own point
                  window keeps its three tabs. */ ?>
             <button type="button" role="tab" data-tab="place" aria-selected="false" tabindex="-1"><?= h(t('Fundpunkt')) ?></button>
+            <?php /* „+" ADDS AN EMPTY TAB (28.11.2026): Tafeln, Dateien
+                 and Sequenzen stand only where the find holds something;
+                 this lists the ones one may fill here (finds.js, syncTabs). */ ?>
+            <button type="button" class="symbol-button small finds-tabs-plus" id="finds-tabs-plus" hidden
+                    aria-haspopup="menu" title="<?= h(t('Reiter hinzufügen')) ?>" aria-label="<?= h(t('Reiter hinzufügen')) ?>"><?= icon('plus') ?></button>
             <div class="finds-tabs-end" id="finds-tabs-end">
                 <span class="finds-saved" id="finds-saved" aria-live="polite"></span>
             </div>

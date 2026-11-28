@@ -40,6 +40,7 @@ import { iconHtml } from './icons.js';
 import { readableDate } from './dates.js';
 import { request } from './api.js';
 import { toast } from './toast.js';
+import { popupMenu } from './dialogs.js';
 import { mountPhotoWindow } from './photowindow.js';
 import { developThumb } from './develop.js';
 import { mountPlates } from './plates.js';
@@ -1482,6 +1483,8 @@ function drawFund(f) {
     leaving = false;
     opened = f.id;
     current = f;
+    // A tab added through „+" and left empty is gone at the next opening (syncTabs).
+    addedTabs.clear();
     choose(f.id);
     browse.hidden = true;
     fund.hidden = false;
@@ -1580,20 +1583,8 @@ function syncPlateTab() {
     plateCount.hidden = plates.length === 0;
     const offer = plateRow.querySelector('.plate-make');
     plateMake.hidden = !offer;
-    /* NOT ON A FOREIGN FIND WITHOUT A PLATE (28.11.2026: „wenn bei
-       Fremdfunden keine Tafeln … vorhanden sind, kannst du diese Tabs
-       eigentlich ausblenden"). „Tafeln stands always" was said for one's
-       own finds, where an empty tab is the way to the first plate. Whoever
-       is not of the find's circle (may_make — holder and co-owners) can
-       make none there, so an empty tab would only promise. Decided once the
-       cockpit has answered for THIS find; syncTabs hands the tab over if it
-       stood on it, as for the window's twins. */
-    const platesTab = tabButton('plates');
-    const bare = f !== null && detail?.point?.id === f.id && detail.may_make !== true && plates.length === 0;
-    if (platesTab && platesTab.hidden !== bare) {
-        platesTab.hidden = bare;
-        syncTabs();
-    }
+    // Whether „Tafeln" stands at all — the plates have answered (syncTabs, tabsOffer).
+    syncTabs();
     plateEmpty.textContent = f && f.pictures.length === 0 && plates.length === 0
         ? t('Für eine Tafel braucht der Fund zuerst ein Bild. Lade es im Reiter Bilder hoch.')
         : plates.length === 0 ? t('Zu diesem Fund gibt es noch keine Tafel.') : '';
@@ -1754,23 +1745,85 @@ for (const b of tabButtons) {
 
 /* WHETHER A TAB CAN BE THERE IS THE WINDOW'S ANSWER: pointwindow.js hides
    its sub-tab where a block cannot be — no pictures for this viewer, the
-   files only on one's own finds with a cloud (detailSubTabsDraw). The page's
-   tab follows its twin, and a tab that goes while it stands hands over. */
+   files only on one's own finds with a cloud, sequences only where one may
+   add one or where one already hangs (detailSubTabsDraw). The page's tab
+   follows its twin, and a tab that goes while it stands hands over.
+
+   A TAB STANDS ONLY WHERE IT HOLDS SOMETHING, AND „+" ADDS THE REST
+   (28.11.2026: „Solange er nichts gefüllt ist, blenden wir ihn bei den
+   eigenen Funden auch aus, können aber über einen Plus-Button quasi genau
+   diesen Tab einblenden und dort dann etwas hinterlegen. Das wäre
+   aufgeräumter"). Tafeln, Dateien and Sequenzen show when the find has a
+   plate, a file, a sequence; empty, they wait behind the „+" at the bar's
+   end, which lists exactly those one may fill here. A tab added that way
+   stays while one is at the find and is gone again at the next opening if
+   nothing went into it. ONE RULE FOR OWN AND FOREIGN FINDS: a friend's
+   plate or sequence shows its tab, and the „+" offers only what one's
+   rights allow. „ÜBERSICHT", „BILDER" AND „FUNDPUNKT" STAND ALWAYS —
+   pictures because nearly every find gets them, and a plate is made from
+   them („Bilder immer sichtbar", the same day). */
 const twins = { 'd-subtab-photos': 'pictures', 'd-subtab-sequences': 'sequences', 'd-subtab-files': 'files' };
+const addedTabs = new Set();     // tabs opened through „+" at the find standing now (emptied by drawFund)
+let platesFor = 0;               // the find whose plates have answered (loadDetail)
+const plateDesk = matchMedia('(min-width: 861px)');   // plates are made at the desk (plates.js, drawRow)
+const tabsPlus = document.getElementById('finds-tabs-plus');
+
+const twinShows = (id) => { const el = document.getElementById(id); return el ? !el.hidden : false; };
+const subCount = (id) => { const el = document.getElementById(id); return el && !el.hidden ? Number(el.textContent) || 0 : 0; };
+
+/** Per tab behind the „+": does the find hold something, may one put something there, can one right now. */
+function tabsOffer() {
+    const f = current;
+    const answered = f && detail?.point?.id === f.id ? detail : null;
+    const plates = f && tools && platesFor === f.id ? tools.plates.list() : [];
+    return {
+        plates: { filled: plates.length > 0,
+                  addable: answered?.may_make === true && plateDesk.matches,
+                  ready: (f?.pictures.length ?? 0) > 0 },
+        files: { filled: twinShows('d-subtab-files') && subCount('d-subcount-files') > 0,
+                 addable: twinShows('d-subtab-files'), ready: true },
+        sequences: { filled: twinShows('d-subtab-sequences') && subCount('d-subcount-sequences') > 0,
+                     addable: twinShows('d-subtab-sequences') && twinShows('d-sequence-add'), ready: true },
+    };
+}
+
 function syncTabs() {
-    for (const [id, name] of Object.entries(twins)) {
-        const twin = document.getElementById(id);
-        if (twin) tabButton(name).hidden = twin.hidden;
+    tabButton('pictures').hidden = !twinShows('d-subtab-photos');
+    const offer = tabsOffer();
+    for (const [name, o] of Object.entries(offer)) {
+        tabButton(name).hidden = !(o.filled || (o.addable && addedTabs.has(name)));
     }
+    if (tabsPlus) tabsPlus.hidden = !Object.entries(offer).some(([name, o]) => o.addable && tabButton(name).hidden);
     if (tabButton(tab).hidden) showTab(tab);
     // The find's remembered tab, now that it may have appeared.
     // A tab remembered that no longer exists („Listen", one afternoon of 27.11.2026) is no wish.
     else if (wantedTab && wantedTab !== tab && tabButton(wantedTab) && !tabButton(wantedTab).hidden) showTab(wantedTab);
 }
-for (const id of Object.keys(twins)) {
-    const twin = document.getElementById(id);
-    if (twin) new MutationObserver(syncTabs).observe(twin, { attributes: true, attributeFilter: ['hidden'] });
+/* What the window says about its blocks: the twins, their numbers, and
+   whether a sequence may be added. A number is redrawn by its text. */
+for (const id of [...Object.keys(twins), 'd-subcount-files', 'd-subcount-sequences', 'd-sequence-add']) {
+    const el = document.getElementById(id);
+    if (el) new MutationObserver(syncTabs).observe(el, { attributes: true, attributeFilter: ['hidden'],
+                                                         childList: true, characterData: true, subtree: true });
 }
+plateDesk.addEventListener('change', syncTabs);
+
+tabsPlus?.addEventListener('click', async () => {
+    const offer = tabsOffer();
+    const entries = [
+        ['plates', t('Tafeln')], ['files', t('Dateien')], ['sequences', t('Sequenzen')],
+    ].filter(([name]) => offer[name].addable && tabButton(name).hidden)
+     .map(([name, label]) => ({
+         value: name, label,
+         disabled: !offer[name].ready,
+         title: offer[name].ready ? '' : t('Für eine Tafel braucht der Fund zuerst ein Bild.'),
+     }));
+    const chosen = await popupMenu({ anchor: tabsPlus, entries });
+    if (!chosen) return;
+    addedTabs.add(chosen);
+    syncTabs();
+    showTab(chosen, true);
+});
 syncTabs();
 
 /* THE RAIL'S WIDTH IS DRAGGED AT ITS EDGE, as the plates' strip's
@@ -2648,6 +2701,7 @@ function loadDetail(f) {
             // The plates come with their own answer; the face and the viewer once they are there.
             Promise.resolve(tools.plates.show(f.id)).then(() => {
                 if (current !== f) return;
+                platesFor = f.id;
                 syncPlateTab();
                 if (tab === 'text') drawFace();
                 viewerIdle();

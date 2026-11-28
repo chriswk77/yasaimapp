@@ -329,7 +329,12 @@ export function popupMenu({ anchor, entries }) {
             button.className = 'popup-menu-entry' + (e.danger ? ' danger' : '');
             button.setAttribute('role', 'menuitem');
             button.textContent = e.label;
-            button.addEventListener('click', () => done(e.value));
+            /* AN ENTRY THAT CANNOT BE TAKEN YET stands greyed, its reason in
+               the title (the Fundbrowser's „+", 28.11.2026: a plate wants a
+               picture first) — gone, it would leave one guessing where it went. */
+            if (e.title) button.title = e.title;
+            if (e.disabled) button.disabled = true;
+            else button.addEventListener('click', () => done(e.value));
             menu.append(button);
         }
 

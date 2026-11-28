@@ -2819,7 +2819,8 @@ input.organize-dialog-check.is-partial::after {
     border-radius: calc(var(--radius) - 4px);
     cursor: pointer;
 }
-.popup-menu-entry:hover { background: var(--ground-3); }
+.popup-menu-entry:hover:not(:disabled) { background: var(--ground-3); }
+.popup-menu-entry:disabled { color: var(--text-quiet); cursor: default; }
 /* Red only turns strong on hover — four red words in a small menu would
    be louder than the one danger at stake. */
 .popup-menu-entry.danger { color: var(--error); }
@@ -6542,6 +6543,15 @@ body.page-content:has(.finds-fund:not([hidden])) > main.content { padding-top: 0
    share of the bar; Speichern and „Zeigen" at its right end. */
 .finds-tabs { margin-top: 1rem; align-items: flex-end; }   /* air under the find's bar (13.10.2026) */
 #finds-tabs [role="tab"] { flex: 0 0 auto; padding: .6rem 1.3rem; }
+/* „+" right after the last tab (finds.js, syncTabs). AT THE DESK A SMALL
+   SQUARE ON THE LINE OF THE TABS' WORDS (28.11.2026: a field-high square
+   „klebt ja schon an der Grundlinie der Tabs. Das sieht nicht toll aus"):
+   as tall as a word's line, centred on it, so air stays above the bar's
+   rule. The phone keeps the thumb's size. */
+.finds-tabs-plus { flex: none; align-self: center; margin-left: .5rem; }
+@media (min-width: 861px) {
+    .finds-tabs-plus { width: 1.45rem; height: 1.45rem; padding: 0; font-size: .75rem; }
+}
 .finds-tabs-end { margin-left: auto; display: flex; align-items: center; gap: .5rem; padding: 0 0 .4rem .9rem; }
 .finds-tabs-end > [hidden] { display: none; }
 /* AT THE DESK THE WINDOW SAVES ITSELF (cockpit.js): its button goes, a quiet
