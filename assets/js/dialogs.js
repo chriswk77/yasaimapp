@@ -305,7 +305,7 @@ export function ask({ title, text, buttons }) {
  * downward or rightward does not suffice, it dodges upward or to the
  * window edge — a menu that sticks out of the picture is not one.
  */
-export function popupMenu({ anchor, entries }) {
+export function popupMenu({ anchor, entries, hover = false }) {
     /* A SECOND TAP ON THE SAME ANCHOR CLOSES (25.09.2026) — the rule of
        infoWindow below, and for the same reason: the click-elsewhere took
        the anchor's own pointerdown, closed the menu, and the click that
@@ -352,7 +352,28 @@ export function popupMenu({ anchor, entries }) {
         const key       = (ev) => { if (ev.key === 'Escape') done(null); };
         const close     = () => done(null);
 
+        /* OPENED BY POINTING, IT GOES WHEN THE POINTER GOES (`hover`; the
+           Fundbrowser's „+", 28.11.2026: „automatisch aufklappen …
+           beim Überfahren"): once the pointer has left the anchor and the
+           menu for a moment — long enough to cross the gap between them. */
+        let leaveTimer = null;
+        const over = () => clearTimeout(leaveTimer);
+        const out = (ev) => {
+            if (ev.pointerType === 'touch') return;
+            clearTimeout(leaveTimer);
+            leaveTimer = setTimeout(close, 350);
+        };
+        if (hover) {
+            for (const el of [anchor, menu]) {
+                el.addEventListener('pointerenter', over);
+                el.addEventListener('pointerleave', out);
+            }
+        }
+
         done = (value) => {
+            clearTimeout(leaveTimer);
+            anchor.removeEventListener('pointerenter', over);
+            anchor.removeEventListener('pointerleave', out);
             document.removeEventListener('pointerdown', elsewhere, true);
             document.removeEventListener('keydown', key, true);
             window.removeEventListener('scroll', close, true);

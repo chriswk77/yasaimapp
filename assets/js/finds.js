@@ -1811,18 +1811,43 @@ for (const id of [...Object.keys(twins), 'd-subcount-files', 'd-subcount-sequenc
 }
 plateDesk.addEventListener('change', syncTabs);
 
-tabsPlus?.addEventListener('click', async () => {
+/* THE MENU OPENS BY POINTING (28.11.2026: „Kannst du das Menü beim
+   Plus automatisch aufklappen? Beim Überfahren?") — after a short rest on
+   the „+", so a pointer passing over it on its way elsewhere does not
+   throw a menu open, and it closes once the pointer has left both
+   (popupMenu, hover). A finger has no hover; its tap is the click. A
+   click on an open menu's „+" keeps it open — pointing opened it, and the
+   click that follows by habit must not shut it again. */
+let plusOpen = false;
+let plusRest = null;
+tabsPlus?.addEventListener('pointerenter', (e) => {
+    if (e.pointerType === 'touch' || plusOpen) return;
+    plusRest = setTimeout(plusMenu, 150);
+});
+tabsPlus?.addEventListener('pointerleave', () => clearTimeout(plusRest));
+tabsPlus?.addEventListener('click', () => {
+    clearTimeout(plusRest);
+    if (!plusOpen) plusMenu();
+});
+
+async function plusMenu() {
+    if (plusOpen || tabsPlus.hidden) return;
     const offer = tabsOffer();
     const entries = [
         ['plates', t('Tafeln')], ['files', t('Dateien')], ['sequences', t('Sequenzen')],
     ].filter(([name]) => offer[name].addable && tabButton(name).hidden)
      .map(([value, label]) => ({ value, label }));
-    const chosen = await popupMenu({ anchor: tabsPlus, entries });
+    if (entries.length === 0) return;
+    plusOpen = true;
+    tabsPlus.setAttribute('aria-expanded', 'true');
+    const chosen = await popupMenu({ anchor: tabsPlus, entries, hover: true });
+    plusOpen = false;
+    tabsPlus.setAttribute('aria-expanded', 'false');
     if (!chosen) return;
     addedTabs.add(chosen);
     syncTabs();
     showTab(chosen, true);
-});
+}
 syncTabs();
 
 /* THE RAIL'S WIDTH IS DRAGGED AT ITS EDGE, as the plates' strip's
