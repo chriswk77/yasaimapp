@@ -1771,19 +1771,22 @@ const tabsPlus = document.getElementById('finds-tabs-plus');
 const twinShows = (id) => { const el = document.getElementById(id); return el ? !el.hidden : false; };
 const subCount = (id) => { const el = document.getElementById(id); return el && !el.hidden ? Number(el.textContent) || 0 : 0; };
 
-/** Per tab behind the „+": does the find hold something, may one put something there, can one right now. */
+/** Per tab behind the „+": does the find hold something, may one put something there. */
 function tabsOffer() {
     const f = current;
     const answered = f && detail?.point?.id === f.id ? detail : null;
     const plates = f && tools && platesFor === f.id ? tools.plates.list() : [];
     return {
+        /* A PLATE ONLY ONCE THERE IS A PICTURE (28.11.2026: „Tafel kann
+           natürlich auch erst angeboten werden, wenn mindestens ein Bild da
+           ist") — not greyed with a reason, simply not offered; it comes
+           into the „+" with the first picture (drawPictures → syncPlateTab). */
         plates: { filled: plates.length > 0,
-                  addable: answered?.may_make === true && plateDesk.matches,
-                  ready: (f?.pictures.length ?? 0) > 0 },
+                  addable: answered?.may_make === true && plateDesk.matches && (f?.pictures.length ?? 0) > 0 },
         files: { filled: twinShows('d-subtab-files') && subCount('d-subcount-files') > 0,
-                 addable: twinShows('d-subtab-files'), ready: true },
+                 addable: twinShows('d-subtab-files') },
         sequences: { filled: twinShows('d-subtab-sequences') && subCount('d-subcount-sequences') > 0,
-                     addable: twinShows('d-subtab-sequences') && twinShows('d-sequence-add'), ready: true },
+                     addable: twinShows('d-subtab-sequences') && twinShows('d-sequence-add') },
     };
 }
 
@@ -1813,11 +1816,7 @@ tabsPlus?.addEventListener('click', async () => {
     const entries = [
         ['plates', t('Tafeln')], ['files', t('Dateien')], ['sequences', t('Sequenzen')],
     ].filter(([name]) => offer[name].addable && tabButton(name).hidden)
-     .map(([name, label]) => ({
-         value: name, label,
-         disabled: !offer[name].ready,
-         title: offer[name].ready ? '' : t('Für eine Tafel braucht der Fund zuerst ein Bild.'),
-     }));
+     .map(([value, label]) => ({ value, label }));
     const chosen = await popupMenu({ anchor: tabsPlus, entries });
     if (!chosen) return;
     addedTabs.add(chosen);

@@ -2819,8 +2819,7 @@ input.organize-dialog-check.is-partial::after {
     border-radius: calc(var(--radius) - 4px);
     cursor: pointer;
 }
-.popup-menu-entry:hover:not(:disabled) { background: var(--ground-3); }
-.popup-menu-entry:disabled { color: var(--text-quiet); cursor: default; }
+.popup-menu-entry:hover { background: var(--ground-3); }
 /* Red only turns strong on hover — four red words in a small menu would
    be louder than the one danger at stake. */
 .popup-menu-entry.danger { color: var(--error); }
