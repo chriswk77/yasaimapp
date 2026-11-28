@@ -294,9 +294,20 @@ try {
         check(!find_number_restart($pdo, $userId) && find_number_upcoming($pdo, $userId, 'U2-JJJJ-NNN') === 58,
             'without the restart the counter simply goes on');
         find_number_settings_save($pdo, $userId, 'U2-JJJJ-NNN', null, true);
+        check(find_number_counter_period($pdo, $userId) === null
+            && find_number_upcoming($pdo, $userId, 'U2-JJJJ-NNN') === 1,
+            'a restart switched on where today\'s section has no number yet begins at 1 at once');
+        find_number_settings_save($pdo, $userId, 'T-JJJJ-NNN', null, false);
+        find_number_settings_save($pdo, $userId, 'T-JJJJ-NNN', null, true);
         check(find_number_counter_period($pdo, $userId) === (string) $y
-            && find_number_upcoming($pdo, $userId, 'U2-JJJJ-NNN') === 58,
-            'a restart switched on just now begins in today\'s section — this year counts on');
+            && find_number_upcoming($pdo, $userId, 'T-JJJJ-NNN') === 58,
+            'one switched on where this year has numbers already counts on — ' . find_number_upcoming($pdo, $userId, 'T-JJJJ-NNN'));
+        find_number_settings_save($pdo, $userId, 'V-JJJJ-NNN', null, false);
+        find_number_settings_save($pdo, $userId, 'V-JJJJ-NNN', null, true);
+        check(find_number_mint($pdo, $userId, [$speciesList], null) === "V-$y-001",
+            'and the first find after such a tick draws 1 and stamps the section');
+        check(find_number_counter_period($pdo, $userId) === (string) $y,
+            'the section is stamped by that find');
 
         /* THE RESTART AND THE FINDS OF AN OLDER SECTION (measured
            25.09.2026): two finds this morning, then yesterday's offline

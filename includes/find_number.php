@@ -196,11 +196,24 @@ function find_number_settings_save(PDO $pdo, int $userId, string $pattern, ?stri
        a pattern saved again on the second of January must not stamp the
        old year's count onto the new one, or the year's first find would
        draw 58 where the mint promised 1. The first find of the next
-       section restarts by itself. */
+       section restarts by itself.
+
+       BUT A SECTION WITHOUT A FIND YET BEGINS AT 1 AT ONCE (28.11.2026:
+       a finder ticked „jeden Tag neu" and his first find of that day drew
+       37 — the rule above had stamped today onto the running count, and
+       the restart would only have shown the next morning). Counting on
+       is right where today already has numbers in the pattern's shape;
+       where it has none, nothing would collide, and whoever ticks the
+       box in the morning means the 01 today. So the section stays
+       unstamped (NULL) and the first find draws 1 and stamps it. */
     if (column_exists($pdo, 'map_users', 'find_number_restart')) {
         $period = $restart ? find_number_period($pattern === '' ? null : $pattern, null) : null;
         if ($period === null) {
             $pdo->prepare('UPDATE map_users SET find_number_restart = 0, find_counter_period = NULL WHERE id = ?')
+                ->execute([$userId]);
+        } elseif ($next === null && !$wasRestart
+                  && find_number_highest($pdo, $userId, $pattern, $period, null) === 0) {
+            $pdo->prepare('UPDATE map_users SET find_number_restart = 1, find_counter_period = NULL WHERE id = ?')
                 ->execute([$userId]);
         } elseif ($next !== null || !$wasRestart) {
             $pdo->prepare('UPDATE map_users SET find_number_restart = 1, find_counter_period = ? WHERE id = ?')

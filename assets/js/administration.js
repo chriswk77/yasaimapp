@@ -1157,7 +1157,9 @@ onTabContent(function bindFindNumberPreview(root) {
        floor is the counter as it stands, but 1 where a restart that was
        on already meets a section it has not counted in (a new year, a new
        morning); a restart ticked just now begins in today's section with
-       the counter as it is. Above the floor stands the highest number
+       the counter as it is — unless today has no number in this shape
+       yet, then at 1 as well (the save's rule of 28.11.2026). Above the
+       floor stands the highest number
        already given — the mint goes on past it (find_number_highest). The
        server counted those for the SAVED pattern only, so they count
        while the typed one keeps that shape; a new shape has none yet.
@@ -1167,12 +1169,15 @@ onTabContent(function bindFindNumberPreview(root) {
     function upcoming(pattern, stated) {
         let floor = stated ?? Math.max(1, parseInt(row.dataset.counter, 10) || 1);
         const sectioned = restartBox?.checked === true && periodUnit(pattern) !== null;
-        if (stated === null && sectioned && row.dataset.restart === '1') {
-            const key = periodKey(pattern, new Date());
-            if (key !== row.dataset.period) floor = 1;
-        }
         const highest = pattern !== savedPattern ? 0
             : parseInt(sectioned ? row.dataset.highestSection : row.dataset.highestAll, 10) || 0;
+        if (stated === null && sectioned) {
+            if (row.dataset.restart === '1') {
+                if (periodKey(pattern, new Date()) !== row.dataset.period) floor = 1;
+            } else if (highest === 0) {
+                floor = 1;
+            }
+        }
         return Math.max(floor, highest + 1);
     }
 
