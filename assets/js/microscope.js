@@ -405,6 +405,8 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
 
     /* Everything a session of the window holds — gone with the window. */
     let session = null;
+    /* The camera's picture is in sight — no message stands over the stage (say). */
+    let picturing = false;
     /* A calibration is running: the objective question keeps quiet — the
        slide is being changed for the micrometer, and that blacks out too. */
     let calibrating = false;
@@ -818,6 +820,11 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
             return;
         }
         message.hidden = text === null;
+        /* The window says nothing only while the picture runs (startLive,
+           the webcam's play) — every trouble is a sentence. The dot on
+           „Mikroskop" asks this, not the session (markLive). */
+        picturing = text === null;
+        markLive();
         msgText.textContent = text ?? '';
         msgDetail.textContent = detail;
         msgDetail.hidden = detail === '';
@@ -2899,9 +2906,15 @@ export function mountMicroscope({ button, presets, devices, setDevices, save, cl
 
     /* THE SIGN THAT THE CAMERA RUNS while the window stands aside: a class
        on the body, and the stylesheet paints it on the switch row's
-       „Mikroskop" (app.css) — the row is the page's, and so is the sign. */
+       „Mikroskop" (app.css) — the row is the page's, and so is the sign.
+       ONLY WHILE A PICTURE COMES (28.11.2026: „kam die Nachricht, das
+       Kameraprogramm antwortet nicht. Dennoch wird mir aber beim
+       Verlassen des Mikroskops ein grüner Punkt … angezeigt"). It asked
+       for the session alone, and a session stands from the first try on —
+       through „antwortet nicht", „nicht angesteckt" and every other
+       sentence. Now it asks whether the stage shows the camera. */
     function markLive() {
-        document.body.classList.toggle('is-microscope-live', session !== null && view === 'aside');
+        document.body.classList.toggle('is-microscope-live', session !== null && picturing && view === 'aside');
     }
 
     /**
