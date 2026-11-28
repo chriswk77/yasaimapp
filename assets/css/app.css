@@ -350,17 +350,19 @@
        der Oberfläche", then „gerade helle Farben, helle Schriften, das
        lenkt alles zu sehr ab … ruhig noch ein Ticken dunkler", and the
        next day back up by a tick: „kann doch ein Tick heller werden
-       wieder"): the grounds lie close together, the frames barely lift
-       off them, the text is a dim grey at 5.3 against the ground — enough
+       wieder", and on 28.11.2026 once more: „etwas heller machen … das
+       ist mir doch zu dunkel" — the grounds went up by about eight steps,
+       text and frames along with them): the grounds lie close together, the frames barely lift
+       off them, the text is a dim grey at 5.8 against the ground — enough
        to read a label, too little to pull the eye — and the meaning
        colours are damped like the accent. Nothing on the page shines next to the
        picture. */
-    --ground:       #141414 !important;
-    --ground-2:     #181818 !important;
-    --ground-3:     #1e1e1e !important;
-    --border:       #282828 !important;
-    --text:         #8a8a8a !important;
-    --text-quiet:   #626262 !important;
+    --ground:       #202020 !important;
+    --ground-2:     #252525 !important;
+    --ground-3:     #2b2b2b !important;
+    --border:       #373737 !important;
+    --text:         #9a9a9a !important;
+    --text-quiet:   #727272 !important;
     --accent-text:  #0a0a0a !important;
     --accent-text-hover: #0a0a0a !important;
     --ok:           #458545 !important;
