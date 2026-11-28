@@ -1580,6 +1580,20 @@ function syncPlateTab() {
     plateCount.hidden = plates.length === 0;
     const offer = plateRow.querySelector('.plate-make');
     plateMake.hidden = !offer;
+    /* NOT ON A FOREIGN FIND WITHOUT A PLATE (28.11.2026: „wenn bei
+       Fremdfunden keine Tafeln … vorhanden sind, kannst du diese Tabs
+       eigentlich ausblenden"). „Tafeln stands always" was said for one's
+       own finds, where an empty tab is the way to the first plate. Whoever
+       is not of the find's circle (may_make — holder and co-owners) can
+       make none there, so an empty tab would only promise. Decided once the
+       cockpit has answered for THIS find; syncTabs hands the tab over if it
+       stood on it, as for the window's twins. */
+    const platesTab = tabButton('plates');
+    const bare = f !== null && detail?.point?.id === f.id && detail.may_make !== true && plates.length === 0;
+    if (platesTab && platesTab.hidden !== bare) {
+        platesTab.hidden = bare;
+        syncTabs();
+    }
     plateEmpty.textContent = f && f.pictures.length === 0 && plates.length === 0
         ? t('Für eine Tafel braucht der Fund zuerst ein Bild. Lade es im Reiter Bilder hoch.')
         : plates.length === 0 ? t('Zu diesem Fund gibt es noch keine Tafel.') : '';
