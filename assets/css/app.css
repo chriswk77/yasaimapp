@@ -6223,7 +6223,10 @@ body:has(#finds-fund:not([hidden])) .header-bar { display: none; }
 }
 /* Under the pointer the map's colour, as „Zeigen" in the find's bar. */
 .finds-tile .finds-to-map:hover { background: var(--show); }
-.finds-tile:hover .finds-to-map, .finds-tile:focus-within .finds-to-map, .finds-tile.is-active .finds-to-map { opacity: 1; }
+/* :has(:focus-visible), not :focus-within: the way back from a find
+   focuses its tile, and a mouse user would find the map sign standing
+   there as a „you were here" (28.11.2026, the frame's reason). */
+.finds-tile:hover .finds-to-map, .finds-tile:is(:focus-visible, :has(:focus-visible)) .finds-to-map, .finds-tile.is-active .finds-to-map { opacity: 1; }
 
 /* „BESTIMMUNG" AT A FIND (pages/identify.php, 24.11.2026): the name asked
    for, then the Internet-Links and the finds of the species. The name's

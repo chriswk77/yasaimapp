@@ -1265,12 +1265,22 @@ function show() {
 // --- Walking and opening ------------------------------------------------------
 
 /** Mark a find in the tiles and the rows (whichever are drawn). */
-function choose(id) {
+/**
+ * The find the arrows stand on, and where the page returns to.
+ *
+ * MARKED ONLY WHILE THE ARROWS WALK (28.11.2026: the frame on the tile of
+ * the find just left „sagt nur aus, da warst du mal drin. Und sobald man
+ * etwas anklickt, geht man in den Fund"). Since one click opens, the mark
+ * has no use for the mouse; opening a find (mark = false) keeps the id —
+ * the way back scrolls to it and the arrows start from it — but no frame.
+ */
+function choose(id, mark = true) {
     if (selected !== null) {
         tiles.get(selected)?.classList.remove('is-active');
         rows.get(selected)?.classList.remove('is-active');
     }
     selected = id;
+    if (!mark) return;
     tiles.get(id)?.classList.add('is-active');
     rows.get(id)?.classList.add('is-active');
 }
@@ -1485,7 +1495,7 @@ function drawFund(f) {
     current = f;
     // A tab added through „+" and left empty is gone at the next opening (syncTabs).
     addedTabs.clear();
-    choose(f.id);
+    choose(f.id, false);
     browse.hidden = true;
     fund.hidden = false;
     areasForFind(f.id);
