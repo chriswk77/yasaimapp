@@ -204,13 +204,23 @@ if (microBox) document.getElementById('finds-microview').append(microBox);
 let micro = null;        // { aside(), end() } — the window's word, once it is mounted (areas.bind)
 
 const areaButton = (name) => areasBox.querySelector(`[data-area="${name}"]`);
+// The row of „Aufnehmen · Hochladen · Mikroskopieren" — hidden where one may not add pictures.
+const photoRow = document.getElementById('d-photo-buttons');
 
 /** The row as the two unseen buttons say: which areas this find has. */
 function syncAreas() {
     const mic = areaButton('microscope');
     const key = areaButton('key');
     if (mic) {
-        mic.hidden = !areaSources.microscope || areaSources.microscope.hidden;
+        /* AND NOT WHERE ONE MAY NOT ADD PICTURES (28.11.2026: „solange ich
+           keine Bearbeitungsberechtigung dafür habe, kann ich dazu auch nicht
+           mikroskopieren"). The source button itself stays unhidden on a
+           foreign find — pointwindow.js hides its ROW, #d-photo-buttons, by
+           the right `attach_photos` (mayAttach), and the switch asked only
+           the button, so the microscope stood in the head of every friend's
+           find. A still is a picture attached like any other; with the right
+           the find is shared work and the circle's copies follow. */
+        mic.hidden = !areaSources.microscope || areaSources.microscope.hidden || photoRow?.hidden === true;
         mic.disabled = areaSources.microscope?.disabled === true;
     }
     /* A foreign find's key is not mine to walk — but somebody's way opened
@@ -220,7 +230,7 @@ function syncAreas() {
     // A switch of one is no switch.
     areasBox.hidden = (!mic || mic.hidden) && (!key || key.hidden);
 }
-for (const source of [areaSources.microscope, areaSources.key]) {
+for (const source of [areaSources.microscope, areaSources.key, photoRow]) {
     if (source) new MutationObserver(syncAreas).observe(source, { attributes: true, attributeFilter: ['hidden', 'disabled'] });
 }
 
